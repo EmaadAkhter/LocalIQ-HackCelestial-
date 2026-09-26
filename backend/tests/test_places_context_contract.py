@@ -251,3 +251,38 @@ def test_weather_fallback_has_all_app_keys():
         assert key in app_weather
     assert app_weather["condition"] == "cloudy"  # unknown -> cloudy for the app
     assert app_weather["temperatureC"] == 28.0
+
+
+def test_scraped_rows_with_null_json_columns_do_not_500():
+    """Rows inserted by the scraper can have NULL JSON columns.
+
+    ``right_now_context_json`` was added by a later migration with no default, so
+    every scraped row is NULL while seeded rows are ``{}``. The response schema
+    must coerce that rather than reject the whole row.
+    """
+    with Session(engine) as session:
+        exp = Experience(
+            name="TS Null JSON Venue",
+            category="food",
+            lat=19.05,
+            lng=72.83,
+        )
+        session.add(exp)
+        session.commit()
+        session.refresh(exp)
+        exp_id = exp.id
+
+    # Force the NULL through the raw column, exactly like the scraper did.
+    with engine.begin() as conn:
+        conn.exec_driver_sql(
+            "UPDATE experiences SET right_now_context_json=NULL WHERE id=?",
+            (exp_id,),
+        )
+
+    detail = client.get(f"/api/v1/experiences/{exp_id}")
+    assert detail.status_code == 200, detail.text
+    assert detail.json()["right_now_label"]
+
+    listing = client.get("/api/v1/places", params={"text": "Null JSON", "limit": 5})
+    assert listing.status_code == 200, listing.text
+    assert any(p["name"] == "TS Null JSON Venue" for p in listing.json())

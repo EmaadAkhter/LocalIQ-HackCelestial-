@@ -113,7 +113,7 @@ class ExperienceResponse(BaseModel):
     # Live "Right Now" context (PRD 4.8). The raw cached JSON is excluded from
     # the response; label/context are unpacked into friendlier fields.
     right_now_score: float = 50.0
-    right_now_context_json: dict[str, Any] = Field(default_factory=dict, exclude=True)
+    right_now_context_json: dict[str, Any] | None = Field(default=None, exclude=True)
     right_now_label: str = "Okay right now"
     right_now_context: list[str] = Field(default_factory=list)
 
