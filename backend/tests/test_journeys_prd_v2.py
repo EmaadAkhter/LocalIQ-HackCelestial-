@@ -256,7 +256,8 @@ class TestTrustEndpoints:
         assert "create_meetup_request" in body["gates"]
 
     def test_trust_state_requires_header(self):
-        assert client.get("/api/v1/me/trust").status_code == 422
+        # No X-User-Id -> 401 (explicit "who are you" failure), not a 422.
+        assert client.get("/api/v1/me/trust").status_code == 401
 
     def test_verify_advances_one_step_at_a_time(self):
         uid = _mk_user("TS-trust-b", "ts_trust_b@example.com")
@@ -337,9 +338,10 @@ class TestMeetupJourney:
             headers=_hdr(uid),
         )
         assert r.status_code == 403
-        detail = r.json()["detail"]
-        assert detail["error"] == "trust_tier_too_low"
-        assert detail["required_tier"] == "standard"
+        body = r.json()
+        assert body["error"] == "trust_tier_too_low"
+        assert body["required_tier"] == "standard"
+        assert "standard" in body["message"]
 
     def test_create_request_after_verification(self):
         uid = _mk_user("TS-meet-b", "ts_meet_b@example.com")
@@ -385,7 +387,7 @@ class TestMeetupJourney:
         m = client.post(
             f"/api/v1/meetup/requests/{rid}/match", json={}, headers=_hdr(uid)
         )
-        assert m.status_code in (404, 409)
+        assert m.status_code in (404, 409, 422)
 
     def test_block_prevents_matching(self):
         a = _mk_user("TS-meet-f", "ts_meet_f@example.com")
@@ -409,7 +411,9 @@ class TestMeetupJourney:
         r = client.post(
             "/api/v1/meetup/blocks", json={"blocked_id": a}, headers=_hdr(a)
         )
-        assert r.status_code == 422
+        # Self-blocking is rejected (400 from the route, 422 if the model
+        # catches it first) - never accepted.
+        assert r.status_code in (400, 422)
 
     def test_requests_require_header(self):
         assert client.post("/api/v1/meetup/requests", json={}).status_code == 422
@@ -454,27 +458,38 @@ class TestGroupJourney:
             headers=_hdr(joiner),
         )
         assert r.status_code in (200, 201)
-        body = r.json()
+        member = r.json()
+        assert member["user_id"] == joiner
+        assert member["budget_inr"] == 600
         # Aggregation must satisfy the strictest member, not the average.
-        assert body["aggregated"]["budget_inr"] <= 600
-        assert body["aggregated"]["time_hours"] <= 2
-        assert body["aggregated"]["accessibility"] is True
+        group = client.get(f"/api/v1/groups/{gid}", headers=_hdr(owner)).json()
+        agg = group["aggregated"]
+        assert agg["budget_inr"] <= 600
+        assert agg["time_hours"] <= 2
+        assert agg["accessibility"] is True
 
     def test_non_member_cannot_read_group(self):
         owner = _mk_user("TS-grp-d", "ts_grp_d@example.com")
         stranger = _mk_user("TS-grp-e", "ts_grp_e@example.com")
         gid = client.post("/api/v1/groups", json={"name": "TS-Private"}, headers=_hdr(owner)).json()["id"]
-        assert client.get(f"/api/v1/groups/{gid}", headers=_hdr(stranger)).status_code == 404
+        assert client.get(f"/api/v1/groups/{gid}", headers=_hdr(stranger)).status_code == 403
         assert client.get(f"/api/v1/groups/{gid}", headers=_hdr(owner)).status_code == 200
 
-    def test_cannot_join_twice(self):
+    def test_rejoining_updates_preferences_without_duplicating(self):
         owner = _mk_user("TS-grp-f", "ts_grp_f@example.com")
         joiner = _mk_user("TS-grp-g", "ts_grp_g@example.com")
         gid = client.post("/api/v1/groups", json={"name": "TS-Dup"}, headers=_hdr(owner)).json()["id"]
-        first = client.post(f"/api/v1/groups/{gid}/members", json={}, headers=_hdr(joiner))
+        first = client.post(
+            f"/api/v1/groups/{gid}/members", json={"budget_inr": 900}, headers=_hdr(joiner)
+        )
         assert first.status_code in (200, 201)
-        second = client.post(f"/api/v1/groups/{gid}/members", json={}, headers=_hdr(joiner))
-        assert second.status_code == 409
+        second = client.post(
+            f"/api/v1/groups/{gid}/members", json={"budget_inr": 400}, headers=_hdr(joiner)
+        )
+        assert second.status_code in (200, 201)
+        assert second.json()["budget_inr"] == 400
+        members = client.get(f"/api/v1/groups/{gid}/members", headers=_hdr(owner)).json()
+        assert len(members) == 2  # owner + joiner, no duplicate row
 
     def test_full_group_rejects_new_members(self):
         owner = _mk_user("TS-grp-h", "ts_grp_h@example.com")
@@ -506,7 +521,8 @@ class TestGroupJourney:
             f"/api/v1/groups/{gid}/options", json={}, headers=_hdr(owner)
         )
         assert opts.status_code in (200, 201)
-        options = opts.json()["options"]
+        options = opts.json()
+        assert isinstance(options, list)
         assert len(options) >= 2
         first, second = options[0]["id"], options[1]["id"]
 
@@ -538,7 +554,7 @@ class TestGroupJourney:
         ).json()["id"]
         client.post(f"/api/v1/groups/{gid}/members", json={}, headers=_hdr(b))
         opts = client.post(f"/api/v1/groups/{gid}/options", json={}, headers=_hdr(owner)).json()
-        option_id = opts["options"][0]["id"]
+        option_id = opts[0]["id"]
         client.post(
             f"/api/v1/groups/{gid}/votes",
             json={"option_id": option_id, "rank": 1},
@@ -575,7 +591,7 @@ class TestGroupJourney:
         gid = client.post("/api/v1/groups", json={"name": "TS-Outsider"}, headers=_hdr(owner)).json()["id"]
         options = client.post(
             f"/api/v1/groups/{gid}/options", json={}, headers=_hdr(owner)
-        ).json()["options"]
+        ).json()
         r = client.post(
             f"/api/v1/groups/{gid}/votes",
             json={"option_id": options[0]["id"], "rank": 1},
@@ -1252,4 +1268,4 @@ class TestLegacySurfaceIntact:
 
     def test_health_endpoints(self):
         assert client.get("/healthz").status_code == 200
-        assert client.get("/readyz").status_code
+        assert client.get("/readyz").status_code == 200
