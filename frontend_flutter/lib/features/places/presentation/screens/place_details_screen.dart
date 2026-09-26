@@ -81,7 +81,7 @@ class _PlaceDetailsScreenState extends ConsumerState<PlaceDetailsScreen> {
     );
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.canvas,
       body: Column(
         children: [
           Expanded(
@@ -157,7 +157,7 @@ class _HeroAppBar extends ConsumerWidget {
       expandedHeight: width < 700 ? 220 : 300,
       pinned: true,
       stretch: true,
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.canvas,
       surfaceTintColor: Colors.transparent,
       leading: const BackButton(),
       actions: [

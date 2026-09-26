@@ -20,7 +20,7 @@ class ContextStrip extends ConsumerWidget {
     final mobile = Breakpoints.isMobile(width);
 
     return DecoratedBox(
-      decoration: const BoxDecoration(color: AppColors.navy),
+      decoration: const BoxDecoration(color: AppColors.surfaceDeep),
       child: Padding(
         padding: EdgeInsets.symmetric(
           horizontal: Breakpoints.gutter(width),
@@ -63,17 +63,17 @@ class _Facts extends StatelessWidget {
       (
         icon: Icons.location_on_rounded,
         text: context.locationLabel,
-        color: const Color(0xFF8FB6FF),
+        color: AppColors.primary,
       ),
       (
         icon: Icons.event_rounded,
         text: _weekday(context.startTime),
-        color: const Color(0xFF9BB0D0),
+        color: AppColors.textMuted,
       ),
       (
         icon: Icons.schedule_rounded,
         text: '${_clock(context.startTime)} · ${context.timeLabel}',
-        color: const Color(0xFF9BB0D0),
+        color: AppColors.textMuted,
       ),
       (
         icon: weather == null
@@ -82,12 +82,12 @@ class _Facts extends StatelessWidget {
         text: weather == null
             ? 'Reading conditions…'
             : '${weather.summary} · ${weather.precipitationChance}% rain',
-        color: const Color(0xFF8FB6FF),
+        color: AppColors.primary,
       ),
       (
         icon: Icons.traffic_rounded,
         text: traffic?.label ?? 'Reading traffic…',
-        color: const Color(0xFF9BB0D0),
+        color: AppColors.textMuted,
       ),
     ];
 
@@ -108,7 +108,7 @@ class _Facts extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppColors.text,
                     fontWeight: FontWeight.w600,
                     fontSize: 12.5,
                   ),
@@ -143,9 +143,9 @@ class _PlanningNote extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.07),
+        color: AppColors.primarySurface,
         borderRadius: BorderRadius.circular(AppRadius.pill),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.20)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -153,14 +153,14 @@ class _PlanningNote extends StatelessWidget {
           const Icon(
             Icons.auto_awesome_rounded,
             size: 13,
-            color: Color(0xFFB9C7E8),
+            color: AppColors.primary,
           ),
           const SizedBox(width: 8),
           Flexible(
             child: Text(
               note ?? 'Ranking against live conditions in $fallback.',
               style: const TextStyle(
-                color: Color(0xFFD7E2F5),
+                color: AppColors.primaryDark,
                 fontWeight: FontWeight.w600,
                 fontSize: 12.5,
                 height: 1.3,
@@ -189,12 +189,12 @@ class ContextSummaryRow extends ConsumerWidget {
         AppBadge(
           label: discovery.timeLabel,
           icon: Icons.schedule_rounded,
-          color: AppColors.blue,
+          color: AppColors.primary,
         ),
         AppBadge(
           label: discovery.budgetLabel,
           icon: Icons.payments_outlined,
-          color: AppColors.violet,
+          color: AppColors.warning,
         ),
         AppBadge(
           label: live?.weather.summary ?? 'Loading…',
@@ -209,12 +209,12 @@ class ContextSummaryRow extends ConsumerWidget {
         AppBadge(
           label: discovery.accessibility.label,
           icon: Icons.accessible_rounded,
-          color: AppColors.primary,
+          color: AppColors.success,
         ),
         AppBadge(
           label: _biasLabel(discovery.localBias),
           icon: Icons.diamond_outlined,
-          color: AppColors.violet,
+          color: AppColors.warning,
         ),
       ],
     );

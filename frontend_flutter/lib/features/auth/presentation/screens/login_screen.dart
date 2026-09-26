@@ -4,10 +4,15 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/data_providers.dart';
 import '../../../../core/error/app_exception.dart';
+import '../../../../core/role/user_role.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../domain/auth_service.dart';
 import '../widgets/auth_layout.dart';
 
+/// Explorer Login Screen.
+///
+/// Only for Explorer role. Guide login has its own screen.
+/// After successful sign-in, routes to Explorer Home.
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -31,6 +36,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
+  /// Determines where to route after successful auth.
+  String get _destination {
+    final role = ref.read(userRoleProvider) ?? UserRole.explorer;
+    return role.isGuide ? '/guide/dashboard' : '/explore';
+  }
+
   Future<void> _run(Future<AuthSession> Function() action) async {
     setState(() {
       _busy = true;
@@ -39,7 +50,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     try {
       await action();
       if (!mounted) return;
-      context.go('/explore');
+      context.go(_destination);
     } on AppException catch (e) {
       if (!mounted) return;
       setState(() {
@@ -71,8 +82,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     return AuthLayout(
       title: 'Welcome back',
-      subtitle: 'Sign in to keep your plans and saved places across sessions.',
-      footer: const AuthBackLink(),
+      subtitle: 'Sign in to your Explorer account.',
+      footer: Column(
+        children: [
+          const AuthBackLink(),
+          const SizedBox(height: 6),
+          TextButton.icon(
+            onPressed: () {
+              ref.read(userRoleProvider.notifier).setRole(UserRole.guide);
+              context.go('/guide-login');
+            },
+            icon: const Icon(Icons.switch_account_rounded, size: 15),
+            label: const Text('Switch to Guide login'),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.textMuted,
+              textStyle: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
       children: [
         if (_error != null) ...[
           AuthError(message: _error!),
@@ -123,40 +151,92 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     : null,
               ),
               const SizedBox(height: 8),
-              Row(
-                children: [
-                  SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: Checkbox(
-                      value: _remember,
-                      onChanged: (v) => setState(() => _remember = v ?? false),
-                      visualDensity: VisualDensity.compact,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text(
-                      'Keep me signed in',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
+              // Responsive row
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final narrow = constraints.maxWidth < 300;
+                  if (narrow) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: Checkbox(
+                                value: _remember,
+                                onChanged: (v) =>
+                                    setState(() => _remember = v ?? false),
+                                visualDensity: VisualDensity.compact,
+                                materialTapTargetSize:
+                                    MaterialTapTargetSize.shrinkWrap,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Keep me signed in',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton(
+                            onPressed: () => context.push('/forgot-password'),
+                            style: TextButton.styleFrom(
+                              minimumSize: const Size(0, 36),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 0),
+                            ),
+                            child: const Text('Forgot password?'),
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+                  return Row(
+                    children: [
+                      SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: Checkbox(
+                          value: _remember,
+                          onChanged: (v) =>
+                              setState(() => _remember = v ?? false),
+                          visualDensity: VisualDensity.compact,
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                        ),
                       ),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () => context.push('/forgot-password'),
-                    style: TextButton.styleFrom(
-                      minimumSize: const Size(0, 36),
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                    ),
-                    child: const Text('Forgot password?'),
-                  ),
-                ],
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Keep me signed in',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => context.push('/forgot-password'),
+                        style: TextButton.styleFrom(
+                          minimumSize: const Size(0, 36),
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                        ),
+                        child: const Text('Forgot password?'),
+                      ),
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 12),
               SizedBox(
@@ -200,9 +280,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             onPressed: _busy
                 ? () {}
                 : () => _run(
-                      () => ref
-                          .read(authServiceProvider)
-                          .continueAsGuest(),
+                      () => ref.read(authServiceProvider).continueAsGuest(),
                     ),
             style: OutlinedButton.styleFrom(
               minimumSize: const Size(double.infinity, 46),

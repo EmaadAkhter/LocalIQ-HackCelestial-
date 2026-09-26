@@ -35,7 +35,7 @@ class LocalIqAppBar extends ConsumerWidget {
     final compact = width < 1000;
 
     return Material(
-      color: AppColors.surface,
+      color: AppColors.surfaceLifted,
       child: DecoratedBox(
         decoration: const BoxDecoration(
           border: Border(bottom: BorderSide(color: AppColors.border)),
@@ -99,7 +99,7 @@ class _WideBar extends ConsumerWidget {
         if (showAssistant)
           TextButton.icon(
             onPressed: () => context.push('/assistant'),
-            style: TextButton.styleFrom(foregroundColor: AppColors.violet),
+            style: TextButton.styleFrom(foregroundColor: AppColors.primary),
             icon: const Icon(Icons.auto_awesome_rounded, size: 16),
             label: const Text('Ask LocalIQ'),
           ),
@@ -181,9 +181,9 @@ class _NavItemState extends State<_NavItem> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             color: active
-                ? AppColors.sky
+                ? AppColors.primarySurface
                 : _hovered
-                    ? AppColors.surfaceMuted
+                    ? AppColors.surfaceSecondary
                     : Colors.transparent,
             borderRadius: BorderRadius.circular(AppRadius.md),
           ),
@@ -195,7 +195,7 @@ class _NavItemState extends State<_NavItem> {
                 style: TextStyle(
                   fontWeight: active ? FontWeight.w800 : FontWeight.w600,
                   fontSize: 14,
-                  color: active ? AppColors.primary : AppColors.textSecondary,
+                  color: active ? AppColors.primary : AppColors.textMuted,
                 ),
               ),
               const SizedBox(height: 4),
@@ -204,7 +204,7 @@ class _NavItemState extends State<_NavItem> {
                 height: 2.5,
                 width: active ? 22 : 0,
                 decoration: BoxDecoration(
-                  color: AppColors.violet,
+                  color: AppColors.primary,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -290,7 +290,7 @@ class LocationSelector extends ConsumerWidget {
             const Icon(
               Icons.location_on_rounded,
               size: 15,
-              color: AppColors.violet,
+              color: AppColors.primary,
             ),
             const SizedBox(width: 6),
             Flexible(
@@ -344,18 +344,18 @@ class UserAvatarButton extends ConsumerWidget {
             shape: BoxShape.circle,
             gradient: LinearGradient(
               colors: [
-                AppColors.violet.withValues(alpha: 0.20),
-                AppColors.blue.withValues(alpha: 0.20),
+                AppColors.primary.withValues(alpha: 0.15),
+                AppColors.primaryDark.withValues(alpha: 0.12),
               ],
             ),
-            border: Border.all(color: AppColors.violet.withValues(alpha: 0.28)),
+            border: Border.all(color: AppColors.primary.withValues(alpha: 0.30)),
           ),
           child: Text(
             initials,
             style: const TextStyle(
               fontWeight: FontWeight.w800,
               fontSize: 11.5,
-              color: AppColors.violet,
+              color: AppColors.primary,
             ),
           ),
         ),
