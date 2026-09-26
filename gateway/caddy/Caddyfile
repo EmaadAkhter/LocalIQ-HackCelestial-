@@ -23,6 +23,20 @@
 		respond "ok" 200
 	}
 
+	# FastAPI docs. These live outside /api, so they bypass Kong and go
+	# straight to the backend (same network). Handy for demos and judging.
+	route /docs* {
+		reverse_proxy backend:8000
+	}
+
+	route /redoc* {
+		reverse_proxy backend:8000
+	}
+
+	route /openapi.json {
+		reverse_proxy backend:8000
+	}
+
 	route {
 		reverse_proxy nginx-flutter:80
 	}

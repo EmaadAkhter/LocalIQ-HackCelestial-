@@ -101,6 +101,7 @@ Public URLs:
 |---|---|
 | App (Flutter web) | https://localiq.tavesglobal.com |
 | API | https://localiq.tavesglobal.com/api/v1/... |
+| API docs (Swagger) | https://localiq.tavesglobal.com/docs |
 | Shared model | https://localiq.tavesglobal.com/llm (Kong key-auth) |
 | CI | https://jenkins.tavesglobal.com |
 

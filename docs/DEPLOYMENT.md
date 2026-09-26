@@ -58,6 +58,7 @@ Public URLs:
 |---|---|
 | App (Flutter web) | https://localiq.tavesglobal.com |
 | API | https://localiq.tavesglobal.com/api/v1/... |
+| API docs (Swagger / ReDoc) | https://localiq.tavesglobal.com/docs · `/redoc` · `/openapi.json` |
 | Shared model (key-auth) | https://localiq.tavesglobal.com/llm |
 | CI | https://jenkins.tavesglobal.com |
 
