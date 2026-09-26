@@ -1,6 +1,7 @@
 """Experiences API endpoints."""
 
 import logging
+import math
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from sqlmodel import Session, func, select
@@ -8,7 +9,14 @@ from sqlmodel import Session, func, select
 from app.database import get_session
 from app.models import Experience, Guide
 from app.rate_limit import PUBLIC_LIMIT, limiter
-from app.schemas import ExperienceListResponse, ExperienceResponse, GuideResponse
+from app.schemas import (
+    ExperienceListResponse,
+    ExperienceResponse,
+    GuideResponse,
+    NearbyExperience,
+    NearbyListResponse,
+)
+from app.services.recommender import haversine_km
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -49,6 +57,48 @@ def list_experiences(
     return ExperienceListResponse(
         total=int(total), items=[ExperienceResponse.model_validate(e) for e in items]
     )
+
+
+@router.get("/experiences/nearby", response_model=NearbyListResponse, summary="Experiences near a point")
+@limiter.limit(PUBLIC_LIMIT)
+def nearby_experiences(
+    request: Request,
+    response: Response,
+    lat: float = Query(..., ge=-90, le=90),
+    lng: float = Query(..., ge=-180, le=180),
+    radius_km: float = Query(default=5.0, gt=0, le=50),
+    limit: int = Query(default=20, ge=1, le=100),
+    session: Session = Depends(get_session),
+):
+    """Nearest experiences within ``radius_km``.
+
+    A lat/lng bounding box keeps the SQL scan small; the exact haversine
+    distance then filters and orders the result.
+    """
+    lat_delta = radius_km / 111.0
+    lng_delta = radius_km / (111.0 * max(0.01, math.cos(math.radians(lat))))
+
+    candidates = session.exec(
+        select(Experience).where(
+            Experience.lat.between(lat - lat_delta, lat + lat_delta),
+            Experience.lng.between(lng - lng_delta, lng + lng_delta),
+        )
+    ).all()
+
+    scored = [
+        (haversine_km(lat, lng, e.lat, e.lng), e)
+        for e in candidates
+    ]
+    scored = [(d, e) for d, e in scored if d <= radius_km]
+    scored.sort(key=lambda pair: pair[0])
+
+    items = [
+        NearbyExperience(
+            experience=ExperienceResponse.model_validate(e), distance_km=round(d, 2)
+        )
+        for d, e in scored[:limit]
+    ]
+    return NearbyListResponse(total=len(scored), radius_km=radius_km, items=items)
 
 
 @router.get("/experiences/{experience_id}", response_model=ExperienceResponse, summary="Get experience by ID")

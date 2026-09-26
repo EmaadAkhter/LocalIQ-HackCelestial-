@@ -13,7 +13,18 @@ from sqlmodel import Session
 
 load_dotenv()
 
-from app.api.v1 import auth, chat, experiences, guides, parse, recommendations, weather  # noqa: E402
+from app.api.v1 import (  # noqa: E402
+    admin,
+    auth,
+    chat,
+    experiences,
+    favorites,
+    guides,
+    itineraries,
+    parse,
+    recommendations,
+    weather,
+)
 from app.config import get_settings  # noqa: E402
 from app.database import get_session, init_db  # noqa: E402
 from app.errors import error_response, register_exception_handlers  # noqa: E402
@@ -110,6 +121,9 @@ app.include_router(guides.router, prefix="/api/v1", tags=["guides"])
 app.include_router(parse.router, prefix="/api/v1", tags=["parse"])
 app.include_router(chat.router, prefix="/api/v1", tags=["chat"])
 app.include_router(weather.router, prefix="/api/v1", tags=["weather"])
+app.include_router(itineraries.router, prefix="/api/v1", tags=["itineraries"])
+app.include_router(favorites.router, prefix="/api/v1", tags=["favorites"])
+app.include_router(admin.router, prefix="/api/v1", tags=["admin"])
 
 
 @app.get("/health", summary="Liveness check")

@@ -118,6 +118,8 @@ build on `main`.
 | `RECOMMEND_CACHE_ENABLED` | backend | cache identical `/recommend` calls (default `true`) |
 | `RECOMMEND_CACHE_TTL_SECONDS` | backend | recommendation cache TTL (default `60`) |
 | `IMAGE_PLACEHOLDER_URL_TEMPLATE` | backend | `{seed}` image placeholder; empty disables |
+| `ADMIN_API_KEY` | backend | enables `/api/v1/admin/*` (empty disables); sent as `X-Admin-Key` |
+| `FEEDBACK_WEIGHT` | backend | ranking nudge from aggregated feedback (default `4.0`) |
 | `HTTP_PORT` | infra | host port for the Caddy edge (default `8080`) |
 | `FLUTTER_WEB_DIR` | infra | path to the Flutter web build |
 
@@ -155,6 +157,19 @@ the common query shapes (`experiences(category, rating)`, `experiences(lat, lng)
 
 > Rate-limit state and login lockout are in-memory: correct for the single
 > backend container this deployment runs. A multi-replica setup needs Redis.
+
+### Product APIs
+
+| Area | Endpoints |
+|---|---|
+| Itineraries | `POST/GET/PUT/DELETE /api/v1/itineraries[/{id}]` — user-owned, totals + travel time computed |
+| Favorites | `GET/POST/DELETE /api/v1/me/favorites[/{experience_id}]` — idempotent save/unsave |
+| Discovery | `GET /api/v1/experiences/nearby?lat=&lng=&radius_km=` — bbox + haversine, distance-sorted |
+| Feedback | `POST /api/v1/recommendations/{experience_id}/feedback` — thumbs up/down nudges ranking |
+| Admin | `POST/PATCH/DELETE /api/v1/admin/experiences[/{id}]` — requires `X-Admin-Key` |
+
+Itineraries and favorites require a session token. Feedback is accepted from
+anonymous users too. Admin endpoints return `503` unless `ADMIN_API_KEY` is set.
 
 ### Caching & query efficiency
 

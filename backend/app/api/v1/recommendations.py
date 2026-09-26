@@ -4,15 +4,24 @@ import hashlib
 import json
 import logging
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from sqlalchemy import case
 from sqlmodel import Session, func, select
 
 from app.config import get_settings
 from app.database import get_session
-from app.models import Experience
-from app.rate_limit import RECOMMEND_LIMIT, limiter
-from app.schemas import ExperienceResponse, RecommendationItem, RecommendationRequest, RecommendationResponse
+from app.models import Experience, RecommendationFeedback, User
+from app.rate_limit import PUBLIC_LIMIT, RECOMMEND_LIMIT, limiter
+from app.schemas import (
+    ExperienceResponse,
+    FeedbackRequest,
+    FeedbackResponse,
+    RecommendationItem,
+    RecommendationRequest,
+    RecommendationResponse,
+)
 from app.services import recommender
+from app.services.auth import get_current_user_optional
 from app.services.cache import TTLCache
 from app.services.weather import fetch_weather
 
@@ -40,6 +49,24 @@ def recommend_cache_stats() -> dict[str, int]:
 def _recommend_cache_key(payload: RecommendationRequest) -> str:
     blob = json.dumps(payload.model_dump(mode="json"), sort_keys=True)
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+
+def _feedback_scores(session: Session) -> dict[int, float]:
+    """Net helpful ratio per experience, in [-1, 1]."""
+    statement = (
+        select(
+            RecommendationFeedback.experience_id,
+            func.count().label("total"),
+            func.sum(case((RecommendationFeedback.helpful, 1), else_=0)).label("helpful"),
+        ).group_by(RecommendationFeedback.experience_id)
+    )
+    scores: dict[int, float] = {}
+    for experience_id, total, helpful in session.execute(statement).all():
+        total = int(total or 0)
+        helpful = int(helpful or 0)
+        if total:
+            scores[int(experience_id)] = (helpful - (total - helpful)) / total
+    return scores
 
 
 @router.post("/recommend", response_model=RecommendationResponse, summary="Ranked feasible recommendations")
@@ -95,6 +122,7 @@ async def get_recommendations(
         accessibility=payload.accessibility,
         start_time=payload.start_time,
         weather=weather,
+        feedback_scores=_feedback_scores(session),
         limit=payload.limit,
     )
 
@@ -122,3 +150,40 @@ async def get_recommendations(
     if settings.recommend_cache_enabled:
         _recommend_cache.set(cache_key, out)
     return out
+
+
+@router.post(
+    "/recommendations/{experience_id}/feedback",
+    response_model=FeedbackResponse,
+    summary="Record thumbs up/down on a recommendation",
+)
+@limiter.limit(PUBLIC_LIMIT)
+def submit_feedback(
+    request: Request,
+    response: Response,
+    experience_id: int,
+    payload: FeedbackRequest,
+    session: Session = Depends(get_session),
+    current_user: User | None = Depends(get_current_user_optional),
+):
+    """Persist feedback and invalidate cached recommendations.
+
+    Aggregated feedback nudges future ranking via ``FEEDBACK_WEIGHT``.
+    """
+    experience = session.get(Experience, experience_id)
+    if experience is None:
+        raise HTTPException(status_code=404, detail="Experience not found")
+
+    session.add(
+        RecommendationFeedback(
+            user_id=current_user.id if current_user else None,
+            experience_id=experience_id,
+            helpful=payload.helpful,
+            location=payload.location,
+            interests=payload.interests,
+        )
+    )
+    session.commit()
+    clear_recommend_cache()
+    logger.info("Feedback recorded: experience=%s helpful=%s", experience_id, payload.helpful)
+    return FeedbackResponse(experience_id=experience_id, helpful=payload.helpful)

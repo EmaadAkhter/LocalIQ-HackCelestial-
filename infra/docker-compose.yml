@@ -32,6 +32,8 @@ services:
       RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
       LOGIN_MAX_ATTEMPTS: ${LOGIN_MAX_ATTEMPTS:-5}
       LOGIN_LOCKOUT_MINUTES: ${LOGIN_LOCKOUT_MINUTES:-15}
+      ADMIN_API_KEY: ${ADMIN_API_KEY:-}
+      FEEDBACK_WEIGHT: ${FEEDBACK_WEIGHT:-4.0}
       DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-localiq}:${POSTGRES_PASSWORD:-localiq}@postgres:5432/${POSTGRES_DB:-localiq}
       OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:3b}

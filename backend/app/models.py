@@ -7,7 +7,7 @@ All tables carry ``created_at`` / ``updated_at`` (naive UTC) via
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import JSON, Column, DateTime, Index
+from sqlalchemy import JSON, Column, DateTime, Index, UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.timeutil import utcnow
@@ -124,16 +124,21 @@ class GuideRequest(TimestampMixin, table=True):
 
 
 class Itinerary(TimestampMixin, table=True):
-    """Optional itinerary container (secondary, hackathon-optional)."""
+    """A saved plan owned by a user."""
 
     __tablename__ = "itineraries"  # type: ignore[assignment]
+    __table_args__ = (Index("ix_itineraries_user_created", "user_id", "created_at"),)
 
     id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: Optional[int] = Field(default=None, foreign_key="users.id", index=True)
     name: str = Field(default="My Mumbai Day")
     total_duration_min: int = Field(default=0)
     total_cost: int = Field(default=0)
 
-    stops: list["ItineraryStop"] = Relationship(back_populates="itinerary")
+    stops: list["ItineraryStop"] = Relationship(
+        back_populates="itinerary",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"},
+    )
 
 
 class ItineraryStop(TimestampMixin, table=True):
@@ -151,3 +156,31 @@ class ItineraryStop(TimestampMixin, table=True):
     travel_time_min: int = Field(default=0)
 
     itinerary: Optional["Itinerary"] = Relationship(back_populates="stops")
+
+
+class Favorite(TimestampMixin, table=True):
+    """A user's saved experience. Unique per (user, experience)."""
+
+    __tablename__ = "favorites"  # type: ignore[assignment]
+    __table_args__ = (
+        UniqueConstraint("user_id", "experience_id", name="uq_favorite_user_experience"),
+        Index("ix_favorites_user_created", "user_id", "created_at"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="users.id", index=True)
+    experience_id: int = Field(foreign_key="experiences.id", index=True)
+
+
+class RecommendationFeedback(TimestampMixin, table=True):
+    """A thumbs up/down on a recommended experience, used to nudge ranking."""
+
+    __tablename__ = "recommendation_feedback"  # type: ignore[assignment]
+    __table_args__ = (Index("ix_feedback_experience_created", "experience_id", "created_at"),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: Optional[int] = Field(default=None, foreign_key="users.id", index=True)
+    experience_id: int = Field(foreign_key="experiences.id", index=True)
+    helpful: bool = Field(default=True)
+    location: Optional[str] = Field(default=None)
+    interests: list[str] = Field(default_factory=list, sa_column=Column(JSON))

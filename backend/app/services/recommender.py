@@ -9,6 +9,7 @@ import logging
 import math
 from dataclasses import dataclass, field
 
+from app.config import get_settings
 from app.models import Experience
 
 logger = logging.getLogger(__name__)
@@ -297,6 +298,7 @@ def score_experience(
     distance_km: float,
     travel_time_min: int,
     weather_boost: float = 0.0,
+    feedback_boost: float = 0.0,
 ) -> tuple[float, dict]:
     """Phase B — rank feasible experiences. Explicit weighted parts."""
     interests = [i.lower().strip() for i in (interests or []) if i]
@@ -353,6 +355,9 @@ def score_experience(
     # Weather/context boost (-6..+6).
     parts["weather"] = max(-6.0, min(6.0, weather_boost))
 
+    # Aggregated user feedback (-8..+8).
+    parts["feedback"] = max(-8.0, min(8.0, feedback_boost))
+
     total = round(sum(parts.values()), 2)
     return total, {k: round(v, 2) for k, v in parts.items()}
 
@@ -393,6 +398,7 @@ def recommend(
     accessibility: str | list[str] | None = None,
     start_time: str | None = None,
     weather: dict | None = None,
+    feedback_scores: dict[int, float] | None = None,
     limit: int = 10,
 ) -> dict:
     """Run feasibility + ranking. Never raises for bad inputs; returns metadata."""
@@ -412,6 +418,9 @@ def recommend(
         if not feas.feasible:
             continue
         boost = weather_boost_for(exp, weather)
+        feedback_boost = get_settings().feedback_weight * float(
+            (feedback_scores or {}).get(exp.id or 0, 0.0)
+        )
         # When no location given, pass 0 distance but neutralize distance part later.
         score, parts = score_experience(
             exp,
@@ -421,6 +430,7 @@ def recommend(
             distance_km=feas.distance_km,
             travel_time_min=feas.travel_time_min,
             weather_boost=boost,
+            feedback_boost=feedback_boost,
         )
         if user_coords is None:
             # Neutral distance when user gave no location.

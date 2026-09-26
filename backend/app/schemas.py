@@ -393,3 +393,116 @@ class WeatherResponse(BaseModel):
     is_rainy: bool = False
     suitable_outdoor: bool = True
     description: str = ""
+
+
+# --------------------------------------------------------------------------
+# Itineraries
+# --------------------------------------------------------------------------
+
+
+class ItineraryStopInput(BaseModel):
+    experience_id: int
+    start_time: str | None = Field(default=None, examples=["10:00"])
+
+
+class ItineraryCreate(BaseModel):
+    name: str = Field(default="My Mumbai Day", max_length=120)
+    stops: list[ItineraryStopInput] = Field(default_factory=list, max_length=20)
+
+
+class ItineraryUpdate(BaseModel):
+    name: str | None = Field(default=None, max_length=120)
+    stops: list[ItineraryStopInput] | None = Field(default=None, max_length=20)
+
+
+class ItineraryStopResponse(BaseModel):
+    id: int
+    experience_id: int
+    experience: ExperienceResponse
+    sequence: int
+    start_time: str = ""
+    end_time: str = ""
+    travel_time_min: int = 0
+
+
+class ItineraryResponse(BaseModel):
+    id: int
+    name: str
+    total_duration_min: int
+    total_cost: int
+    created_at: datetime
+    stops: list[ItineraryStopResponse] = Field(default_factory=list)
+
+
+# --------------------------------------------------------------------------
+# Geospatial
+# --------------------------------------------------------------------------
+
+
+class NearbyExperience(BaseModel):
+    experience: ExperienceResponse
+    distance_km: float
+
+
+class NearbyListResponse(BaseModel):
+    total: int
+    radius_km: float
+    items: list[NearbyExperience] = Field(default_factory=list)
+
+
+# --------------------------------------------------------------------------
+# Feedback
+# --------------------------------------------------------------------------
+
+
+class FeedbackRequest(BaseModel):
+    helpful: bool
+    location: str | None = Field(default=None, max_length=100)
+    interests: list[str] = Field(default_factory=list)
+
+
+class FeedbackResponse(BaseModel):
+    status: str = "recorded"
+    experience_id: int
+    helpful: bool
+
+
+# --------------------------------------------------------------------------
+# Admin content management
+# --------------------------------------------------------------------------
+
+
+class ExperienceCreate(BaseModel):
+    name: str = Field(..., min_length=2, max_length=200)
+    category: str = Field(..., min_length=2, max_length=40)
+    lat: float = Field(..., ge=-90, le=90)
+    lng: float = Field(..., ge=-180, le=180)
+    avg_cost: int = Field(default=0, ge=0)
+    duration_min: int = Field(default=60, ge=15)
+    open_time: str = Field(default="09:00", max_length=5)
+    close_time: str = Field(default="21:00", max_length=5)
+    rating: float = Field(default=4.0, ge=0.0, le=5.0)
+    description: str = Field(default="", max_length=2000)
+    image_url: str | None = Field(default=None, max_length=500)
+    tags: list[str] = Field(default_factory=list)
+    accessibility_flags: list[str] = Field(default_factory=list)
+    indoor_outdoor: str = Field(default="indoor", max_length=20)
+    local_gem_score: float = Field(default=0.5, ge=0.0, le=1.0)
+
+
+class ExperienceUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=2, max_length=200)
+    category: str | None = Field(default=None, min_length=2, max_length=40)
+    lat: float | None = Field(default=None, ge=-90, le=90)
+    lng: float | None = Field(default=None, ge=-180, le=180)
+    avg_cost: int | None = Field(default=None, ge=0)
+    duration_min: int | None = Field(default=None, ge=15)
+    open_time: str | None = Field(default=None, max_length=5)
+    close_time: str | None = Field(default=None, max_length=5)
+    rating: float | None = Field(default=None, ge=0.0, le=5.0)
+    description: str | None = Field(default=None, max_length=2000)
+    image_url: str | None = Field(default=None, max_length=500)
+    tags: list[str] | None = None
+    accessibility_flags: list[str] | None = None
+    indoor_outdoor: str | None = Field(default=None, max_length=20)
+    local_gem_score: float | None = Field(default=None, ge=0.0, le=1.0)

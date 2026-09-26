@@ -72,6 +72,12 @@ class Settings(BaseSettings):
     # Images: {seed} is replaced with a slug of the experience name.
     image_placeholder_url_template: str = "https://picsum.photos/seed/{seed}/800/600"
 
+    # Admin API (content management). Empty disables the admin endpoints.
+    admin_api_key: str = ""
+
+    # Ranking: weight applied to aggregated user feedback (score in -1..1).
+    feedback_weight: float = 4.0
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]

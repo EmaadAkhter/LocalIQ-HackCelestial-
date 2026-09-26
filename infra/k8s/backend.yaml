@@ -12,6 +12,9 @@ data:
   OLLAMA_URL: http://ollama:11434
   OLLAMA_MODEL: llama3.2:3b
   OLLAMA_API_KEY: ""
+  # Empty disables /api/v1/admin/*. Replace with a Secret reference in production.
+  ADMIN_API_KEY: ""
+  FEEDBACK_WEIGHT: "4.0"
 ---
 apiVersion: apps/v1
 kind: Deployment
