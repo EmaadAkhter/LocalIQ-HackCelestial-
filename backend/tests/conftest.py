@@ -97,6 +97,7 @@ def _cleanup_test_rows():
         GuideRequest,
         Itinerary,
         ItineraryStop,
+        OnboardingSession,
         PreferenceSignal,
         RecommendationFeedback,
         User,
@@ -155,6 +156,7 @@ def _cleanup_test_rows():
                 GuideProfile,
                 ExperienceSession,
                 AITip,
+                OnboardingSession,
             ):
                 session.exec(delete(model))
             # Quests/badges/sources are seeded reference data, so only remove

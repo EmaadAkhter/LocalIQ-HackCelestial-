@@ -33,6 +33,7 @@ from app.api.v1 import (  # noqa: E402
     itineraries,
     media,
     meetup,
+    onboarding,
     parse,
     personalization,
     place_discovery,
@@ -181,6 +182,7 @@ app.include_router(personalization.router, prefix="/api/v1", tags=["personalizat
 app.include_router(place_discovery.router, prefix="/api/v1", tags=["place-discovery"])
 app.include_router(media.router, tags=["media"])
 app.include_router(agent.router, prefix="/api/v1", tags=["agent"])
+app.include_router(onboarding.router, prefix="/api/v1", tags=["onboarding"])
 app.include_router(wallet.router, prefix="/api/v1", tags=["wallet"])
 app.include_router(director.router, prefix="/api/v1", tags=["director"])
 app.include_router(tags.router, prefix="/api/v1", tags=["tags"])

@@ -706,3 +706,38 @@ class AITip(TimestampMixin, table=True):
     #: {"lat": float, "lng": float, "radius_m": int} — {} means "always".
     location_trigger_json: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
 
+
+# -----------------------------------------------------------------------------
+# Guided onboarding (taste capture + guide supply onboarding)
+# -----------------------------------------------------------------------------
+
+
+class OnboardingSession(TimestampMixin, table=True):
+    """A scripted onboarding conversation.
+
+    ``kind="user"`` drives the taste-capture conversation (the "maître d'"
+    experience); the answers are distilled into the user's taste vector.
+    ``kind="guide"`` optionally tracks a guide application.
+    """
+
+    __tablename__ = "onboarding_sessions"
+    __table_args__ = (
+        Index("ix_onboarding_sessions_user_kind", "user_id", "kind", "status"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="users.id", index=True)
+    #: "user" | "guide"
+    kind: str = Field(default="user", max_length=20, index=True)
+    #: in_progress | completed | abandoned
+    status: str = Field(default="in_progress", max_length=20, index=True)
+    step: int = Field(default=0, ge=0)
+    language: str = Field(default="en", max_length=8)
+    #: [{role, text, at}, ...] — the rendered transcript.
+    messages_json: list[dict[str, Any]] = Field(default_factory=list, sa_column=Column(JSON))
+    #: {step_key: raw_answer}
+    answers_json: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+    #: Taste signals derived from the conversation.
+    extracted_json: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+    completed_at: Optional[datetime] = Field(default=None)
+

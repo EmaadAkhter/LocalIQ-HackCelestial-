@@ -1036,6 +1036,37 @@ class DirectorEndResponse(BaseModel):
 
 
 # --------------------------------------------------------------------------
+# Guided onboarding (taste capture)
+# --------------------------------------------------------------------------
+
+
+class OnboardingStartRequest(BaseModel):
+    language: str = Field(default="en", max_length=8)
+    restart: bool = False
+
+
+class OnboardingAnswerRequest(BaseModel):
+    message: str | None = Field(default=None, max_length=1000)
+    selections: list[str] = Field(default_factory=list)
+
+
+class OnboardingStep(BaseModel):
+    session_id: int | None = None
+    status: str = "in_progress"
+    step: int = 0
+    total_steps: int = 0
+    progress: float = 0.0
+    ack: str | None = None
+    prompt: str | None = None
+    options: list[str] = Field(default_factory=list)
+    multi: bool = False
+    free_text: bool = False
+    done: bool = False
+    completed: bool = False
+    taste: dict[str, Any] | None = None
+
+
+# --------------------------------------------------------------------------
 # Geospatial
 # --------------------------------------------------------------------------
 
