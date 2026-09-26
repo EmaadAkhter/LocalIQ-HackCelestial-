@@ -86,9 +86,11 @@ def _cleanup_test_rows():
 
     from app.database import engine
     from app.models import (
+        AITip,
         ConversationSession,
         Experience,
         ExperienceLog,
+        ExperienceSession,
         ExperienceWallet,
         Favorite,
         Guide,
@@ -151,6 +153,8 @@ def _cleanup_test_rows():
                 GuideAvailability,
                 GuideTraining,
                 GuideProfile,
+                ExperienceSession,
+                AITip,
             ):
                 session.exec(delete(model))
             # Quests/badges/sources are seeded reference data, so only remove

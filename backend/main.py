@@ -21,6 +21,7 @@ from app.api.v1 import (  # noqa: E402
     auth,
     chat,
     config,
+    director,
     discovery,
     experiences,
     favorites,
@@ -179,6 +180,7 @@ app.include_router(personalization.router, prefix="/api/v1", tags=["personalizat
 app.include_router(media.router, tags=["media"])
 app.include_router(agent.router, prefix="/api/v1", tags=["agent"])
 app.include_router(wallet.router, prefix="/api/v1", tags=["wallet"])
+app.include_router(director.router, prefix="/api/v1", tags=["director"])
 app.include_router(tags.router, prefix="/api/v1", tags=["tags"])
 app.include_router(discovery.router, prefix="/api/v1", tags=["discovery"])
 app.include_router(guides.router, prefix="/api/v1", tags=["guides"])

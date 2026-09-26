@@ -874,6 +874,70 @@ class WalletShareSummary(BaseModel):
 
 
 # --------------------------------------------------------------------------
+# AI Experience Director — live companion (PRD 4.10)
+# --------------------------------------------------------------------------
+
+
+class DirectorStartRequest(BaseModel):
+    experience_id: int | None = None
+    itinerary_id: int | None = None
+    language: str = Field(default="en", max_length=8)
+
+
+class DirectorCheckInRequest(BaseModel):
+    lat: float | None = None
+    lng: float | None = None
+
+
+class DirectorEndRequest(BaseModel):
+    rating: float | None = Field(default=None, ge=0.0, le=5.0)
+    notes: str | None = Field(default=None, max_length=2000)
+
+
+class AITipView(BaseModel):
+    id: int
+    category: str
+    message: str
+    language: str = "en"
+
+
+class DirectorSessionView(BaseModel):
+    id: int
+    status: str
+    language: str
+    experience_id: int | None = None
+    itinerary_id: int | None = None
+    start_time: datetime | None = None
+    end_time: datetime | None = None
+    stops: list[dict[str, Any]] = Field(default_factory=list)
+    summary: dict[str, Any] = Field(default_factory=dict)
+    shown_tip_ids: list[int] = Field(default_factory=list)
+
+
+class DirectorTipResponse(BaseModel):
+    session_id: int
+    tip: AITipView | None = None
+    remaining: int = 0
+    message: str = ""
+
+
+class DirectorAdaptResponse(BaseModel):
+    session_id: int
+    adaptation_needed: bool
+    message: str
+    suggestion: ExperienceResponse | None = None
+    travel_time_min: int = 0
+    why: list[str] = Field(default_factory=list)
+
+
+class DirectorEndResponse(BaseModel):
+    session_id: int
+    status: str
+    summary: dict[str, Any]
+    new_badges: list[dict[str, Any]] = Field(default_factory=list)
+
+
+# --------------------------------------------------------------------------
 # Geospatial
 # --------------------------------------------------------------------------
 

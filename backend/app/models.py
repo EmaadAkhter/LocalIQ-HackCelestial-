@@ -651,3 +651,46 @@ class UserBadge(TimestampMixin, table=True):
     earned_at: Optional[datetime] = Field(default=None)
     context_json: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
 
+
+# -----------------------------------------------------------------------------
+# AI Experience Director — live companion (PRD 4.10)
+# -----------------------------------------------------------------------------
+
+
+class ExperienceSession(TimestampMixin, table=True):
+    """A live AI Director session across pre/during/post experience (PRD 4.10)."""
+
+    __tablename__ = "experience_sessions"
+    __table_args__ = (Index("ix_experience_sessions_user_status", "user_id", "status"),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="users.id", index=True)
+    experience_id: Optional[int] = Field(default=None, foreign_key="experiences.id", index=True)
+    itinerary_id: Optional[int] = Field(default=None, foreign_key="itineraries.id", index=True)
+    #: planned | active | completed | cancelled
+    status: str = Field(default="active", max_length=20, index=True)
+    language: str = Field(default="en", max_length=8)
+    start_time: Optional[datetime] = Field(default=None)
+    end_time: Optional[datetime] = Field(default=None)
+    #: {"stops": [{"experience_id": int, "sequence": int}, ...]}
+    route_json: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+    #: {"shown_tip_ids": [...], "last_weather": {...}}
+    live_context_json: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+    summary_json: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+
+
+class AITip(TimestampMixin, table=True):
+    """A reusable, location-triggered tip for an experience (PRD 4.10)."""
+
+    __tablename__ = "ai_tips"
+    __table_args__ = (Index("ix_ai_tips_experience_category", "experience_id", "category"),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    experience_id: int = Field(foreign_key="experiences.id", index=True)
+    #: history | photo | food | safety | routing
+    category: str = Field(default="history", max_length=20)
+    message_text: str = Field(default="", max_length=1000)
+    language: str = Field(default="en", max_length=8)
+    #: {"lat": float, "lng": float, "radius_m": int} — {} means "always".
+    location_trigger_json: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+
