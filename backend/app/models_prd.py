@@ -67,6 +67,21 @@ class GuideProfile(TimestampMixin, table=True):
     #: Visibility multiplier + unlocked features are derived from tier.
     is_published: bool = Field(default=False)
 
+    # --- Fast onboarding (documents + specialisation) -----------------------
+    #: Object-storage keys for the uploaded licences (never the raw document in
+    #: the DB). Both are required before an application can be submitted.
+    driver_license_key: Optional[str] = Field(default=None, max_length=500)
+    guide_license_key: Optional[str] = Field(default=None, max_length=500)
+    #: Neighbourhoods the guide covers, e.g. ["Bandra", "Colaba"].
+    specialization_areas: list[str] = Field(default_factory=list, sa_column=Column(JSON))
+    #: Specialities, e.g. ["street_food", "heritage"].
+    niches: list[str] = Field(default_factory=list, sa_column=Column(JSON))
+    #: {"driver_license": {"key", "content_type", "size", "uploaded_at"}, ...}
+    documents_json: dict = Field(default_factory=dict, sa_column=Column(JSON))
+    submitted_at: Optional[datetime] = Field(default=None, sa_type=DateTime)
+    reviewed_at: Optional[datetime] = Field(default=None, sa_type=DateTime)
+    admin_notes: Optional[str] = Field(default=None, max_length=1000)
+
 
 class GuideAvailability(TimestampMixin, table=True):
     """A bookable window for a guide."""

@@ -49,5 +49,8 @@ pgvector==0.4.0
 # --- object storage (self-hosted S3: MinIO / s3mock; also used for photos) ---
 boto3>=1.34
 
+# --- multipart form uploads (guide licence documents) ---
+python-multipart>=0.0.9
+
 # Test-only dependencies live in requirements-dev.txt so the runtime image
 # stays lean.

@@ -1067,6 +1067,62 @@ class OnboardingStep(BaseModel):
 
 
 # --------------------------------------------------------------------------
+# Fast guide onboarding
+# --------------------------------------------------------------------------
+
+
+class GuideOnboardingStartRequest(BaseModel):
+    name: str | None = Field(default=None, max_length=120)
+    languages: list[str] = Field(default_factory=list)
+    city: str = Field(default="Mumbai", max_length=80)
+    bio: str = Field(default="", max_length=2000)
+
+
+class GuideOnboardingApplyRequest(BaseModel):
+    areas: list[str] = Field(default_factory=list)
+    niches: list[str] = Field(default_factory=list)
+    rate_per_hour: int | None = Field(default=None, ge=0, le=100000)
+    bio: str | None = Field(default=None, max_length=2000)
+    languages: list[str] = Field(default_factory=list)
+
+
+class GuideDocumentResponse(BaseModel):
+    kind: str
+    key: str
+    content_type: str
+    size: int
+
+
+class GuideOnboardingStatus(BaseModel):
+    guide_id: int | None = None
+    state: str = "not_started"
+    verification_status: str = "unverified"
+    verification_tier: str = "basic"
+    required_documents: list[str] = Field(default_factory=list)
+    documents: dict[str, Any] = Field(default_factory=dict)
+    has_driver_license: bool = False
+    has_guide_license: bool = False
+    areas: list[str] = Field(default_factory=list)
+    niches: list[str] = Field(default_factory=list)
+    can_submit: bool = False
+    is_published: bool = False
+    submitted_at: str | None = None
+    admin_notes: str | None = None
+
+
+class GuideVerifyRequest(BaseModel):
+    approve: bool = True
+    notes: str | None = Field(default=None, max_length=1000)
+    tier: str = Field(default="standard", max_length=20)
+
+
+class GuideOptionsResponse(BaseModel):
+    areas: list[str] = Field(default_factory=list)
+    niches: list[str] = Field(default_factory=list)
+    document_kinds: list[str] = Field(default_factory=list)
+
+
+# --------------------------------------------------------------------------
 # Geospatial
 # --------------------------------------------------------------------------
 

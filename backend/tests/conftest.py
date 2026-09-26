@@ -193,9 +193,10 @@ def _cleanup_test_rows():
                 session.exec(delete(Guide).where(Guide.experience_id == exp.id))
                 session.delete(exp)
 
-            p5_guides = session.exec(select(Guide).where(Guide.name.contains("Test"))).all()
+            p5_guides = session.exec(select(Guide)).all()
             for guide in p5_guides:
-                session.delete(guide)
+                if "Test" in guide.name or _is_test_row(guide.name):
+                    session.delete(guide)
 
             users = session.exec(select(User)).all()
             for user in users:
