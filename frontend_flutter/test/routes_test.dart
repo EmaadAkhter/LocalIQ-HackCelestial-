@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:localiq/app/app.dart';
+import 'package:localiq/core/config/providers.dart';
 
 /// Every location the router can produce, including a path-parameter route.
 const _routes = <String>[
@@ -70,7 +71,17 @@ void main() {
             tester.view.resetDevicePixelRatio();
           });
 
-          await tester.pumpWidget(const ProviderScope(child: LocalIqApp()));
+          await tester.pumpWidget(
+            ProviderScope(
+              // These tests render every route against the bundled dataset; the
+              // app now defaults to the backend, so pin the offline source here
+              // to keep the suite hermetic (no network, no pending timers).
+              overrides: [
+                remoteDataEnabledProvider.overrideWithValue(false),
+              ],
+              child: const LocalIqApp(),
+            ),
+          );
           await _settle(tester);
 
           _routerOf(tester).go(route);
