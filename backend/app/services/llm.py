@@ -13,6 +13,12 @@ class LLMError(RuntimeError):
     """Raised when the local LLM is unreachable or returns unusable output."""
 
 
+def _auth_headers() -> dict[str, str]:
+    """Send the shared-LLM API key when one is configured (Kong key-auth)."""
+    key = get_settings().ollama_api_key
+    return {"apikey": key} if key else {}
+
+
 async def generate(
     prompt: str,
     *,
@@ -38,7 +44,7 @@ async def generate(
     url = f"{settings.ollama_url.rstrip('/')}/api/generate"
     try:
         async with httpx.AsyncClient(timeout=timeout or settings.ollama_timeout_seconds) as client:
-            response = await client.post(url, json=payload)
+            response = await client.post(url, json=payload, headers=_auth_headers())
             response.raise_for_status()
     except httpx.HTTPError as exc:
         raise LLMError(f"Ollama request failed: {exc}") from exc
@@ -65,7 +71,7 @@ async def chat(
     url = f"{settings.ollama_url.rstrip('/')}/api/chat"
     try:
         async with httpx.AsyncClient(timeout=timeout or settings.ollama_timeout_seconds) as client:
-            response = await client.post(url, json=payload)
+            response = await client.post(url, json=payload, headers=_auth_headers())
             response.raise_for_status()
     except httpx.HTTPError as exc:
         raise LLMError(f"Ollama chat failed: {exc}") from exc

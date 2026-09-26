@@ -1,0 +1,101 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kong-declarative
+  namespace: localiq
+data:
+  kong.yml: |
+    _format_version: "3.0"
+    services:
+      - name: backend
+        url: http://backend:8000
+        routes:
+          - name: backend-route
+            paths: ["/api"]
+            strip_path: false
+            methods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
+      - name: ollama
+        url: http://ollama:11434
+        routes:
+          - name: ollama-route
+            paths: ["/llm"]
+            strip_path: true
+            methods: [GET, POST]
+            plugins:
+              - name: key-auth
+                config:
+                  key_names: [apikey]
+    consumers:
+      - username: team
+        keyauth_credentials:
+          - key: localiq-shared-key
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kong
+  namespace: localiq
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kong
+  template:
+    metadata:
+      labels:
+        app: kong
+    spec:
+      containers:
+        - name: kong
+          image: kong:3.9
+          ports:
+            - containerPort: 8000
+          env:
+            - name: KONG_DATABASE
+              value: "off"
+            - name: KONG_DECLARATIVE_CONFIG
+              value: /kong/declarative/kong.yml
+            - name: KONG_PROXY_LISTEN
+              value: 0.0.0.0:8000
+            - name: KONG_ADMIN_LISTEN
+              value: 127.0.0.1:8001
+            - name: KONG_PROXY_ACCESS_LOG
+              value: /dev/stdout
+            - name: KONG_ADMIN_ACCESS_LOG
+              value: /dev/stdout
+            - name: KONG_PROXY_ERROR_LOG
+              value: /dev/stderr
+            - name: KONG_ADMIN_ERROR_LOG
+              value: /dev/stderr
+          volumeMounts:
+            - name: kong-declarative
+              mountPath: /kong/declarative
+              readOnly: true
+          readinessProbe:
+            tcpSocket:
+              port: 8000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      volumes:
+        - name: kong-declarative
+          configMap:
+            name: kong-declarative
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kong
+  namespace: localiq
+spec:
+  selector:
+    app: kong
+  ports:
+    - port: 8000
+      targetPort: 8000

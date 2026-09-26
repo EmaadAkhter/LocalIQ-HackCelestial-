@@ -1,0 +1,49 @@
+# Cloudflare Tunnel runs in-cluster and forwards to the Caddy edge Service.
+# Create a named tunnel in the Cloudflare dashboard, then put its token in the
+# secret below (or via `kubectl create secret generic ...`).
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cloudflared-token
+  namespace: localiq
+type: Opaque
+stringData:
+  token: REPLACE-WITH-TUNNEL-TOKEN
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudflared
+  namespace: localiq
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cloudflared
+  template:
+    metadata:
+      labels:
+        app: cloudflared
+    spec:
+      containers:
+        - name: cloudflared
+          image: cloudflare/cloudflared:latest
+          args:
+            - tunnel
+            - --no-autoupdate
+            - run
+            - --token
+            - $(TUNNEL_TOKEN)
+          env:
+            - name: TUNNEL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: cloudflared-token
+                  key: token
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi

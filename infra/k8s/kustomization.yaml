@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: localiq
+resources:
+  - namespace.yaml
+  - postgres.yaml
+  # Include ollama.yaml only if you want an in-cluster model server.
+  # - ollama.yaml
+  - backend.yaml
+  - flutter-web.yaml
+  - kong.yaml
+  - caddy.yaml
+  - cloudflared.yaml
+  - hpa.yaml

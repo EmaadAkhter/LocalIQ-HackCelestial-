@@ -1,0 +1,47 @@
+# Kong DB-less declarative config.
+#
+# Routes:
+#   /api/*  -> FastAPI backend (no auth; the app is public)
+#   /llm/*  -> Ollama on the host, protected by key-auth
+#
+# Clients of the shared LLM must send:  apikey: localiq-shared-key
+# Change that value before sharing the tunnel with anyone.
+
+_format_version: "3.0"
+
+services:
+  - name: backend
+    url: http://backend:8000
+    routes:
+      - name: backend-route
+        paths:
+          - /api
+        strip_path: false
+        methods:
+          - GET
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+          - OPTIONS
+
+  - name: ollama
+    url: http://host.docker.internal:11434
+    routes:
+      - name: ollama-route
+        paths:
+          - /llm
+        strip_path: true
+        methods:
+          - GET
+          - POST
+        plugins:
+          - name: key-auth
+            config:
+              key_names:
+                - apikey
+
+consumers:
+  - username: team
+    keyauth_credentials:
+      - key: localiq-shared-key

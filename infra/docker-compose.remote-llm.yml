@@ -1,0 +1,84 @@
+name: localiq
+
+# Remote-LLM profile: for teammates who do NOT run Ollama locally.
+# The backend points at a shared, tunnelled Ollama (Kong key-auth).
+#
+#   export OLLAMA_URL=https://<shared-tunnel-host>/llm
+#   export OLLAMA_API_KEY=localiq-shared-key
+#   docker compose -f docker-compose.remote-llm.yml --env-file .env up --build
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-localiq}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-localiq}
+      POSTGRES_DB: ${POSTGRES_DB:-localiq}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-localiq} -d ${POSTGRES_DB:-localiq}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [localiq]
+
+  backend:
+    build:
+      context: ../backend
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-localiq}:${POSTGRES_PASSWORD:-localiq}@postgres:5432/${POSTGRES_DB:-localiq}
+      # Remote, shared model — must be supplied by the environment.
+      OLLAMA_URL: ${OLLAMA_URL:?set OLLAMA_URL to the shared tunnel, e.g. https://host/llm}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:3b}
+      OLLAMA_API_KEY: ${OLLAMA_API_KEY:?set OLLAMA_API_KEY to the shared key}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [localiq]
+
+  nginx-flutter:
+    image: nginx:1.27-alpine
+    volumes:
+      - ../gateway/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ${FLUTTER_WEB_DIR:-./placeholders/flutter-web}:/usr/share/nginx/html:ro
+    depends_on:
+      - backend
+    networks: [localiq]
+
+  kong:
+    image: kong:3.9
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: 127.0.0.1:8001
+      KONG_PROXY_LISTEN: 0.0.0.0:8000
+    volumes:
+      - ../gateway/kong/kong.yml:/kong/declarative/kong.yml:ro
+    depends_on:
+      - backend
+    networks: [localiq]
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "${HTTP_PORT:-8080}:80"
+    volumes:
+      - ../gateway/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - kong
+      - nginx-flutter
+    networks: [localiq]
+
+volumes:
+  postgres-data:
+
+networks:
+  localiq:
+    driver: bridge

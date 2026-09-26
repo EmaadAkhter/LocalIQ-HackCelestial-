@@ -1,0 +1,29 @@
+# LocalIQ edge proxy.
+# Sits behind Cloudflare Tunnel (TLS terminated at the Cloudflare edge), so
+# auto-HTTPS is disabled here. Routes API + shared LLM to Kong, everything
+# else to the static Flutter web build.
+
+{
+	admin off
+	auto_https off
+}
+
+:80 {
+	encode zstd gzip
+
+	route /api/* {
+		reverse_proxy kong:8000
+	}
+
+	route /llm/* {
+		reverse_proxy kong:8000
+	}
+
+	route /healthz {
+		respond "ok" 200
+	}
+
+	route {
+		reverse_proxy nginx-flutter:80
+	}
+}

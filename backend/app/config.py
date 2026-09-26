@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     ollama_url: str = "http://localhost:11434"
     ollama_model: str = "llama3.2:3b"
     ollama_timeout_seconds: float = 30.0
+    # Set when using a shared/tunnelled Ollama behind Kong key-auth.
+    ollama_api_key: str = ""
 
     # External services (optional)
     open_meteo_url: str = "https://api.open-meteo.com/v1/forecast"
