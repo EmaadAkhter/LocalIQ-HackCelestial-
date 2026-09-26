@@ -35,12 +35,64 @@ FastAPI ──► PostgreSQL
 
 Details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
+## Features
+
+### Recommendation engine
+- **Feasibility-first filtering:** budget, time (visit + travel + buffer),
+  opening hours (overnight-aware), accessibility (wheelchair/step-free) and max
+  day-trip distance — nothing infeasible is ever ranked.
+- **Weighted ranking:** interest match, time fit, budget fit, distance, rating,
+  local-gem score, weather boost and aggregated user feedback.
+- **Deterministic explainability:** every result carries a plain-language
+  `why_this_fits` (templates, not an LLM).
+- **Travel-time heuristic:** haversine distance + Mumbai city-speed model.
+- **Location resolution:** ~40 Mumbai area anchors with substring matching.
+- **“N candidates → M feasible”** reveal, preserved even with SQL pre-filtering.
+
+### AI / LLM
+- **Natural-language parsing** (`/parse`) via local Ollama with a heuristic regex
+  fallback and a few-shot prompt.
+- **Structured-output normalisation** — coerces `"null"` strings, `"₹1,500"`,
+  numeric strings, comma interests, list accessibility, group synonyms, `HH:MM`.
+- **Guide chat** (`/chat`) grounded in one experience, with intent-aware canned
+  fallbacks; `DEMO_MODE=true` forces canned responses.
+- **Resilience:** one shared HTTP client, exponential-backoff retries, a
+  per-prompt TTL cache and per-endpoint timeouts; LLM failures never 500 a request.
+
+### Data
+- 48 curated Mumbai experiences + 12 guides, seeded idempotently.
+- Alembic migrations applied on startup (`alembic check` drift-free).
+- `created_at` / `updated_at` on every table, composite indexes for hot queries
+  and Postgres pool tuning. SQLite for native dev/tests.
+
+### API
+- 32 paths / 37 operations: auth, experiences, recommendations, guides, parse,
+  chat, weather, itineraries, favorites, nearby, feedback, admin, client config
+  and places. Swagger at `/docs`, ReDoc at `/redoc`, schema at `/openapi.json`.
+
+### Auth & security
+- PBKDF2-SHA256 passwords; opaque session tokens stored only as HMAC hashes.
+- Password policy, login lockout, per-IP rate limits, explicit CORS allow-list.
+- Unified error schema with no stack-trace leakage.
+
+### Observability & performance
+- `X-Request-ID` on every response, structured JSON logs and Prometheus `/metrics`.
+- `/readyz` readiness (Postgres required, Ollama reported).
+- Weather cache (10 min), recommendation cache (60 s), LLM response cache.
+
+### Infrastructure & CI
+- Docker Compose in two modes (local-LLM, remote-LLM); Caddy → Kong → FastAPI.
+- Kubernetes manifests with HPA; self-hosted Jenkins with a GitHub push webhook
+  and an 80% coverage gate; named Cloudflare tunnel on `tavesglobal.com`.
+- Multi-stage backend image on Python 3.12 (non-root), secrets-from-file and
+  database backup/restore scripts.
+
 ## Repository layout
 
 ```text
 localIQ/
 ├── backend/                 # FastAPI app (Dockerfile included)
-├── frontend_flutter/        # Flutter client (web + iOS + Android)  [to be added]
+├── frontend_flutter/        # Flutter client (web + iOS + Android)
 ├── frontend_legacy/         # previous Next.js web app (reference)
 ├── gateway/                 # Caddy (edge), Kong (API), nginx (static web)
 ├── infra/
@@ -49,7 +101,7 @@ localIQ/
 │   ├── jenkins/                       # self-hosted Jenkins + JCasC
 │   └── k8s/                           # Kubernetes manifests + HPA
 ├── docs/                    # architecture, deployment, dev, ethics, jenkins
-├── scripts/                 # dev.sh, tunnel.sh, tunnel-setup.sh
+├── scripts/                 # dev, tunnel, db backup/restore, maps keys
 ├── tests/smoke/             # end-to-end smoke test
 ├── Jenkinsfile              # CI pipeline
 ├── Makefile
@@ -135,10 +187,15 @@ export OLLAMA_API_KEY=localiq-shared-key
 
 ## Status
 
-> Backend + data layer complete: PostgreSQL seeded with the Mumbai dataset,
-> feasibility/ranking engine live, self-hosted Jenkins CI with GitHub push
-> triggers, and a named Cloudflare tunnel on `tavesglobal.com`. Next: the
-> Flutter client. See [`PLAN.md`](PLAN.md).
+> All seven backend phases are complete: PostgreSQL data layer, feasibility +
+> ranking engine, local-LLM parsing and chat, auth hardening, caching,
+> observability (Prometheus + structured logs) and operations (multi-stage image,
+> secrets-from-file, backups). Self-hosted Jenkins builds on every push with an
+> 80% coverage gate, and a named Cloudflare tunnel serves the stack on
+> `tavesglobal.com`.
+>
+> The Flutter client lives in `frontend_flutter/`. Remaining: build it for web
+> and point `FLUTTER_WEB_DIR` at the output, and supply the Google Maps keys.
 
 ## License
 

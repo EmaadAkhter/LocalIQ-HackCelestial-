@@ -12,6 +12,13 @@ data:
   OLLAMA_URL: http://ollama:11434
   OLLAMA_MODEL: llama3.2:3b
   OLLAMA_API_KEY: ""
+  # Google Maps / Places / Routes. Empty disables maps and the backend falls
+  # back to the local SQLite dataset. Supply real values via a Secret.
+  GOOGLE_MAPS_API_KEY_WEB: ""
+  GOOGLE_MAPS_API_KEY_ANDROID: ""
+  GOOGLE_MAPS_API_KEY_IOS: ""
+  GOOGLE_PLACES_API_KEY: ""
+  GOOGLE_ROUTES_API_KEY: ""
   # Empty disables /api/v1/admin/*. Replace with a Secret reference in production.
   ADMIN_API_KEY: ""
   FEEDBACK_WEIGHT: "4.0"
