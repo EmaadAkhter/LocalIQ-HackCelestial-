@@ -69,8 +69,9 @@ backend/app/
   LLM, so they are instant and never wrong.
 - **Graceful LLM degradation.** Every LLM call has a fallback: parser → heuristic,
   chat → canned. `DEMO_MODE=true` forces canned responses for a stable demo.
-- **One tunnel, three surfaces.** App, API, and shared model share one tunnel;
-  the model route is protected by Kong key-auth.
+- **One named tunnel, four surfaces.** App, API, shared model, and Jenkins share
+  one Cloudflare tunnel on `tavesglobal.com`; the model route is protected by
+  Kong key-auth and Jenkins by its own login.
 - **Kong over nginx for APIs.** Kong gives declarative routing and plugins
   (key-auth) without bespoke config; nginx only serves static files.
 

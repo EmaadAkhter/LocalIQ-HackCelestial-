@@ -31,17 +31,25 @@ the internet. Always route shared model access through Kong `key-auth` (the
 
 ### Jenkins is high risk
 
-- Do not expose the Jenkins UI publicly without strong authentication. Prefer an
-  SSH tunnel or a private network.
+- The controller is published at `https://jenkins.tavesglobal.com` so GitHub can
+  deliver push webhooks. It requires login and anonymous read is disabled; keep
+  the admin password strong and rotate it if it is ever shared.
+- Do not place Cloudflare Access in front of `/github-webhook/` — it intercepts
+  the POST and GitHub deliveries fail.
+- Prefer SSH port-forwarding (`ssh -L 8081:localhost:8081`) for day-to-day admin
+  work instead of using the public UI.
 - Mounting the Docker socket into Jenkins grants it host-level control. Treat the
   controller as a trusted machine only.
 - Keep plugins updated; Jenkins plugins are a common entry point.
 
 ### Tunnel hygiene
 
-- Cloudflare quick tunnels are public by default. Anyone with the URL can reach
-  the app. Use named tunnels with access policies for anything sensitive.
-- Treat the tunnel URL as a secret.
+- LocalIQ uses a *named* Cloudflare tunnel (`localiq`) with DNS routes on
+  `tavesglobal.com`. Exposed: the app/API, the key-auth shared LLM, and Jenkins.
+- `/llm/*` is protected by Kong key-auth (`apikey`). Rotate
+  `localiq-shared-key` before sharing the model widely.
+- The tunnel credentials JSON (`infra/cloudflared/*.json`) is git-ignored. Treat
+  it as a secret.
 
 ### Data and privacy
 

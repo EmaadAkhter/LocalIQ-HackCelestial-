@@ -32,13 +32,43 @@ cd infra
 docker compose -f docker-compose.remote-llm.yml --env-file .env up -d --build
 ```
 
-### Public tunnel
+### Public tunnel (Cloudflare, named)
+
+One named tunnel (`localiq`) serves the app, the API, Jenkins, and the shared
+LLM. TLS terminates at Cloudflare's edge; cloudflared dials out, so no ports are
+opened on the host.
+
+One-time setup (already done on the owner's machine):
 
 ```bash
-cd infra
-docker compose --env-file .env --profile tunnel up -d
-# or, from the host:
-scripts/tunnel.sh
+cloudflared tunnel login                 # browser; pick tavesglobal.com
+make tunnel-setup                        # creates the tunnel + DNS routes
+```
+
+Run it (foreground) against the running stack:
+
+```bash
+make tunnel
+# or: ./scripts/tunnel.sh
+```
+
+Public URLs:
+
+| Surface | URL |
+|---|---|
+| App (Flutter web) | https://localiq.tavesglobal.com |
+| API | https://localiq.tavesglobal.com/api/v1/... |
+| Shared model (key-auth) | https://localiq.tavesglobal.com/llm |
+| CI | https://jenkins.tavesglobal.com |
+
+Config: `infra/cloudflared/config.yml`. Credentials are git-ignored
+(`infra/cloudflared/*.json`).
+
+Teammates using the shared model:
+
+```bash
+export OLLAMA_URL=https://localiq.tavesglobal.com/llm
+export OLLAMA_API_KEY=localiq-shared-key
 ```
 
 ## Kubernetes

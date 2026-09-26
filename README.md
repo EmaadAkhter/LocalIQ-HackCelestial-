@@ -49,7 +49,7 @@ localIQ/
 │   ├── jenkins/                       # self-hosted Jenkins + JCasC
 │   └── k8s/                           # Kubernetes manifests + HPA
 ├── docs/                    # architecture, deployment, dev, ethics, jenkins
-├── scripts/                 # dev.sh, tunnel.sh, tunnel-jenkins.sh
+├── scripts/                 # dev.sh, tunnel.sh, tunnel-setup.sh
 ├── tests/smoke/             # end-to-end smoke test
 ├── Jenkinsfile              # CI pipeline
 ├── Makefile
@@ -88,16 +88,26 @@ Run `make help` for all targets.
 
 ## Sharing the local model
 
-One tunnel serves the app, the API, and the shared LLM:
+A single named Cloudflare tunnel serves the app, the API, Jenkins, and the
+shared LLM (one-time setup: `make tunnel-setup`).
 
 ```bash
-make tunnel
+make tunnel          # runs the `localiq` tunnel in the foreground
 ```
+
+Public URLs:
+
+| Surface | URL |
+|---|---|
+| App (Flutter web) | https://localiq.tavesglobal.com |
+| API | https://localiq.tavesglobal.com/api/v1/... |
+| Shared model | https://localiq.tavesglobal.com/llm (Kong key-auth) |
+| CI | https://jenkins.tavesglobal.com |
 
 Teammates then set:
 
 ```bash
-export OLLAMA_URL=https://<shared-host>/llm
+export OLLAMA_URL=https://localiq.tavesglobal.com/llm
 export OLLAMA_API_KEY=localiq-shared-key
 ```
 
@@ -124,9 +134,10 @@ export OLLAMA_API_KEY=localiq-shared-key
 
 ## Status
 
-> AI backend complete. Infrastructure complete (Docker, Kong, Caddy, nginx,
-> Kubernetes, Jenkins CI). Next: PostgreSQL data layer + feasibility/ranking
-> engine, and the Flutter client. See [`PLAN.md`](PLAN.md).
+> Backend + data layer complete: PostgreSQL seeded with the Mumbai dataset,
+> feasibility/ranking engine live, self-hosted Jenkins CI with GitHub push
+> triggers, and a named Cloudflare tunnel on `tavesglobal.com`. Next: the
+> Flutter client. See [`PLAN.md`](PLAN.md).
 
 ## License
 
