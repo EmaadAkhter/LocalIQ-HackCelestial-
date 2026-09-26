@@ -114,6 +114,10 @@ build on `main`.
 | `LLM_RETRY_BACKOFF_SECONDS` | backend | exponential-backoff base (default `0.5`) |
 | `LLM_CACHE_ENABLED` | backend | memoise identical prompts (default `true`) |
 | `LLM_CACHE_TTL_SECONDS` | backend | response cache TTL (default `300`) |
+| `WEATHER_CACHE_TTL_SECONDS` | backend | weather cache TTL (default `600`) |
+| `RECOMMEND_CACHE_ENABLED` | backend | cache identical `/recommend` calls (default `true`) |
+| `RECOMMEND_CACHE_TTL_SECONDS` | backend | recommendation cache TTL (default `60`) |
+| `IMAGE_PLACEHOLDER_URL_TEMPLATE` | backend | `{seed}` image placeholder; empty disables |
 | `HTTP_PORT` | infra | host port for the Caddy edge (default `8080`) |
 | `FLUTTER_WEB_DIR` | infra | path to the Flutter web build |
 
@@ -151,6 +155,20 @@ the common query shapes (`experiences(category, rating)`, `experiences(lat, lng)
 
 > Rate-limit state and login lockout are in-memory: correct for the single
 > backend container this deployment runs. A multi-replica setup needs Redis.
+
+### Caching & query efficiency
+
+- **Weather** is cached per coordinate for `WEATHER_CACHE_TTL_SECONDS` (10 min),
+  so `/recommend` does not call Open-Meteo on every request. Failures are not
+  cached and fall back to neutral context.
+- **Recommendations** are cached per constraint set for
+  `RECOMMEND_CACHE_TTL_SECONDS` (60 s) — repeated slider drags are instant.
+- **Budget** is a hard feasibility filter, so it is applied in SQL
+  (`avg_cost <= budget`) before ranking instead of loading every row. The full
+  pool size is still counted separately, so the "N candidates → M feasible"
+  reveal is unchanged.
+- **Images**: every experience gets an `image_url`; curated URLs win, otherwise a
+  deterministic placeholder is generated from the name.
 
 ### LLM reliability
 

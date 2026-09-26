@@ -35,6 +35,7 @@ class Experience(TimestampMixin, table=True):
     __table_args__ = (
         Index("ix_experiences_category_rating", "category", "rating"),
         Index("ix_experiences_lat_lng", "lat", "lng"),
+        Index("ix_experiences_avg_cost", "avg_cost"),
     )
 
     id: Optional[int] = Field(default=None, primary_key=True)

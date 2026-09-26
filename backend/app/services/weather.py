@@ -1,16 +1,29 @@
-"""Weather service for LocalIQ (Open-Meteo, graceful fallback)."""
+"""Weather service for LocalIQ (Open-Meteo, graceful fallback + TTL cache)."""
 
 import logging
 
 import httpx
 
 from app.config import settings
+from app.services.cache import TTLCache
 
 logger = logging.getLogger(__name__)
 
 MUMBAI_LAT = 19.0760
 MUMBAI_LON = 72.8777
 TIMEOUT_S = 8.0
+
+# Weather changes slowly; one upstream call per coordinate per TTL is plenty.
+_weather_cache = TTLCache(maxsize=64, ttl_seconds=settings.weather_cache_ttl_seconds)
+
+
+def clear_weather_cache() -> None:
+    """Drop cached weather (used by tests)."""
+    _weather_cache.clear()
+
+
+def weather_cache_stats() -> dict[str, int]:
+    return _weather_cache.stats()
 
 
 def neutral_weather(reason: str = "unavailable") -> dict:
@@ -47,8 +60,8 @@ def _weathercode_to_condition(code: int | None) -> tuple[str, bool]:
     return "cloudy", False
 
 
-async def fetch_weather(lat: float = MUMBAI_LAT, lon: float = MUMBAI_LON) -> dict:
-    """Fetch current Mumbai weather from Open-Meteo. Never raises."""
+async def _fetch_weather_live(lat: float, lon: float) -> dict:
+    """Fetch current weather from Open-Meteo. Never raises."""
     url = settings.open_meteo_base_url
     params = {
         "latitude": lat,
@@ -92,3 +105,20 @@ async def fetch_weather(lat: float = MUMBAI_LAT, lon: float = MUMBAI_LON) -> dic
     except Exception as exc:
         logger.warning("Weather parse failed: %s", exc)
         return neutral_weather(reason="parse_failed")
+
+
+async def fetch_weather(lat: float = MUMBAI_LAT, lon: float = MUMBAI_LON) -> dict:
+    """Current weather, cached per coordinate for the configured TTL.
+
+    Only successful responses are cached; failures fall back to neutral values
+    and are retried on the next call.
+    """
+    key = f"{lat:.4f},{lon:.4f}"
+    cached = _weather_cache.get(key)
+    if cached is not None:
+        return cached
+
+    data = await _fetch_weather_live(lat, lon)
+    if data.get("available"):
+        _weather_cache.set(key, data)
+    return data

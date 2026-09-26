@@ -14,6 +14,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from app.config import get_settings
+
 GroupType = Literal["solo", "couple", "family", "friends"]
 ParseSource = Literal["ollama", "heuristic", "llm", "canned"]
 
@@ -97,6 +99,20 @@ class ExperienceResponse(BaseModel):
     local_gem_score: float = 0.5
 
     model_config = {"from_attributes": True}
+
+    @model_validator(mode="after")
+    def _fill_image_placeholder(self) -> "ExperienceResponse":
+        """Guarantee an image so the UI never shows an empty card.
+
+        Curated ``image_url`` values win; otherwise a deterministic placeholder
+        is generated from the venue name.
+        """
+        if not self.image_url:
+            template = get_settings().image_placeholder_url_template
+            if template:
+                slug = re.sub(r"[^a-z0-9]+", "-", self.name.lower()).strip("-")[:40]
+                self.image_url = template.format(seed=f"localiq-{slug}")
+        return self
 
 
 class ExperienceListResponse(BaseModel):

@@ -63,6 +63,15 @@ class Settings(BaseSettings):
     open_meteo_url: str = "https://api.open-meteo.com/v1/forecast"
     google_maps_api_key: str = ""
 
+    # Caching (in-memory, per process)
+    weather_cache_ttl_seconds: int = 600
+    recommend_cache_enabled: bool = True
+    recommend_cache_ttl_seconds: int = 60
+    recommend_cache_maxsize: int = 256
+
+    # Images: {seed} is replaced with a slug of the experience name.
+    image_placeholder_url_template: str = "https://picsum.photos/seed/{seed}/800/600"
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
