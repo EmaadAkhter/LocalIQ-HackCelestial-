@@ -466,6 +466,10 @@ class PackageBooking(TimestampMixin, table=True):
     pickup_address: Optional[str] = Field(default=None, max_length=500)
     pickup_lat: Optional[float] = Field(default=None)
     pickup_lng: Optional[float] = Field(default=None)
+    #: Explicit drop point. When unset the trip returns to the pickup.
+    drop_address: Optional[str] = Field(default=None, max_length=500)
+    drop_lat: Optional[float] = Field(default=None)
+    drop_lng: Optional[float] = Field(default=None)
     date: Optional[str] = Field(default=None, max_length=10)
     start_time: Optional[str] = Field(default=None, max_length=5)
     hours: int = Field(default=2, ge=1)
@@ -475,6 +479,12 @@ class PackageBooking(TimestampMixin, table=True):
     note: Optional[str] = Field(default=None, max_length=500)
     guest_name: Optional[str] = Field(default=None, max_length=100)
     guest_phone: Optional[str] = Field(default=None, max_length=20)
+    #: Last position the driver's device reported, for the live trip map.
+    driver_lat: Optional[float] = Field(default=None)
+    driver_lng: Optional[float] = Field(default=None)
+    driver_updated_at: Optional[datetime] = Field(default=None, sa_type=DateTime)
+    started_at: Optional[datetime] = Field(default=None, sa_type=DateTime)
+    completed_at: Optional[datetime] = Field(default=None, sa_type=DateTime)
 
 
 class PackageReview(TimestampMixin, table=True):

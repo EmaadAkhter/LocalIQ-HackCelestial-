@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+from datetime import date
 from pathlib import Path
 
 from sqlmodel import Session, delete, func, select
@@ -15,9 +16,11 @@ from app.models import (
     Guide,
     GuidePackage,
     GuidePackageStop,
+    PackageBooking,
     Tag,
+    User,
 )
-from app.models_prd import Badge, Quest, QuestStop
+from app.models_prd import Badge, GuideProfile, Quest, QuestStop
 
 logger = logging.getLogger(__name__)
 
@@ -480,6 +483,104 @@ def seed_quests_and_badges() -> dict[str, int]:
         return {"quests": quest_count, "badges": badge_count}
 
 
+#: Dev-only demo guide login so the driver trip map is demoable out of the box.
+DEMO_GUIDE_EMAIL = "guide.demo@localiq.demo"
+DEMO_GUIDE_PASSWORD = "GuideDemo123"
+
+
+def seed_demo_driver_data(session: Session | None = None) -> dict[str, int]:
+    """Give every package one confirmed trip plus a demo guide login.
+
+    The driver map is meaningless with no trips, so in development we fabricate
+    one confirmed booking per package (pickup = the package's pickup point, drop
+    = same place) and link a demo guide account to the first guide. Guarded to
+    development: no demo account or fabricated booking is ever created in
+    production or under test.
+    """
+    from app.config import get_settings
+
+    if get_settings().app_env not in ("development", "dev"):
+        return {"trips": 0, "demo_user": 0}
+
+    close_session = session is None
+    if session is None:
+        init_db()
+        session = Session(engine)
+
+    try:
+        packages = list(session.exec(select(GuidePackage)).all())
+        if not packages:
+            return {"trips": 0, "demo_user": 0}
+
+        created_trips = 0
+        existing = session.exec(select(func.count()).select_from(PackageBooking)).one()
+        if int(existing) == 0:
+            for package in packages:
+                session.add(
+                    PackageBooking(
+                        booking_ref=f"DEMO{package.id:04d}",
+                        guide_id=package.guide_id,
+                        package_id=package.id,
+                        pickup_address=package.default_pickup_area,
+                        pickup_lat=package.pickup_lat,
+                        pickup_lng=package.pickup_lng,
+                        date=date.today().isoformat(),
+                        start_time="10:00",
+                        hours=max(1, int(package.total_duration_hours)),
+                        group_size=2,
+                        total_price=package.total_price
+                        or package.price_per_person * 2,
+                        status="confirmed",
+                        guest_name="Demo Guest",
+                        guest_phone="+91 90000 00000",
+                    )
+                )
+                created_trips += 1
+            session.commit()
+
+        demo_user = 0
+        existing_user = session.exec(
+            select(User).where(User.email == DEMO_GUIDE_EMAIL)
+        ).first()
+        if existing_user is None:
+            first_guide = session.exec(select(Guide)).first()
+            if first_guide is not None:
+                from app.services.auth import hash_password
+
+                user = User(
+                    name=first_guide.name,
+                    email=DEMO_GUIDE_EMAIL,
+                    password_hash=hash_password(DEMO_GUIDE_PASSWORD),
+                    trust_tier="standard",
+                    provider="email",
+                    tier="plus",
+                )
+                session.add(user)
+                session.commit()
+                session.refresh(user)
+                profile = session.exec(
+                    select(GuideProfile).where(GuideProfile.user_id == user.id)
+                ).first()
+                if profile is None:
+                    session.add(
+                        GuideProfile(
+                            guide_id=first_guide.id,
+                            user_id=user.id,
+                            onboarding_state="verified",
+                            verification_status="verified",
+                            verification_tier="standard",
+                            is_published=True,
+                            city="Mumbai",
+                        )
+                    )
+                    session.commit()
+                demo_user = 1
+        return {"trips": created_trips, "demo_user": demo_user}
+    finally:
+        if close_session:
+            session.close()
+
+
 def count_experiences() -> int:
     """Return the number of experience rows currently stored."""
     init_db()
@@ -501,6 +602,7 @@ def seed_if_empty() -> dict[str, int] | None:
         link_count = backfill_experience_tags()
         package_count = seed_guide_packages()
         quest_counts = seed_quests_and_badges()
+        seed_demo_driver_data()
         logger.info(
             "Seeded %d tags, %d links, %d packages, %d quests, %d badges",
             tag_count,
@@ -513,6 +615,7 @@ def seed_if_empty() -> dict[str, int] | None:
     logger.info("Experiences table empty: seeding dataset")
     result = seed_database()
     result["guide_packages"] = seed_guide_packages()
+    seed_demo_driver_data()
     return result
 
 

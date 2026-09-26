@@ -23,6 +23,7 @@ from app.api.v1 import (  # noqa: E402
     config,
     director,
     discovery,
+    driver,
     experiences,
     favorites,
     gems,
@@ -185,6 +186,7 @@ app.include_router(media.router, tags=["media"])
 app.include_router(agent.router, prefix="/api/v1", tags=["agent"])
 app.include_router(onboarding.router, prefix="/api/v1", tags=["onboarding"])
 app.include_router(guide_onboarding.router, prefix="/api/v1", tags=["guide-onboarding"])
+app.include_router(driver.router, prefix="/api/v1", tags=["driver"])
 app.include_router(wallet.router, prefix="/api/v1", tags=["wallet"])
 app.include_router(director.router, prefix="/api/v1", tags=["director"])
 app.include_router(tags.router, prefix="/api/v1", tags=["tags"])

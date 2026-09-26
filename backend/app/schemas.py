@@ -1123,6 +1123,85 @@ class GuideOptionsResponse(BaseModel):
 
 
 # --------------------------------------------------------------------------
+# Driver trips (pickup -> stops -> drop, with route geometry)
+# --------------------------------------------------------------------------
+
+
+class TripPoint(BaseModel):
+    lat: float
+    lng: float
+    label: str | None = None
+    address: str | None = None
+
+
+class TripStop(BaseModel):
+    sequence: int
+    name: str | None = None
+    lat: float | None = None
+    lng: float | None = None
+    duration_min: int = 0
+    travel_time_min: int = 0
+    segment_type: str = "experience"
+    guide_notes: str | None = None
+
+
+class TripRemaining(BaseModel):
+    distance_km: float
+    duration_min: int
+
+
+class DriverTripSummary(BaseModel):
+    id: int
+    booking_ref: str
+    status: str
+    date: str | None = None
+    start_time: str | None = None
+    group_size: int = 1
+    guest_name: str | None = None
+    package_title: str | None = None
+    pickup_address: str | None = None
+    pickup: TripPoint | None = None
+    has_driver_location: bool = False
+
+
+class DriverTripDetail(BaseModel):
+    id: int
+    booking_ref: str
+    status: str
+    allowed_transitions: list[str] = Field(default_factory=list)
+    date: str | None = None
+    start_time: str | None = None
+    hours: int = 2
+    group_size: int = 1
+    guest_name: str | None = None
+    guest_phone: str | None = None
+    note: str | None = None
+    package_id: int | None = None
+    package_title: str | None = None
+    guide_id: int
+    guide_name: str | None = None
+    pickup: TripPoint | None = None
+    drop: TripPoint | None = None
+    stops: list[TripStop] = Field(default_factory=list)
+    route: list[dict[str, float]] = Field(default_factory=list)
+    distance_km: float = 0.0
+    duration_min: int = 0
+    route_source: str = "local"
+    driver_location: TripPoint | None = None
+    remaining: TripRemaining | None = None
+
+
+class DriverTripStatusUpdate(BaseModel):
+    status: Literal["confirmed", "in_progress", "completed", "cancelled"]
+    note: str | None = Field(default=None, max_length=300)
+
+
+class DriverLocationUpdate(BaseModel):
+    lat: float = Field(ge=-90, le=90)
+    lng: float = Field(ge=-180, le=180)
+
+
+# --------------------------------------------------------------------------
 # Geospatial
 # --------------------------------------------------------------------------
 
