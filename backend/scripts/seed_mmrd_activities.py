@@ -146,6 +146,11 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--concurrency", type=int, default=1, help="page fetches in flight")
     parser.add_argument("--no-llm", action="store_true", help="heuristic extraction only")
     parser.add_argument("--no-embed", action="store_true", help="skip embedding generation")
+    parser.add_argument(
+        "--no-enrich-photos",
+        action="store_true",
+        help="skip Google Places cover photos -> object storage",
+    )
     parser.add_argument("--dry-run", action="store_true", help="extract but write nothing")
     parser.add_argument("--verbose", action="store_true")
     return parser.parse_args()
@@ -168,8 +173,10 @@ async def _run(args: argparse.Namespace) -> int:
     )
     from app.services.embeddings import embed_text
     from app.services.geocode import geocode, in_mmr
+    from app.services import google_places, photo_enrichment
 
     settings = get_settings()
+    enrich_photos = not args.no_enrich_photos
     init_db()
 
     areas = [a.strip().lower() for a in args.areas.split(",") if a.strip()] or MMR_AREAS
@@ -315,6 +322,13 @@ async def _run(args: argparse.Namespace) -> int:
                         )
                     )
                     session.commit()
+
+                    # Self-host the cover photo (Google Places -> S3/MinIO).
+                    if enrich_photos and google_places.is_configured():
+                        try:
+                            await photo_enrichment.enrich_experience_photo(session, exp)
+                        except Exception as exc:
+                            logger.warning("Photo enrichment failed for %s: %s", name, exc)
 
             stats["added"] += 1
             added.append(f"{name}  [{cand_area}]")
