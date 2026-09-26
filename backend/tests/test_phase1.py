@@ -145,11 +145,17 @@ def test_readyz_reports_database():
 
 
 def test_cors_allows_known_origin():
-    r = client.get(
-        "/api/v1/experiences?limit=1",
-        headers={"Origin": "https://localiq.tavesglobal.com"},
-    )
-    assert r.headers.get("access-control-allow-origin") == "https://localiq.tavesglobal.com"
+    """An origin from the configured allow-list is echoed back.
+
+    The list is environment-specific (see CORS_ORIGINS), so the test derives a
+    real allowed origin instead of hardcoding a production URL.
+    """
+    from app.config import get_settings
+
+    origins = [o for o in get_settings().cors_origin_list if o != "*"]
+    origin = origins[0] if origins else "https://localiq.tavesglobal.com"
+    r = client.get("/api/v1/experiences?limit=1", headers={"Origin": origin})
+    assert r.headers.get("access-control-allow-origin") == origin
 
 
 def test_cors_rejects_unknown_origin():

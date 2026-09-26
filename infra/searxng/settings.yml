@@ -1,0 +1,29 @@
+# Minimal self-hosted SearXNG config for LocalIQ discovery.
+#
+# The backend only needs the JSON API: it calls /search?format=json, then
+# scrapes each returned page itself. Keep this file small and inherit the
+# upstream defaults so engine maintenance stays upstream's problem.
+
+use_default_settings: true
+
+general:
+  instance_name: "LocalIQ Search"
+  enable_metrics: false
+
+search:
+  safe_search: 0
+  autocomplete: ""
+  # Required for the backend's /search?format=json calls.
+  formats:
+    - html
+    - json
+
+server:
+  secret_key: "localiq-dev-searxng-secret-change-me"
+  limiter: false
+  image_proxy: false
+  port: 8080
+  bind_address: "0.0.0.0"
+
+ui:
+  static_use_hash: true

@@ -25,6 +25,7 @@ from app.schemas import (
 )
 from app.services import google_routes, recommender
 from app.services.auth import get_current_user_optional
+from app.services.semantic_search import semantic_search, _apply_tag_filters
 from app.services.cache import TTLCache
 from app.services.weather import fetch_weather
 
@@ -130,13 +131,43 @@ async def get_recommendations(
     # it separately from the candidate set we score.
     total_candidates = int(session.exec(select(func.count()).select_from(Experience)).one())
 
-    # Budget is a hard feasibility filter, so apply it in SQL and only load rows
-    # that can survive. Everything else (time, hours, distance, accessibility)
-    # stays in the ranking engine.
-    stmt = select(Experience)
-    if payload.budget_inr is not None:
-        stmt = stmt.where(Experience.avg_cost <= payload.budget_inr)
-    candidates = list(session.exec(stmt).all())
+    # Semantic retrieval branch: embed intent, retrieve top-K by vector similarity,
+    # then feasibility-filter + re-rank. Falls back to SQL keyword retrieval when
+    # semantic is disabled or no query text is available.
+    semantic_query = (payload.semantic_query or " ".join(payload.interests or [])).strip()
+    use_semantic = payload.use_semantic and bool(semantic_query)
+
+    if use_semantic:
+        logger.info("Semantic recommend query: %s", semantic_query[:80])
+        candidate_ids = await semantic_search(
+            session,
+            semantic_query,
+            top_k=max(50, payload.limit * 5),
+            required_tags=payload.required_tags or None,
+            excluded_tags=payload.excluded_tags or None,
+            category=payload.interests[0] if payload.interests else None,
+            indoor_outdoor=None,
+            lat=payload.origin_lat,
+            lng=payload.origin_lng,
+            radius_km=30.0 if payload.origin_lat is not None else None,
+        )
+        if candidate_ids:
+            candidates = list(session.exec(select(Experience).where(Experience.id.in_(candidate_ids))).all())
+            # Preserve semantic order.
+            order = {exp_id: idx for idx, exp_id in enumerate(candidate_ids)}
+            candidates.sort(key=lambda e: order.get(e.id, 9999))
+        else:
+            candidates = []
+    else:
+        # Budget is a hard feasibility filter, so apply it in SQL and only load rows
+        # that can survive. Everything else (time, hours, distance, accessibility)
+        # stays in the ranking engine.
+        stmt = select(Experience)
+        if payload.budget_inr is not None:
+            stmt = stmt.where(Experience.avg_cost <= payload.budget_inr)
+        if payload.required_tags:
+            stmt = _apply_tag_filters(stmt, payload.required_tags, payload.excluded_tags)
+        candidates = list(session.exec(stmt).all())
 
     # Weather is best-effort: failure yields neutral context, never 500.
     try:
@@ -146,6 +177,16 @@ async def get_recommendations(
         from app.services.weather import neutral_weather
 
         weather = neutral_weather(reason="exception")
+
+    # Tag hit annotations for semantic explanations.
+    required = set(payload.required_tags or [])
+    semantic_tag_hits: dict[int, list[str]] = {}
+    if use_semantic or required:
+        for exp in candidates:
+            exp_tags = set(exp.tags or [])
+            hits = sorted(required & exp_tags)
+            if hits:
+                semantic_tag_hits[exp.id] = hits
 
     result = recommender.recommend(
         candidates,
@@ -158,6 +199,8 @@ async def get_recommendations(
         weather=weather,
         feedback_scores=_feedback_scores(session),
         limit=payload.limit,
+        semantic_query=semantic_query if use_semantic else None,
+        semantic_tag_hits=semantic_tag_hits,
     )
 
     top = result["results"]

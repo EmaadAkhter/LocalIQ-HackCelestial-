@@ -8,7 +8,7 @@ name: localiq
 
 services:
   postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-localiq}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-localiq}
@@ -37,7 +37,10 @@ services:
       DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-localiq}:${POSTGRES_PASSWORD:-localiq}@postgres:5432/${POSTGRES_DB:-localiq}
       OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:3b}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-nomic-embed-text}
       OLLAMA_API_KEY: ${OLLAMA_API_KEY:-}
+      SEARXNG_URL: ${SEARXNG_URL:-http://searxng:8080}
+      SEARXNG_ENABLED: ${SEARXNG_ENABLED:-true}
       GOOGLE_MAPS_API_KEY_WEB: ${GOOGLE_MAPS_API_KEY_WEB:-}
       GOOGLE_MAPS_API_KEY_ANDROID: ${GOOGLE_MAPS_API_KEY_ANDROID:-}
       GOOGLE_MAPS_API_KEY_IOS: ${GOOGLE_MAPS_API_KEY_IOS:-}
@@ -48,6 +51,22 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      searxng:
+        condition: service_started
+    networks: [localiq]
+
+  searxng:
+    image: searxng/searxng:latest
+    environment:
+      SEARXNG_SECRET: ${SEARXNG_SECRET:-localiq-dev-searxng-secret-change-me}
+      SEARXNG_BASE_URL: ${SEARXNG_BASE_URL:-http://localhost:8888/}
+    volumes:
+      - ./searxng/settings.yml:/etc/searxng/settings.yml:ro
+    # Internal-only: the backend reaches it at http://searxng:8080. Expose
+    # SEARXNG_PORT on the host only when you want to debug the UI directly.
+    ports:
+      - "${SEARXNG_PORT:-8888}:8080"
+    restart: unless-stopped
     networks: [localiq]
 
   nginx-flutter:

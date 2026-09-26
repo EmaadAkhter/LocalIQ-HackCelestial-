@@ -99,6 +99,32 @@ class Settings(BaseSettings):
     google_maps_api_key_android: str = ""
     google_maps_api_key_ios: str = ""
 
+    # --- Embeddings / semantic search (self-hosted) -------------------------
+    embedding_model: str = "nomic-embed-text"
+    embedding_dimension: int = 768
+    embedding_batch_size: int = 16
+    embedding_timeout_seconds: float = 30.0
+
+    # --- SearXNG discovery pipeline (self-hosted) ---------------------------
+    searxng_url: str = "http://localhost:8080"
+    searxng_timeout_seconds: float = 30.0
+    searxng_max_results: int = 10
+    searxng_enabled: bool = True
+    # Use the local LLM to extract structured candidates from scraped pages.
+    # Falls back to the heuristic extractor when the model is unavailable.
+    discovery_use_llm: bool = True
+    discovery_llm_timeout_seconds: float = 45.0
+    # Cap output tokens for extraction (JSON is small); keeps latency low.
+    discovery_llm_num_predict: int = 384
+    # Max pages to process per discovery run (LLM extraction is the bottleneck).
+    discovery_max_results: int = 5
+    # How many pages may hit the LLM concurrently. A single laptop Ollama
+    # serializes generations, so >1 mostly causes queued requests to time out.
+    discovery_llm_concurrency: int = 1
+    discovery_max_candidates_per_page: int = 5
+    # Page text is truncated to this many characters before prompting.
+    discovery_page_chars: int = 2000
+
     # --- Server-side Google APIs (never sent to any client) -----------------
     # These are *different* keys from the client map keys above: restrict them
     # by IP (and keep the Places/Routes APIs enabled) so they are useless if

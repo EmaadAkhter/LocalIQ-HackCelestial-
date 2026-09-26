@@ -44,6 +44,7 @@ typing-inspection==0.4.4
 
 # --- database driver (PostgreSQL, used by Docker/K8s; SQLite needs none) ---
 psycopg2-binary>=2.9.9
+pgvector==0.4.0
 
 # Test-only dependencies live in requirements-dev.txt so the runtime image
 # stays lean.

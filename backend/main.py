@@ -18,13 +18,16 @@ from app.api.v1 import (  # noqa: E402
     auth,
     chat,
     config,
+    discovery,
     experiences,
     favorites,
+    guide_packages,
     guides,
     itineraries,
     parse,
     places,
     recommendations,
+    tags,
     weather,
 )
 from app.config import get_settings  # noqa: E402
@@ -36,7 +39,7 @@ from app.middleware.access_log import AccessLogMiddleware  # noqa: E402
 from app.migrations import upgrade_to_head  # noqa: E402
 from app.middleware.request_id import RequestIDMiddleware  # noqa: E402
 from app.rate_limit import limiter  # noqa: E402
-from app.seed import seed_if_empty  # noqa: E402
+from app.seed import generate_missing_embeddings, seed_if_empty  # noqa: E402
 from app.services.llm import LLMError, close_http_client, generate, get_client  # noqa: E402
 
 settings = get_settings()
@@ -66,6 +69,16 @@ async def lifespan(app: FastAPI):
         logger.info("Database ready")
     except Exception as exc:
         logger.exception("Startup DB init failed: %s", exc)
+
+    # Generate semantic embeddings for any experience that doesn't have one.
+    # Runs in the background so startup isn't blocked; failures are logged only.
+    if settings.app_env != "test":
+        try:
+            embedding_count = await generate_missing_embeddings()
+            if embedding_count:
+                logger.info("Generated embeddings for %d experiences on startup", embedding_count)
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.exception("Startup embedding generation failed: %s", exc)
 
     # Warm the local model so the first real request is fast. Failure is fine.
     if settings.app_env != "test":
@@ -125,7 +138,10 @@ app.include_router(config.router, prefix="/api/v1", tags=["config"])
 app.include_router(places.router, prefix="/api/v1", tags=["places"])
 app.include_router(experiences.router, prefix="/api/v1", tags=["experiences"])
 app.include_router(recommendations.router, prefix="/api/v1", tags=["recommendations"])
+app.include_router(tags.router, prefix="/api/v1", tags=["tags"])
+app.include_router(discovery.router, prefix="/api/v1", tags=["discovery"])
 app.include_router(guides.router, prefix="/api/v1", tags=["guides"])
+app.include_router(guide_packages.router, prefix="/api/v1", tags=["guide-packages"])
 app.include_router(parse.router, prefix="/api/v1", tags=["parse"])
 app.include_router(chat.router, prefix="/api/v1", tags=["chat"])
 app.include_router(weather.router, prefix="/api/v1", tags=["weather"])

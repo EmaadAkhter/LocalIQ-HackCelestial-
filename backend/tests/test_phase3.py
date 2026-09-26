@@ -58,6 +58,9 @@ def _patch_llm(monkeypatch, handler, *, retries=2, cache_enabled=False):
     base = get_settings()
     patched = base.model_copy(
         update={
+            # Force a configured model so the client exercises the HTTP path
+            # regardless of the developer's OLLAMA_MODEL setting.
+            "ollama_model": "test-model",
             "llm_retry_backoff_seconds": 0.0,
             "llm_max_retries": retries,
             "llm_cache_enabled": cache_enabled,

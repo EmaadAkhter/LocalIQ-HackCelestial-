@@ -41,10 +41,17 @@ Details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 - **Feasibility-first filtering:** budget, time (visit + travel + buffer),
   opening hours (overnight-aware), accessibility (wheelchair/step-free) and max
   day-trip distance — nothing infeasible is ever ranked.
+- **Semantic retrieval:** `use_semantic=true` embeds the free-text intent with a
+  self-hosted model (`nomic-embed-text` via Ollama) and retrieves by cosine
+  similarity; pgvector on Postgres, a JSON-vector brute-force fallback on SQLite.
+  Falls back to tag + rating order when no embeddings exist yet.
+- **Taxonomy-aware filtering:** `required_tags` / `excluded_tags` filter on the
+  master tag taxonomy, composable with semantic or keyword retrieval.
 - **Weighted ranking:** interest match, time fit, budget fit, distance, rating,
-  local-gem score, weather boost and aggregated user feedback.
+  local-gem score, semantic rank, weather boost and aggregated user feedback.
 - **Deterministic explainability:** every result carries a plain-language
-  `why_this_fits` (templates, not an LLM).
+  `why_this_fits` (templates, not an LLM) that names the semantic query and any
+  matched tags.
 - **Travel-time heuristic:** haversine distance + Mumbai city-speed model.
 - **Location resolution:** ~40 Mumbai area anchors with substring matching.
 - **“N candidates → M feasible”** reveal, preserved even with SQL pre-filtering.
@@ -61,14 +68,25 @@ Details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ### Data
 - 48 curated Mumbai experiences + 12 guides, seeded idempotently.
+- **Master tag taxonomy** (180+ tags + composite filters) in
+  `data/tag_taxonomy.json`, backfilled onto every experience as `experience_tags`.
+- **End-to-end guide packages:** pickup → ordered stops → drop-off, seeded from
+  each guide’s own route plus nearby experiences.
+- **Discovery pipeline:** SearXNG-backed search, page scraping (with a
+  search-snippet fallback when a site blocks bots), then **local-LLM candidate
+  extraction** constrained to the tag taxonomy and known Mumbai areas. Results
+  land in `hidden_gem_candidates` with `sources` / `mentions` provenance, plus an
+  admin approve/reject curation flow. Falls back to a deterministic heuristic
+  extractor when the model is unavailable.
 - Alembic migrations applied on startup (`alembic check` drift-free).
 - `created_at` / `updated_at` on every table, composite indexes for hot queries
   and Postgres pool tuning. SQLite for native dev/tests.
 
 ### API
-- 32 paths / 37 operations: auth, experiences, recommendations, guides, parse,
-  chat, weather, itineraries, favorites, nearby, feedback, admin, client config
-  and places. Swagger at `/docs`, ReDoc at `/redoc`, schema at `/openapi.json`.
+- Auth, experiences, recommendations (semantic + tag aware), tags, discovery,
+  guide packages (bookings, availability, reviews), guides, parse, chat, weather,
+  itineraries, favorites, nearby, feedback, admin and client config. Swagger at
+  `/docs`, ReDoc at `/redoc`, schema at `/openapi.json`.
 
 ### Auth & security
 - PBKDF2-SHA256 passwords; opaque session tokens stored only as HMAC hashes.
@@ -82,6 +100,7 @@ Details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ### Infrastructure & CI
 - Docker Compose in two modes (local-LLM, remote-LLM); Caddy → Kong → FastAPI.
+- **Self-hosted SearXNG** alongside pgvector/Postgres for the discovery pipeline.
 - Kubernetes manifests with HPA; self-hosted Jenkins with a GitHub push webhook
   and an 80% coverage gate; named Cloudflare tunnel on `tavesglobal.com`.
 - Multi-stage backend image on Python 3.12 (non-root), secrets-from-file and
@@ -128,6 +147,27 @@ Docker (full stack + local model):
 cd infra && cp .env.example .env
 cd .. && make infra-up      # edge on http://localhost:8080
 ```
+
+Discovery (SearXNG + local-LLM extraction):
+
+```bash
+# SearXNG (compose service, published on host port 8888)
+cd infra && docker compose up -d searxng
+
+# Local model for parsing/chat and candidate extraction (optional but recommended)
+ollama pull llama3.2:3b
+ollama pull nomic-embed-text     # semantic search embeddings
+
+# backend/.env (native dev)
+#   SEARXNG_URL=http://localhost:8888
+#   OLLAMA_MODEL=llama3.2:3b
+#   EMBEDDING_MODEL=nomic-embed-text
+```
+
+Then `POST /api/v1/discover` with `{"query": "hidden heritage spots", "area": "Bandra"}`.
+LLM extraction takes ~15–25s per page, so discovery is a curation tool rather
+than a hot path; set `discovery_use_llm=false` to use the instant heuristic
+extractor instead.
 
 CI (self-hosted Jenkins):
 

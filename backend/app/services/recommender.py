@@ -265,9 +265,15 @@ def build_why_this_fits(
     time_hours: float | None,
     interests: list[str],
     distance_km: float,
+    semantic_query: str | None = None,
+    semantic_tag_hits: list[str] | None = None,
 ) -> str:
     """Deterministic template explanation (no LLM needed)."""
     bits: list[str] = []
+    if semantic_query:
+        bits.append(f"semantically matched '{semantic_query[:40]}{'...' if len(semantic_query) > 40 else ''}'")
+    if semantic_tag_hits:
+        bits.append(f"tags: {', '.join(semantic_tag_hits[:3])}")
     if budget_inr is not None:
         bits.append(f"₹{exp.avg_cost} fits your ₹{budget_inr} budget")
     else:
@@ -299,6 +305,7 @@ def score_experience(
     travel_time_min: int,
     weather_boost: float = 0.0,
     feedback_boost: float = 0.0,
+    semantic_rank: int | None = None,
 ) -> tuple[float, dict]:
     """Phase B — rank feasible experiences. Explicit weighted parts."""
     interests = [i.lower().strip() for i in (interests or []) if i]
@@ -358,6 +365,12 @@ def score_experience(
     # Aggregated user feedback (-8..+8).
     parts["feedback"] = max(-8.0, min(8.0, feedback_boost))
 
+    # Semantic retrieval position bonus (0..5). Top rank gets ~5, decays quickly.
+    if semantic_rank is not None and semantic_rank >= 0:
+        parts["semantic"] = round(5.0 * (0.7 ** semantic_rank), 2)
+    else:
+        parts["semantic"] = 0.0
+
     total = round(sum(parts.values()), 2)
     return total, {k: round(v, 2) for k, v in parts.items()}
 
@@ -400,11 +413,16 @@ def recommend(
     weather: dict | None = None,
     feedback_scores: dict[int, float] | None = None,
     limit: int = 10,
+    semantic_query: str | None = None,
+    semantic_tag_hits: dict[int, list[str]] | None = None,
 ) -> dict:
     """Run feasibility + ranking. Never raises for bad inputs; returns metadata."""
     user_coords = resolve_location(location)
     total_candidates = len(experiences)
     scored: list[ScoredExperience] = []
+    semantic_tag_hits = semantic_tag_hits or {}
+    # Preserve semantic retrieval order for scoring bonus.
+    semantic_rank_map = {exp.id: idx for idx, exp in enumerate(experiences) if exp.id is not None}
 
     for exp in experiences:
         feas = check_feasibility(
@@ -431,13 +449,20 @@ def recommend(
             travel_time_min=feas.travel_time_min,
             weather_boost=boost,
             feedback_boost=feedback_boost,
+            semantic_rank=semantic_rank_map.get(exp.id) if semantic_query else None,
         )
         if user_coords is None:
             # Neutral distance when user gave no location.
             score = round(score - parts["distance"] + 10.0, 2)
             parts["distance"] = 10.0
         why = build_why_this_fits(
-            exp, budget_inr=budget_inr, time_hours=time_hours, interests=interests or [], distance_km=feas.distance_km
+            exp,
+            budget_inr=budget_inr,
+            time_hours=time_hours,
+            interests=interests or [],
+            distance_km=feas.distance_km,
+            semantic_query=semantic_query,
+            semantic_tag_hits=semantic_tag_hits.get(exp.id),
         )
         scored.append(
             ScoredExperience(

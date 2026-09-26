@@ -1,0 +1,968 @@
+{
+  "tags": [
+    {
+      "name": "wheelchair_accessible",
+      "category": "accessibility",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "step_free_entry",
+      "category": "accessibility",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "accessible_washroom",
+      "category": "accessibility",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "low_walking_required",
+      "category": "accessibility",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "elevator_available",
+      "category": "accessibility",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "hearing_friendly",
+      "category": "accessibility",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "visual_friendly",
+      "category": "accessibility",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "sensory_friendly",
+      "category": "accessibility",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "family_friendly",
+      "category": "accessibility",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "child_friendly",
+      "category": "accessibility",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "elderly_friendly",
+      "category": "accessibility",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "pet_friendly",
+      "category": "accessibility",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "gender_safe_space",
+      "category": "accessibility",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "solo_friendly",
+      "category": "group",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "couple_friendly",
+      "category": "group",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "group_friendly",
+      "category": "group",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "good_for_dates",
+      "category": "group",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "good_for_friends",
+      "category": "group",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "good_for_networking",
+      "category": "group",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "good_for_meetups",
+      "category": "group",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "budget_friendly",
+      "category": "cost",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "mid_range",
+      "category": "cost",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "premium",
+      "category": "cost",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "free_entry",
+      "category": "cost",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "good_value_for_money",
+      "category": "cost",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "open_now",
+      "category": "time",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "open_late",
+      "category": "time",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "early_morning_friendly",
+      "category": "time",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "sunset_view",
+      "category": "time",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "sunrise_view",
+      "category": "time",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "night_view",
+      "category": "time",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "quiet_hours",
+      "category": "time",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "seasonal_best_time",
+      "category": "time",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "food",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "culture",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "history",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "photography",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "nature",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "adventure",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "shopping",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "nightlife",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "cafe_hopping",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "street_art",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "heritage_walk",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "hidden_gem",
+      "category": "hidden_gem",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "touristy",
+      "category": "vibe",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "local_favorite",
+      "category": "hidden_gem",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "romantic",
+      "category": "vibe",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "chill",
+      "category": "vibe",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "energetic",
+      "category": "vibe",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "instagrammable",
+      "category": "vibe",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "quiet_retreat",
+      "category": "vibe",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "creative_hub",
+      "category": "vibe",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "near_metro",
+      "category": "location",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "near_bus_stop",
+      "category": "location",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "parking_available",
+      "category": "location",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "easy_to_find",
+      "category": "location",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "indoor",
+      "category": "weather",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "outdoor",
+      "category": "weather",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "monsoon_friendly",
+      "category": "weather",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "summer_friendly",
+      "category": "weather",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "winter_friendly",
+      "category": "weather",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "rain_safe",
+      "category": "weather",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "well_lit_area",
+      "category": "safety",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "high_footfall_area",
+      "category": "safety",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "safe_for_solo_women",
+      "category": "safety",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "police_presence_nearby",
+      "category": "safety",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "emergency_services_nearby",
+      "category": "safety",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "reliable_service",
+      "category": "service",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "fast_service",
+      "category": "service",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "friendly_staff",
+      "category": "service",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "english_speaking_staff",
+      "category": "service",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "wifi_available",
+      "category": "service",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "good_for_work",
+      "category": "service",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "good_for_reading",
+      "category": "activity",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "good_for_conversations",
+      "category": "activity",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "good_for_photos",
+      "category": "activity",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "good_for_street_food",
+      "category": "activity",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "good_for_fine_dining",
+      "category": "activity",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "good_for_breakfast",
+      "category": "activity",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "good_for_lunch",
+      "category": "activity",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "good_for_dinner",
+      "category": "activity",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "good_for_coffee",
+      "category": "activity",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "good_for_evening_snacks",
+      "category": "activity",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "good_for_night_walk",
+      "category": "activity",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "good_for_morning_walk",
+      "category": "activity",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "trending",
+      "category": "hidden_gem",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "over_hyped",
+      "category": "hidden_gem",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "underrated",
+      "category": "hidden_gem",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "antiques",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "architecture",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "bargain",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "bars",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "beach",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "beer",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "boutiques",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "brands",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "brewery",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "buddhist",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "budget",
+      "category": "cost",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "cafe",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "caves",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "chaat",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "cocktails",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "continental",
+      "category": "activity",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "cycling",
+      "category": "activity",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "dance",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "date_night",
+      "category": "group",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "day_trip",
+      "category": "activity",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "dive_bars",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "evening",
+      "category": "activity",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "family",
+      "category": "group",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "fashion",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "ferry",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "festival",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "fishing",
+      "category": "activity",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "flowers",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "food_court",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "forest",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "fort",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "free",
+      "category": "cost",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "friends",
+      "category": "group",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "galleries",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "gallery",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "gardens",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "gold",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "harbour",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "heritage",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "hiking",
+      "category": "activity",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "historic",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "jazz",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "karaoke",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "kebabs",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "lake",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "landmark",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "late_night",
+      "category": "activity",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "live_music",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "local",
+      "category": "hidden_gem",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "lounge",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "lunch",
+      "category": "activity",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "maharashtrian",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "mall",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "market",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "meditation",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "modern_art",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "morning",
+      "category": "activity",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "murals",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "museum",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "music",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "non_veg",
+      "category": "activity",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "opera",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "painting",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "parsi",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "peaceful",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "performance",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "rainy_day",
+      "category": "weather",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "ramadan",
+      "category": "activity",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "rooftop",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "sea",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "sea_face",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "sea_link",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "sea_view",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "seafood",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "shrine",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "snacks",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "souvenirs",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "spices",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "spiritual",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "street_food",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "street_market",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "sunrise",
+      "category": "activity",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "sunset",
+      "category": "activity",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "temple",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "theatre",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "unesco",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "vegetarian",
+      "category": "activity",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "views",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "vintage",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "walking",
+      "category": "activity",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "wholesale",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    },
+    {
+      "name": "wildlife",
+      "category": "experience_type",
+      "facet_type": "user_facing"
+    }
+  ],
+  "composite_tags": [
+    {
+      "name": "monsoon_evening_walk_with_coffee",
+      "description": "Monsoon-friendly evening spots with coffee",
+      "required_tags": [
+        "monsoon_friendly",
+        "night_view",
+        "good_for_evening_snacks",
+        "good_for_coffee",
+        "well_lit_area"
+      ],
+      "optional_tags": []
+    },
+    {
+      "name": "morning_walk_plus_breakfast",
+      "description": "Morning walk spots with breakfast options",
+      "required_tags": [
+        "good_for_morning_walk",
+        "good_for_breakfast"
+      ],
+      "optional_tags": [
+        "family_friendly"
+      ]
+    },
+    {
+      "name": "sunset_viewpoint_with_cafe",
+      "description": "Sunset viewpoints near cafes",
+      "required_tags": [
+        "sunset_view",
+        "cafe_hopping",
+        "couple_friendly",
+        "photography"
+      ],
+      "optional_tags": []
+    },
+    {
+      "name": "hidden_food_trail_for_students",
+      "description": "Budget-friendly hidden food spots",
+      "required_tags": [
+        "hidden_gem",
+        "good_for_street_food",
+        "budget_friendly",
+        "local_favorite"
+      ],
+      "optional_tags": []
+    },
+    {
+      "name": "safe_night_out_for_solo_women",
+      "description": "Safe nightlife spots for solo women",
+      "required_tags": [
+        "nightlife",
+        "well_lit_area",
+        "high_footfall_area",
+        "safe_for_solo_women",
+        "near_metro"
+      ],
+      "optional_tags": []
+    }
+  ]
+}

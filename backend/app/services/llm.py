@@ -125,11 +125,17 @@ def _cache_key(kind: str, model: str, payload: dict) -> str:
 # ---------------------------------------------------------------------------
 
 
-async def _post_json(url: str, payload: dict, *, timeout: float) -> httpx.Response:
-    """POST JSON with retries + exponential backoff on transient failures."""
+async def _post_json(
+    url: str, payload: dict, *, timeout: float, attempts_override: int | None = None
+) -> httpx.Response:
+    """POST JSON with retries + exponential backoff on transient failures.
+
+    ``attempts_override`` lets latency-sensitive callers (e.g. batch discovery
+    extraction) make a single attempt instead of the default retry budget.
+    """
     settings = get_settings()
     client = get_http_client()
-    attempts = max(1, settings.llm_max_retries + 1)
+    attempts = max(1, attempts_override if attempts_override is not None else settings.llm_max_retries + 1)
     last_exc: Exception | None = None
 
     for attempt in range(attempts):
@@ -202,8 +208,14 @@ class OllamaClient:
         *,
         json_mode: bool = False,
         timeout: float | None = None,
+        num_predict: int | None = None,
+        attempts: int | None = None,
     ) -> str | None:
-        """Generate text. Returns None when unavailable instead of raising."""
+        """Generate text. Returns None when unavailable instead of raising.
+
+        ``num_predict`` caps output length (defaults to 600); ``attempts``
+        overrides the retry budget for latency-sensitive callers.
+        """
         if not self.configured:
             logger.info("Ollama model not configured; using deterministic fallback")
             return None
@@ -212,7 +224,7 @@ class OllamaClient:
             "model": self.model,
             "prompt": prompt,
             "stream": False,
-            "options": {"temperature": 0.2, "num_predict": 600},
+            "options": {"temperature": 0.2, "num_predict": num_predict or 600},
         }
         if system:
             payload["system"] = system
@@ -231,6 +243,7 @@ class OllamaClient:
                 f"{self.base_url}/api/generate",
                 payload,
                 timeout=timeout or get_settings().ollama_timeout_seconds,
+                attempts_override=attempts,
             )
             text = (response.json().get("response") or "").strip() or None
         except Exception as exc:
@@ -242,10 +255,23 @@ class OllamaClient:
         return text
 
     async def generate_json(
-        self, prompt: str, system: str | None = None, *, timeout: float | None = None
+        self,
+        prompt: str,
+        system: str | None = None,
+        *,
+        timeout: float | None = None,
+        num_predict: int | None = None,
+        attempts: int | None = None,
     ) -> dict | None:
         """Generate + parse JSON. Returns None on any failure (caller falls back)."""
-        text = await self.generate(prompt, system, json_mode=True, timeout=timeout)
+        text = await self.generate(
+            prompt,
+            system,
+            json_mode=True,
+            timeout=timeout,
+            num_predict=num_predict,
+            attempts=attempts,
+        )
         if not text:
             return None
         try:

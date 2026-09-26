@@ -8,9 +8,10 @@ Two layers live here:
 
 from __future__ import annotations
 
+import enum
 import re
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -98,6 +99,16 @@ class ExperienceResponse(BaseModel):
     indoor_outdoor: str = "indoor"
     local_gem_score: float = 0.5
 
+    # Semantic + DNA fields
+    vibe_vector: dict[str, Any] = Field(default_factory=dict)
+    accessibility_score: float = 0.0
+    authenticity_score: float = 0.0
+    safety_score: float = 0.0
+    crowd_density_level: str = "MEDIUM"
+    noise_level: str = "MODERATE"
+    best_visit_time: str | None = None
+    time_to_spend: str | None = None
+
     model_config = {"from_attributes": True}
 
     @model_validator(mode="after")
@@ -155,6 +166,126 @@ class GuideRequestResponse(BaseModel):
     booking_ref: str
     booking_id: int | None = None
     created_at: datetime | None = None
+
+
+class GuidePackageStopBase(BaseModel):
+    experience_id: int | None = None
+    sequence: int = 0
+    segment_type: str = "experience"
+    location_name: str | None = None
+    lat: float | None = None
+    lng: float | None = None
+    duration_min: int = 60
+    note: str | None = None
+
+
+class GuidePackageStopCreate(GuidePackageStopBase):
+    pass
+
+
+class GuidePackageStopResponse(GuidePackageStopBase):
+    id: int
+    package_id: int
+
+    model_config = {"from_attributes": True}
+
+
+class GuidePackageBase(BaseModel):
+    title: str = Field(..., min_length=3, max_length=200)
+    description: str | None = Field(default=None, max_length=2000)
+    pickup_type: str = "fixed_point"
+    default_pickup_area: str | None = Field(default=None, max_length=200)
+    pickup_lat: float | None = None
+    pickup_lng: float | None = None
+    drop_off_same_as_pickup: bool = True
+    max_pickup_distance_km: float = 10.0
+    total_duration_hours: float = 3.0
+    inclusions: list[str] = Field(default_factory=list)
+    price_per_person: int = 0
+    total_price: int | None = None
+    max_group_size: int = 6
+    languages: list[str] = Field(default_factory=list)
+    cancellation_policy: str | None = Field(default=None, max_length=1000)
+    is_active: bool = True
+
+
+class GuidePackageCreate(GuidePackageBase):
+    stops: list[GuidePackageStopCreate] = Field(default_factory=list)
+
+
+class GuidePackageResponse(GuidePackageBase):
+    id: int
+    guide_id: int
+    stops: list[GuidePackageStopResponse] = Field(default_factory=list)
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class GuideAvailabilityBase(BaseModel):
+    available_date: datetime | None = Field(default=None, examples=["2026-09-27"])
+    start_time: str = Field(default="09:00", max_length=5)
+    end_time: str = Field(default="18:00", max_length=5)
+    is_available: bool = True
+
+
+class GuideAvailabilityCreate(BaseModel):
+    available_date: str = Field(..., examples=["2026-09-27"])
+    start_time: str = Field(default="09:00", max_length=5)
+    end_time: str = Field(default="18:00", max_length=5)
+    is_available: bool = True
+
+
+class GuideAvailabilityResponse(GuideAvailabilityBase):
+    id: int
+    guide_id: int
+
+    model_config = {"from_attributes": True}
+
+
+class GuideBookingStatus(str, enum.Enum):
+    PENDING = "pending"
+    CONFIRMED = "confirmed"
+    CANCELLED = "cancelled"
+    COMPLETED = "completed"
+
+
+class GuideBookingCreate(BaseModel):
+    package_id: int
+    date: str = Field(..., examples=["2026-09-27"])
+    start_time: str | None = None
+    group_size: int = Field(default=2, ge=1, le=50)
+    pickup_address: str | None = Field(default=None, max_length=500)
+    note: str | None = Field(default=None, max_length=500)
+
+
+class GuideBookingResponse(GuideBookingCreate):
+    id: int
+    status: GuideBookingStatus
+    booking_ref: str
+    created_at: datetime | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class GuideReviewCreate(BaseModel):
+    booking_id: int
+    rating: float = Field(..., ge=0.0, le=5.0)
+    review_text: str | None = Field(default=None, max_length=2000)
+
+
+class GuideReviewResponse(BaseModel):
+    id: int
+    booking_id: int
+    guide_id: int
+    package_id: int | None = None
+    user_id: int | None = None
+    rating: float
+    review_text: str | None = None
+    created_at: datetime | None = None
+
+    model_config = {"from_attributes": True}
 
 
 # --------------------------------------------------------------------------
@@ -315,6 +446,17 @@ class RecommendationRequest(BaseModel):
         default=True,
         description="Enrich each result with Google route metrics when a server key exists.",
     )
+    use_semantic: bool = Field(
+        default=False,
+        description="Use vector semantic search from free-text intent instead of keyword interest matching.",
+    )
+    semantic_query: str | None = Field(
+        default=None,
+        max_length=500,
+        description="Optional free-text intent for semantic retrieval. Falls back to interests/location description.",
+    )
+    required_tags: list[str] = Field(default_factory=list, description="Hard-required tags.")
+    excluded_tags: list[str] = Field(default_factory=list, description="Excluded tags.")
 
     model_config = {
         "json_schema_extra": {

@@ -44,17 +44,24 @@ backend/app/
 ├── schemas.py                # Pydantic request/response models
 ├── models.py                 # SQLModel tables            (data layer)
 ├── database.py               # engine + session           (data layer)
-├── seed.py                   # dataset seeding            (data layer)
+├── vector.py                 # pgvector / SQLite JSON vector column
+├── seed.py                   # dataset + tags + packages seeding
 ├── services/
 │   ├── llm.py                # Ollama client (generate, chat, auth)
+│   ├── embeddings.py         # Ollama embeddings + deterministic fallback
+│   ├── semantic_search.py    # pgvector / SQLite cosine + tag hybrid search
 │   ├── parser.py             # NL → constraints (LLM + heuristic + canned)
 │   ├── guide.py              # context-scoped AI guide chat
 │   ├── explain.py            # template "why this fits" reasons
-│   ├── recommender.py        # feasibility + ranking       (to build)
-│   └── weather.py            # Open-Meteo adapter          (to build)
+│   ├── recommender.py        # feasibility + ranking
+│   ├── discovery.py          # SearXNG search + scrape + candidate extraction
+│   └── weather.py            # Open-Meteo adapter
 └── api/v1/
     ├── experiences.py
-    ├── recommendations.py
+    ├── recommendations.py    # semantic + tag-aware ranking
+    ├── tags.py               # taxonomy, composite tags, by-tag lookup
+    ├── discovery.py          # /discover candidate pipeline
+    ├── guide_packages.py     # packages, bookings, availability, reviews
     ├── guides.py
     ├── parse.py
     ├── chat.py
@@ -69,6 +76,23 @@ backend/app/
   LLM, so they are instant and never wrong.
 - **Graceful LLM degradation.** Every LLM call has a fallback: parser → heuristic,
   chat → canned. `DEMO_MODE=true` forces canned responses for a stable demo.
+- **Semantic search is optional and self-hosted.** `use_semantic=true` embeds the
+  intent via Ollama; embeddings are stored as `pgvector` on Postgres and JSON on
+  SQLite through one `Vector` type. When the model or vectors are missing the
+  query degrades to tag + rating retrieval, never an error.
+- **One taxonomy everywhere.** Experiences, guides and quests reference the same
+  master tag list (`data/tag_taxonomy.json`) so filters, semantic queries and
+  composite tags share vocabulary.
+- **Discovery is provenance-first.** SearXNG results are scraped into
+  `hidden_gem_candidates` with `sources`/`mentions` rows; nothing becomes a real
+  experience until an admin approves it, keeping the curated dataset trustworthy.
+- **Extraction prefers the LLM but never depends on it.** Candidate extraction
+  prompts the local Ollama model for JSON constrained to the taxonomy and known
+  Mumbai areas; unparseable output, a missing model or a test environment falls
+  back to a deterministic heuristic extractor. SearXNG snippets are used when a
+  site blocks scraping, so discovery still works within a modest footprint.
+  `discovery_llm_concurrency=1` by default because a single laptop Ollama
+  serializes generations.
 - **One named tunnel, four surfaces.** App, API, shared model, and Jenkins share
   one Cloudflare tunnel on `tavesglobal.com`; the model route is protected by
   Kong key-auth and Jenkins by its own login.

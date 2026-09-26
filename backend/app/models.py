@@ -2,15 +2,25 @@
 
 All tables carry ``created_at`` / ``updated_at`` (naive UTC) via
 ``TimestampMixin``. Composite indexes cover the common query shapes.
+
+Relationship notes:
+- SQLModel 0.0.47 + SQLAlchemy 2.0 is strict about forward references. Keep
+  bidirectional relationships only between classes where the referenced class is
+  defined *after* the relationship owner, and avoid generic wrappers like
+  ``List``/``Optional`` in relationship annotations.
+- Association tables and new feature tables use explicit queries instead of
+  relationships to keep mapper configuration stable.
 """
 
-from datetime import datetime
-from typing import Optional
+import enum
+from datetime import date, datetime
+from typing import Any, List, Optional
 
-from sqlalchemy import JSON, Column, DateTime, Index, UniqueConstraint
+from sqlalchemy import JSON, Column, Date, DateTime, Index, UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.timeutil import utcnow
+from app.vector import Vector
 
 
 class TimestampMixin(SQLModel):
@@ -28,10 +38,15 @@ class TimestampMixin(SQLModel):
     )
 
 
+# -----------------------------------------------------------------------------
+# Original core tables (keep relationships stable)
+# -----------------------------------------------------------------------------
+
+
 class Experience(TimestampMixin, table=True):
     """Mumbai experience model."""
 
-    __tablename__ = "experiences"  # type: ignore[assignment]
+    __tablename__ = "experiences"
     __table_args__ = (
         Index("ix_experiences_category_rating", "category", "rating"),
         Index("ix_experiences_lat_lng", "lat", "lng"),
@@ -55,13 +70,34 @@ class Experience(TimestampMixin, table=True):
     indoor_outdoor: str = Field(default="indoor")
     local_gem_score: float = Field(default=0.5, ge=0.0, le=1.0)
 
+    # Semantic + DNA fields
+    embedding: Optional[list[float]] = Field(
+        default=None,
+        sa_column=Column(Vector(dimensions=768), nullable=True),
+    )
+    vibe_vector: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+    weather_suitability_score: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+
+    # Internal scores
+    accessibility_score: float = Field(default=0.0, ge=0.0, le=100.0)
+    authenticity_score: float = Field(default=0.0, ge=0.0, le=100.0)
+    safety_score: float = Field(default=0.0, ge=0.0, le=100.0)
+    crowd_density_level: str = Field(default="MEDIUM", max_length=20)
+    noise_level: str = Field(default="MODERATE", max_length=20)
+
+    # Rich scheduling metadata
+    opening_hours_json: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+    peak_times_json: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+    best_visit_time: Optional[str] = Field(default=None, max_length=200)
+    time_to_spend: Optional[str] = Field(default=None, max_length=100)
+
     guides: list["Guide"] = Relationship(back_populates="experience")
 
 
 class Guide(TimestampMixin, table=True):
     """Local guide model."""
 
-    __tablename__ = "guides"  # type: ignore[assignment]
+    __tablename__ = "guides"
     __table_args__ = (Index("ix_guides_experience_rating", "experience_id", "rating"),)
 
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -73,13 +109,23 @@ class Guide(TimestampMixin, table=True):
     rate_per_hour: int = Field(default=800, ge=0)
     rating: float = Field(default=4.5, ge=0.0, le=5.0)
 
+    # Verification & profile
+    verification_status: str = Field(default="unverified", max_length=20)
+    background_checked: bool = Field(default=False)
+    uin: Optional[str] = Field(default=None, max_length=50)
+    areas_covered: list[str] = Field(default_factory=list, sa_column=Column(JSON))
+    energy_level: str = Field(default="relaxed", max_length=20)
+    storytelling_style: str = Field(default="casual", max_length=40)
+    max_group_size: int = Field(default=6, ge=1)
+    bio: Optional[str] = Field(default=None, max_length=2000)
+
     experience: Optional["Experience"] = Relationship(back_populates="guides")
 
 
 class User(TimestampMixin, table=True):
     """Local account. Password is stored only as a PBKDF2 hash."""
 
-    __tablename__ = "users"  # type: ignore[assignment]
+    __tablename__ = "users"
 
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(index=True)
@@ -87,13 +133,19 @@ class User(TimestampMixin, table=True):
     password_hash: str
     group_type: Optional[str] = Field(default=None)
 
+    # Trust / verification
+    trust_tier: str = Field(default="basic", max_length=20)
+    id_verification_status: str = Field(default="unverified", max_length=20)
+    id_verified_at: Optional[datetime] = Field(default=None)
+    kyc_provider_ref: Optional[str] = Field(default=None, max_length=200)
+
     sessions: list["UserSession"] = Relationship(back_populates="user")
 
 
 class UserSession(TimestampMixin, table=True):
     """Persisted session. Only the SHA-256 hash of the token is stored."""
 
-    __tablename__ = "user_sessions"  # type: ignore[assignment]
+    __tablename__ = "user_sessions"
     __table_args__ = (Index("ix_user_sessions_user_expires", "user_id", "expires_at"),)
 
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -105,9 +157,9 @@ class UserSession(TimestampMixin, table=True):
 
 
 class GuideRequest(TimestampMixin, table=True):
-    """Persisted guide booking request (no payments, demo only)."""
+    """Legacy persisted guide booking request (kept for backwards compatibility)."""
 
-    __tablename__ = "guide_requests"  # type: ignore[assignment]
+    __tablename__ = "guide_requests"
     __table_args__ = (Index("ix_guide_requests_user_created", "user_id", "created_at"),)
 
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -126,7 +178,7 @@ class GuideRequest(TimestampMixin, table=True):
 class Itinerary(TimestampMixin, table=True):
     """A saved plan owned by a user."""
 
-    __tablename__ = "itineraries"  # type: ignore[assignment]
+    __tablename__ = "itineraries"
     __table_args__ = (Index("ix_itineraries_user_created", "user_id", "created_at"),)
 
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -144,7 +196,7 @@ class Itinerary(TimestampMixin, table=True):
 class ItineraryStop(TimestampMixin, table=True):
     """Optional itinerary stop (secondary, hackathon-optional)."""
 
-    __tablename__ = "itinerary_stops"  # type: ignore[assignment]
+    __tablename__ = "itinerary_stops"
     __table_args__ = (Index("ix_itinerary_stops_itinerary_seq", "itinerary_id", "sequence"),)
 
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -161,7 +213,7 @@ class ItineraryStop(TimestampMixin, table=True):
 class Favorite(TimestampMixin, table=True):
     """A user's saved experience. Unique per (user, experience)."""
 
-    __tablename__ = "favorites"  # type: ignore[assignment]
+    __tablename__ = "favorites"
     __table_args__ = (
         UniqueConstraint("user_id", "experience_id", name="uq_favorite_user_experience"),
         Index("ix_favorites_user_created", "user_id", "created_at"),
@@ -175,7 +227,7 @@ class Favorite(TimestampMixin, table=True):
 class RecommendationFeedback(TimestampMixin, table=True):
     """A thumbs up/down on a recommended experience, used to nudge ranking."""
 
-    __tablename__ = "recommendation_feedback"  # type: ignore[assignment]
+    __tablename__ = "recommendation_feedback"
     __table_args__ = (Index("ix_feedback_experience_created", "experience_id", "created_at"),)
 
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -184,3 +236,390 @@ class RecommendationFeedback(TimestampMixin, table=True):
     helpful: bool = Field(default=True)
     location: Optional[str] = Field(default=None)
     interests: list[str] = Field(default_factory=list, sa_column=Column(JSON))
+
+
+# -----------------------------------------------------------------------------
+# Tag taxonomy
+# -----------------------------------------------------------------------------
+
+
+class TagFacetType(str, enum.Enum):
+    USER_FACING = "user_facing"
+    INTERNAL = "internal"
+    COMPOSITE = "composite"
+
+
+class Tag(TimestampMixin, table=True):
+    """Master taxonomy tag."""
+
+    __tablename__ = "tags"
+    # ``category`` is indexed via Field(index=True); only facet_type needs an
+    # explicit index here. Defining both would emit duplicate CREATE INDEX
+    # statements with the same name on a fresh database.
+    __table_args__ = (Index("ix_tags_facet_type", "facet_type"),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(index=True, unique=True, max_length=80)
+    category: str = Field(index=True, max_length=40)
+    facet_type: str = Field(default=TagFacetType.USER_FACING.value, max_length=20)
+    description: Optional[str] = Field(default=None, max_length=500)
+    weight: float = Field(default=1.0)
+
+
+class ExperienceTag(TimestampMixin, table=True):
+    """Many-to-many link between experiences and tags with provenance."""
+
+    __tablename__ = "experience_tags"
+    __table_args__ = (
+        UniqueConstraint("experience_id", "tag_id", name="uq_experience_tag"),
+        # Distinct name from the Field(index=True) index; the migration records
+        # both, so keep both to avoid model/migration drift.
+        Index("ix_experience_tags_tag", "tag_id"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    experience_id: int = Field(foreign_key="experiences.id", index=True)
+    tag_id: int = Field(foreign_key="tags.id", index=True)
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+    source: str = Field(default="manual", max_length=20)
+
+
+class CompositeTag(TimestampMixin, table=True):
+    """Smart filter composed of required/optional base tags."""
+
+    __tablename__ = "composite_tags"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(index=True, unique=True, max_length=80)
+    description: Optional[str] = Field(default=None, max_length=500)
+    required_tags: list[str] = Field(default_factory=list, sa_column=Column(JSON))
+    optional_tags: list[str] = Field(default_factory=list, sa_column=Column(JSON))
+
+
+# -----------------------------------------------------------------------------
+# Discovery pipeline
+# -----------------------------------------------------------------------------
+
+
+class Source(TimestampMixin, table=True):
+    """A web source tracked by the SearXNG scraper pipeline."""
+
+    __tablename__ = "sources"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(index=True, max_length=200)
+    base_url: Optional[str] = Field(default=None, max_length=500)
+    source_type: str = Field(default="blog", max_length=40)
+    trust_score: float = Field(default=0.5, ge=0.0, le=1.0)
+    last_scraped: Optional[datetime] = Field(default=None)
+
+
+class CandidateStatus(str, enum.Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+
+
+class HiddenGemCandidate(TimestampMixin, table=True):
+    """Raw extracted candidate awaiting curation."""
+
+    __tablename__ = "hidden_gem_candidates"
+    __table_args__ = (Index("ix_hidden_gem_candidates_status", "status"),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    raw_title: str = Field(max_length=300)
+    url: Optional[str] = Field(default=None, max_length=1000)
+    area: Optional[str] = Field(default=None, max_length=100)
+    extracted_data: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+    llm_confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    mention_count: int = Field(default=0, ge=0)
+    authenticity_signals: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+    status: str = Field(default=CandidateStatus.PENDING.value, max_length=20)
+    reviewed_at: Optional[datetime] = Field(default=None)
+    reviewed_by: Optional[int] = Field(default=None, foreign_key="users.id")
+    experience_id: Optional[int] = Field(default=None, foreign_key="experiences.id")
+
+
+class Mention(TimestampMixin, table=True):
+    """A mention of a place found by the scraper."""
+
+    __tablename__ = "mentions"
+    __table_args__ = (Index("ix_mentions_candidate_source", "candidate_id", "source_id"),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    candidate_id: int = Field(foreign_key="hidden_gem_candidates.id", index=True)
+    source_id: Optional[int] = Field(default=None, foreign_key="sources.id", index=True)
+    url: Optional[str] = Field(default=None, max_length=1000)
+    quote: Optional[str] = Field(default=None, max_length=2000)
+    sentiment: str = Field(default="neutral", max_length=20)
+    mention_date: Optional[datetime] = Field(default=None)
+
+
+# -----------------------------------------------------------------------------
+# Guide marketplace
+# -----------------------------------------------------------------------------
+
+
+class GuidePackage(TimestampMixin, table=True):
+    """End-to-end guide package: pickup, route, activities, drop-off."""
+
+    __tablename__ = "guide_packages"
+    __table_args__ = (Index("ix_guide_packages_guide", "guide_id"),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    guide_id: int = Field(foreign_key="guides.id", index=True)
+    title: str = Field(max_length=200)
+    description: Optional[str] = Field(default=None, max_length=2000)
+    pickup_type: str = Field(default="fixed_point", max_length=20)
+    default_pickup_area: Optional[str] = Field(default=None, max_length=200)
+    pickup_lat: Optional[float] = Field(default=None)
+    pickup_lng: Optional[float] = Field(default=None)
+    drop_off_same_as_pickup: bool = Field(default=True)
+    max_pickup_distance_km: float = Field(default=10.0, ge=0.0)
+    total_duration_hours: float = Field(default=3.0, ge=0.5)
+    inclusions: list[str] = Field(default_factory=list, sa_column=Column(JSON))
+    price_per_person: int = Field(default=0, ge=0)
+    total_price: Optional[int] = Field(default=None, ge=0)
+    max_group_size: int = Field(default=6, ge=1)
+    languages: list[str] = Field(default_factory=list, sa_column=Column(JSON))
+    cancellation_policy: Optional[str] = Field(default=None, max_length=1000)
+    is_active: bool = Field(default=True)
+
+
+class GuidePackageStop(TimestampMixin, table=True):
+    """One segment of a guide package route."""
+
+    __tablename__ = "guide_package_stops"
+    __table_args__ = (Index("ix_guide_package_stops_package_seq", "package_id", "sequence"),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    package_id: int = Field(foreign_key="guide_packages.id", index=True)
+    experience_id: Optional[int] = Field(default=None, foreign_key="experiences.id", index=True)
+    sequence: int = Field(default=0, ge=0)
+    segment_type: str = Field(default="experience", max_length=20)
+    location_name: Optional[str] = Field(default=None, max_length=200)
+    lat: Optional[float] = Field(default=None)
+    lng: Optional[float] = Field(default=None)
+    duration_min: int = Field(default=60, ge=0)
+    travel_time_min: int = Field(default=0, ge=0)
+    guide_notes: Optional[str] = Field(default=None, max_length=1000)
+
+
+class GuideAvailability(TimestampMixin, table=True):
+    """Guide calendar slot."""
+
+    __tablename__ = "guide_availabilities"
+    __table_args__ = (Index("ix_guide_availabilities_guide_date", "guide_id", "available_date"),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    guide_id: int = Field(foreign_key="guides.id", index=True)
+    available_date: date = Field(sa_type=Date, sa_column_kwargs={"nullable": False})
+    start_time: str = Field(max_length=5)
+    end_time: str = Field(max_length=5)
+    is_available: bool = Field(default=True)
+
+
+class BookingStatus(str, enum.Enum):
+    REQUESTED = "requested"
+    ACCEPTED = "accepted"
+    DECLINED = "declined"
+    CONFIRMED = "confirmed"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+
+
+class GuideBooking(TimestampMixin, table=True):
+    """Guide booking lifecycle."""
+
+    __tablename__ = "guide_bookings"
+    __table_args__ = (Index("ix_guide_bookings_user_status", "user_id", "status"),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    booking_ref: str = Field(index=True, max_length=32)
+    user_id: Optional[int] = Field(default=None, foreign_key="users.id", index=True)
+    guide_id: int = Field(foreign_key="guides.id", index=True)
+    package_id: Optional[int] = Field(default=None, foreign_key="guide_packages.id", index=True)
+    experience_id: Optional[int] = Field(default=None, foreign_key="experiences.id", index=True)
+    pickup_address: Optional[str] = Field(default=None, max_length=500)
+    pickup_lat: Optional[float] = Field(default=None)
+    pickup_lng: Optional[float] = Field(default=None)
+    date: Optional[str] = Field(default=None, max_length=10)
+    start_time: Optional[str] = Field(default=None, max_length=5)
+    hours: int = Field(default=2, ge=1)
+    group_size: int = Field(default=2, ge=1)
+    total_price: Optional[int] = Field(default=None, ge=0)
+    status: str = Field(default=BookingStatus.REQUESTED.value, max_length=20)
+    note: Optional[str] = Field(default=None, max_length=500)
+    guest_name: Optional[str] = Field(default=None, max_length=100)
+    guest_phone: Optional[str] = Field(default=None, max_length=20)
+
+
+class GuideReview(TimestampMixin, table=True):
+    """Review for a guide or package."""
+
+    __tablename__ = "guide_reviews"
+    __table_args__ = (Index("ix_guide_reviews_guide", "guide_id"),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    booking_id: int = Field(foreign_key="guide_bookings.id", index=True)
+    guide_id: int = Field(foreign_key="guides.id", index=True)
+    package_id: Optional[int] = Field(default=None, foreign_key="guide_packages.id", index=True)
+    user_id: Optional[int] = Field(default=None, foreign_key="users.id", index=True)
+    rating: float = Field(ge=0.0, le=5.0)
+    review_text: Optional[str] = Field(default=None, max_length=2000)
+
+
+# -----------------------------------------------------------------------------
+# Users & social
+# -----------------------------------------------------------------------------
+
+
+class TrustTier(str, enum.Enum):
+    BASIC = "basic"
+    ID_VERIFIED = "id_verified"
+    ENHANCED = "enhanced"
+
+
+class UserProfile(TimestampMixin, table=True):
+    """Extended user profile for matching and personalization."""
+
+    __tablename__ = "user_profiles"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="users.id", index=True, unique=True)
+    bio: Optional[str] = Field(default=None, max_length=1000)
+    photo_url: Optional[str] = Field(default=None, max_length=500)
+    home_location: Optional[str] = Field(default=None, max_length=100)
+    preferred_languages: list[str] = Field(default_factory=list, sa_column=Column(JSON))
+    travel_style: Optional[str] = Field(default=None, max_length=50)
+
+
+class UserInterest(TimestampMixin, table=True):
+    """A user's explicit interest."""
+
+    __tablename__ = "user_interests"
+    __table_args__ = (UniqueConstraint("profile_id", "tag_name", name="uq_profile_interest"),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    profile_id: int = Field(foreign_key="user_profiles.id", index=True)
+    tag_name: str = Field(max_length=80)
+    weight: float = Field(default=1.0, ge=0.0, le=5.0)
+
+
+class MeetupStatus(str, enum.Enum):
+    OPEN = "open"
+    MATCHED = "matched"
+    EXPIRED = "expired"
+    CANCELLED = "cancelled"
+    COMPLETED = "completed"
+
+
+class MeetupRequest(TimestampMixin, table=True):
+    """A user wants company for a specific experience."""
+
+    __tablename__ = "meetup_requests"
+    __table_args__ = (Index("ix_meetup_requests_status_experience", "status", "experience_id"),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="users.id", index=True)
+    experience_id: int = Field(foreign_key="experiences.id", index=True)
+    status: str = Field(default=MeetupStatus.OPEN.value, max_length=20)
+    proposed_time: Optional[datetime] = Field(default=None)
+    notes: Optional[str] = Field(default=None, max_length=500)
+    expires_at: Optional[datetime] = Field(default=None)
+
+
+class MeetupMatch(TimestampMixin, table=True):
+    """A matched pair/group for a meetup."""
+
+    __tablename__ = "meetup_matches"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    request_id: int = Field(foreign_key="meetup_requests.id", index=True)
+    matched_user_id: int = Field(foreign_key="users.id", index=True)
+    compatibility_score: float = Field(default=0.0)
+    meeting_point: Optional[str] = Field(default=None, max_length=300)
+    status: str = Field(default="pending", max_length=20)
+
+
+class Group(TimestampMixin, table=True):
+    """A group deciding on an experience."""
+
+    __tablename__ = "groups"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(max_length=120)
+    created_by: int = Field(foreign_key="users.id", index=True)
+    status: str = Field(default="deciding", max_length=20)
+
+
+class GroupMember(TimestampMixin, table=True):
+    """Membership in a group."""
+
+    __tablename__ = "group_members"
+    __table_args__ = (UniqueConstraint("group_id", "user_id", name="uq_group_member"),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    group_id: int = Field(foreign_key="groups.id", index=True)
+    user_id: int = Field(foreign_key="users.id", index=True)
+
+
+class GroupVote(TimestampMixin, table=True):
+    """Vote on an experience within a group."""
+
+    __tablename__ = "group_votes"
+    __table_args__ = (
+        UniqueConstraint("group_id", "user_id", "experience_id", name="uq_group_vote"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    group_id: int = Field(foreign_key="groups.id", index=True)
+    user_id: int = Field(foreign_key="users.id", index=True)
+    experience_id: int = Field(foreign_key="experiences.id", index=True)
+    vote: int = Field(default=0, ge=-1, le=1)
+
+
+# -----------------------------------------------------------------------------
+# Gamification
+# -----------------------------------------------------------------------------
+
+
+class Quest(TimestampMixin, table=True):
+    """A curated quest users can complete."""
+
+    __tablename__ = "quests"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    title: str = Field(max_length=200)
+    description: Optional[str] = Field(default=None, max_length=2000)
+    quest_type: str = Field(max_length=50)
+    difficulty: str = Field(default="easy", max_length=20)
+    duration_min: int = Field(default=120, ge=0)
+    best_season: Optional[str] = Field(default=None, max_length=100)
+    badge_name: Optional[str] = Field(default=None, max_length=100)
+    required_experience_ids: list[int] = Field(default_factory=list, sa_column=Column(JSON))
+
+
+class Badge(TimestampMixin, table=True):
+    """Achievement badge."""
+
+    __tablename__ = "badges"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(index=True, unique=True, max_length=100)
+    description: Optional[str] = Field(default=None, max_length=500)
+    icon_url: Optional[str] = Field(default=None, max_length=500)
+
+
+class UserProgress(TimestampMixin, table=True):
+    """User quest/badge progress."""
+
+    __tablename__ = "user_progress"
+    __table_args__ = (UniqueConstraint("user_id", "badge_id", name="uq_user_badge"),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="users.id", index=True)
+    badge_id: int = Field(foreign_key="badges.id", index=True)
+    progress: int = Field(default=0, ge=0)
+    earned: bool = Field(default=False)
+    earned_at: Optional[datetime] = Field(default=None)
