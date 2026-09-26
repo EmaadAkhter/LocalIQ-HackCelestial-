@@ -32,7 +32,7 @@ curl -fsS "http://localhost:${PORT}/healthz" | grep -q "ok"
 echo "Waiting for the API through the gateway..."
 api_ready=""
 for _ in $(seq 1 45); do
-  if curl -fsS "http://localhost:${PORT}/api/v1/experiences/" >/dev/null 2>&1; then
+  if curl -fsS "http://localhost:${PORT}/api/v1/experiences" >/dev/null 2>&1; then
     api_ready="yes"
     break
   fi
@@ -44,8 +44,8 @@ if [ -z "${api_ready}" ]; then
   exit 1
 fi
 
-echo "Checking /api/v1/parse/ through Caddy -> Kong -> backend..."
-curl -fsS "http://localhost:${PORT}/api/v1/parse/" \
+echo "Checking /api/v1/parse through Caddy -> Kong -> backend..."
+curl -fsS "http://localhost:${PORT}/api/v1/parse" \
   -H 'Content-Type: application/json' \
   -d '{"text":"find local food for 2 hours under 500"}' | grep -q "constraints"
 

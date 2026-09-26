@@ -38,3 +38,6 @@ typing-inspection==0.4.4
 
 # --- tests ---
 pytest>=7.4.0
+
+# --- database driver (PostgreSQL, used by Docker/K8s; SQLite needs none) ---
+psycopg2-binary>=2.9.9

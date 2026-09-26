@@ -248,7 +248,7 @@ def test_register_login_me_logout():
 
     # Fresh login works, logout revokes the token.
     again = client.post(
-        "/api/v1/auth/login", json={"email": "flow@localiq.test", "password": "secret123"}
+        "/api/v1/auth/login", json={"email": email, "password": "secret123"}
     )
     assert again.status_code == 200
     h2 = {"Authorization": f"Bearer {again.json()['access_token']}"}
