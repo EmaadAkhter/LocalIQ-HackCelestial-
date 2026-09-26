@@ -111,13 +111,13 @@ class _BrandPanel extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               const Text(
-                'Discover local. Smarter.',
-                style: TextStyle(
-                  color: Color(0xFFBCC9E4),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                  'Discover local. Live it fully.',
+                  style: TextStyle(
+                    color: Color(0xFFF5E6DC),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
               const SizedBox(height: 28),
               const Text(
                 'Location + time + budget + interests + group + weather\n'
@@ -300,7 +300,7 @@ class AuthNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = tone ?? AppColors.blue;
+    final color = tone ?? AppColors.primary;
     return AppPanel(
       padding: const EdgeInsets.fromLTRB(13, 11, 13, 11),
       elevated: false,

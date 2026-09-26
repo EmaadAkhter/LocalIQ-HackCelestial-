@@ -45,6 +45,33 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
+  void _showAccountRequiredDialog(BuildContext context, String featureName) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+        title: const Text('Account Required', style: TextStyle(fontWeight: FontWeight.w800)),
+        content: Text(
+          'Create an account to unlock $featureName.\n\nSign in or register to sync your saved places, itineraries, and trusted identity across devices.',
+          style: const TextStyle(fontSize: 13.5, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.push('/signup');
+            },
+            child: const Text('Create Account'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
@@ -55,8 +82,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final env = ref.watch(environmentProvider);
     final discovery = ref.watch(discoveryContextProvider);
 
+    final isGuest = user == null || user.isGuest;
+    final displayName = isGuest ? 'Guest Explorer' : (user.displayName.isEmpty ? 'Explorer' : user.displayName);
+    final subtitle = isGuest ? 'LocalIQ Guest Profile' : (user.email ?? 'Verified Account');
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.canvas,
       appBar: AppBar(title: const Text('Profile')),
       body: Align(
         alignment: Alignment.topCenter,
@@ -87,7 +118,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         ),
                       ),
                       child: Text(
-                        user?.initials ?? 'G',
+                        isGuest ? 'GE' : user.initials,
                         style: const TextStyle(
                           fontWeight: FontWeight.w800,
                           fontSize: 18,
@@ -101,14 +132,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            user?.displayName ?? 'Guest',
+                            displayName,
                             style: const TextStyle(
                               fontWeight: FontWeight.w800,
                               fontSize: 17,
                             ),
                           ),
                           Text(
-                            user?.email ?? 'Not signed in — exploring as a guest',
+                            subtitle,
                             style: const TextStyle(
                               fontSize: 13,
                               color: AppColors.textSecondary,
@@ -120,17 +151,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             runSpacing: 6,
                             children: [
                               AppBadge(
-                                label: (user?.tier ?? UserTier.guest).label
-                                    .toUpperCase(),
-                                color: user?.isGuest == true
-                                    ? AppColors.warning
-                                    : AppColors.success,
+                                label: isGuest
+                                    ? 'GUEST EXPLORER'
+                                    : (user.tier.label).toUpperCase(),
+                                color: isGuest ? AppColors.warning : AppColors.success,
                                 dense: true,
                               ),
                               AppBadge(
-                                label: (user?.provider ?? AuthProvider.guest)
-                                    .label
-                                    .toUpperCase(),
+                                label: isGuest
+                                    ? 'SESSION ACTIVE'
+                                    : (user.provider.label).toUpperCase(),
                                 color: AppColors.violet,
                                 dense: true,
                               ),
@@ -142,6 +172,50 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ],
                 ),
               ),
+
+              if (isGuest) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.primarySurface,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline_rounded, color: AppColors.primary, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text(
+                              'LocalIQ Guest Profile Active',
+                              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: AppColors.primaryDark),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Your preferences, plans, and wallet are saved for this session. Create an account to sync across devices.',
+                              style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      FilledButton(
+                        onPressed: () => context.push('/signup'),
+                        style: FilledButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                        ),
+                        child: const Text('Sign Up', style: TextStyle(fontSize: 12)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
               if (_error != null) ...[
                 const SizedBox(height: 12),
                 AppPanel(
@@ -171,6 +245,76 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
               ],
               const SizedBox(height: 16),
+
+              // ── Five Distinct Primary Sections (Req 3 & 10)
+              AppPanel(
+                padding: EdgeInsets.zero,
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: Column(
+                    children: [
+                      // Section 1: Preferences
+                      ListTile(
+                        leading: const Icon(Icons.tune_rounded, color: AppColors.primary),
+                        title: const Text('Preferences', style: TextStyle(fontWeight: FontWeight.w700)),
+                        subtitle: Text(
+                          'Time: ${discovery.timeLabel} · Budget: ${discovery.budgetLabel} · Group: ${discovery.groupType.label}',
+                        ),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => context.push('/taste-profile'),
+                      ),
+                      const Divider(height: 1),
+
+                      // Section 2: Current Area
+                      ListTile(
+                        leading: const Icon(Icons.location_on_outlined, color: AppColors.blue),
+                        title: const Text('Current Area', style: TextStyle(fontWeight: FontWeight.w700)),
+                        subtitle: Text(discovery.locationLabel),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => _locationSheet(context),
+                      ),
+                      const Divider(height: 1),
+
+                      // Section 3: Saved Experiences
+                      ListTile(
+                        leading: const Icon(Icons.favorite_outline, color: AppColors.danger),
+                        title: const Text('Saved Experiences', style: TextStyle(fontWeight: FontWeight.w700)),
+                        subtitle: Text('$savedCount saved places and experiences'),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => context.go('/saved'),
+                      ),
+                      const Divider(height: 1),
+
+                      // Section 4: My Plans
+                      ListTile(
+                        leading: const Icon(Icons.playlist_add_check_outlined, color: Color(0xFF0E7C5A)),
+                        title: const Text('My Plans', style: TextStyle(fontWeight: FontWeight.w700)),
+                        subtitle: Text(
+                          itinerary == null || itinerary.isEmpty
+                              ? 'No stops planned yet'
+                              : '${itinerary.stopCount} stops · ${itinerary.costLabel} · ${itinerary.totalLabel}',
+                        ),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => context.go('/plan'),
+                      ),
+                      const Divider(height: 1),
+
+                      // Section 5: Taste Profile
+                      ListTile(
+                        leading: const Icon(Icons.fingerprint_rounded, color: AppColors.violet),
+                        title: const Text('Taste Profile & DNA', style: TextStyle(fontWeight: FontWeight.w700)),
+                        subtitle: const Text('Architecture, cafes, heritage & hidden gems'),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => context.push('/taste-profile'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // ── Navigation & Tools
               AppPanel(
                 padding: EdgeInsets.zero,
                 child: Material(
@@ -178,11 +322,79 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   child: Column(
                     children: [
                       ListTile(
-                        leading: const Icon(Icons.location_on_outlined),
-                        title: const Text('Starting point'),
-                        subtitle: Text(discovery.locationLabel),
+                        leading: const Icon(Icons.wallet_rounded),
+                        title: const Text('Experience Wallet & Passport'),
+                        subtitle: const Text('Offline passes, stamps & quest badges'),
                         trailing: const Icon(Icons.chevron_right_rounded),
-                        onTap: () => _locationSheet(context),
+                        onTap: () => context.push('/wallet'),
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(Icons.explore_rounded),
+                        title: const Text('City Quests & Expeditions'),
+                        subtitle: const Text('Curated challenges and XP rewards'),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => context.push('/quests'),
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(Icons.map_outlined),
+                        title: const Text('Interactive Map'),
+                        subtitle: const Text('View experiences on vector map'),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => context.push('/map'),
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(Icons.security_rounded),
+                        title: const Text('Safety & Trust Center'),
+                        subtitle: const Text('ID verification, trusted contacts & SOS'),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () {
+                          if (isGuest) {
+                            _showAccountRequiredDialog(context, 'Safety & ID Verification');
+                          } else {
+                            context.push('/safety');
+                          }
+                        },
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(Icons.person_search_rounded),
+                        title: const Text('Local Guides Marketplace'),
+                        subtitle: const Text('Book verified guides & custom tours'),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => context.push('/guides'),
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(Icons.psychology_rounded),
+                        title: const Text('AI Experience Director'),
+                        subtitle: const Text('Autonomous real-time trip orchestrator'),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => context.push('/director'),
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(Icons.work_outline_rounded),
+                        title: const Text('Guide Workspace'),
+                        subtitle: const Text('Switch to guide role & manage bookings'),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () {
+                          if (isGuest) {
+                            _showAccountRequiredDialog(context, 'Guide Workspace');
+                          } else {
+                            context.push('/guide/dashboard');
+                          }
+                        },
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(Icons.auto_awesome_outlined),
+                        title: const Text('Companion'),
+                        subtitle: Text('$chat messages'),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => context.push('/companion'),
                       ),
                       const Divider(height: 1),
                       ListTile(
@@ -208,10 +420,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       const Divider(height: 1),
                       ListTile(
                         leading: const Icon(Icons.auto_awesome_outlined),
-                        title: const Text('Assistant'),
+                        title: const Text('Companion'),
                         subtitle: Text('$chat messages'),
                         trailing: const Icon(Icons.chevron_right_rounded),
-                        onTap: () => context.push('/assistant'),
+                        onTap: () => context.push('/companion'),
                       ),
                     ],
                   ),

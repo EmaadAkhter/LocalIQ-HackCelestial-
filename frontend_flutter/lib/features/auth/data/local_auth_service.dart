@@ -155,7 +155,7 @@ class LocalAuthService implements AuthService {
   Future<AuthSession> _emit(LocalIqUser user, AuthProvider provider) async {
     final session = AuthSession(
       user: user,
-      accessToken: 'local-${math.Random().nextInt(1 << 32)}',
+      accessToken: 'local-${math.Random().nextInt(0x7FFFFFFF)}',
       refreshToken: 'local-refresh-${user.id}',
       expiresAt: _clock().add(const Duration(days: 7)),
     );

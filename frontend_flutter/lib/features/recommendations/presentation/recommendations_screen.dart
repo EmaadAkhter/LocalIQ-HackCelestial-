@@ -23,7 +23,7 @@ class RecommendationsScreen extends ConsumerWidget {
     final gutter = Breakpoints.gutter(width);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.canvas,
       appBar: AppBar(
         title: const Text('Recommendations'),
         leading: const BackButton(),

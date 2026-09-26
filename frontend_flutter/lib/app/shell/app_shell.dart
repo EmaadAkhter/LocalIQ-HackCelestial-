@@ -5,8 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../core/data_providers.dart';
 import '../../core/theme/app_theme.dart';
 import '../widgets/context_strip.dart';
-import '../widgets/primary_navigation.dart';
 import '../widgets/top_app_bar.dart';
+import 'role_shells.dart';
 
 class AppShell extends ConsumerWidget {
   const AppShell({super.key, required this.navigationShell});
@@ -18,6 +18,10 @@ class AppShell extends ConsumerWidget {
     final width = MediaQuery.sizeOf(context).width;
     final mobile = Breakpoints.isMobile(width);
 
+    if (mobile) {
+      return ExplorerShell(navigationShell: navigationShell);
+    }
+
     return Scaffold(
       body: Column(
         children: [
@@ -26,25 +30,15 @@ class AppShell extends ConsumerWidget {
           Expanded(child: navigationShell),
         ],
       ),
-      bottomNavigationBar: mobile
-          ? PrimaryNavigationBar(
-              currentIndex: navigationShell.currentIndex,
-              onSelect: (index) => navigationShell.goBranch(
-                index,
-                initialLocation: index == navigationShell.currentIndex,
-              ),
-            )
-          : null,
-      floatingActionButton: mobile
-          ? FloatingActionButton(
-              onPressed: () => context.push('/assistant'),
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              elevation: 2,
-              tooltip: 'Ask LocalIQ',
-              child: const Icon(Icons.auto_awesome_rounded, size: 20),
-            )
-          : null,
+      bottomNavigationBar: null,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.push('/companion'),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        elevation: 2,
+        tooltip: 'Ask LocalIQ Companion',
+        child: const Icon(Icons.auto_awesome_rounded, size: 20),
+      ),
     );
   }
 }
