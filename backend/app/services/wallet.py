@@ -36,7 +36,7 @@ _WALLET_BADGE_SPECS: list[dict[str, Any]] = [
     {
         "code": "wallet_hidden_gem_hunter",
         "name": "Hidden Gem Hunter",
-        "description": f"Visited {HIDDEN_GEM_THRESHOLD:.1f}+-scoring spots 5 times.",
+        "description": "Visited 5 local hidden gems.",
         "xp_bonus": 60,
         "tier": "silver",
     },
