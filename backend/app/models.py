@@ -1,15 +1,41 @@
-"""Database models for LocalIQ."""
+"""Database models for LocalIQ.
 
+All tables carry ``created_at`` / ``updated_at`` (naive UTC) via
+``TimestampMixin``. Composite indexes cover the common query shapes.
+"""
+
+from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import Column, JSON
+from sqlalchemy import JSON, Column, DateTime, Index
 from sqlmodel import Field, Relationship, SQLModel
 
+from app.timeutil import utcnow
 
-class Experience(SQLModel, table=True):
+
+class TimestampMixin(SQLModel):
+    """Created/updated bookkeeping, populated automatically."""
+
+    created_at: datetime = Field(
+        default_factory=utcnow,
+        sa_type=DateTime,
+        sa_column_kwargs={"nullable": False},
+    )
+    updated_at: datetime = Field(
+        default_factory=utcnow,
+        sa_type=DateTime,
+        sa_column_kwargs={"nullable": False, "onupdate": utcnow},
+    )
+
+
+class Experience(TimestampMixin, table=True):
     """Mumbai experience model."""
 
     __tablename__ = "experiences"  # type: ignore[assignment]
+    __table_args__ = (
+        Index("ix_experiences_category_rating", "category", "rating"),
+        Index("ix_experiences_lat_lng", "lat", "lng"),
+    )
 
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(index=True)
@@ -31,10 +57,11 @@ class Experience(SQLModel, table=True):
     guides: list["Guide"] = Relationship(back_populates="experience")
 
 
-class Guide(SQLModel, table=True):
+class Guide(TimestampMixin, table=True):
     """Local guide model."""
 
     __tablename__ = "guides"  # type: ignore[assignment]
+    __table_args__ = (Index("ix_guides_experience_rating", "experience_id", "rating"),)
 
     id: Optional[int] = Field(default=None, primary_key=True)
     experience_id: Optional[int] = Field(default=None, foreign_key="experiences.id", index=True)
@@ -48,7 +75,7 @@ class Guide(SQLModel, table=True):
     experience: Optional["Experience"] = Relationship(back_populates="guides")
 
 
-class User(SQLModel, table=True):
+class User(TimestampMixin, table=True):
     """Local account. Password is stored only as a PBKDF2 hash."""
 
     __tablename__ = "users"  # type: ignore[assignment]
@@ -58,29 +85,29 @@ class User(SQLModel, table=True):
     email: str = Field(index=True, unique=True)
     password_hash: str
     group_type: Optional[str] = Field(default=None)
-    created_at: str = Field(default="")
 
     sessions: list["UserSession"] = Relationship(back_populates="user")
 
 
-class UserSession(SQLModel, table=True):
+class UserSession(TimestampMixin, table=True):
     """Persisted session. Only the SHA-256 hash of the token is stored."""
 
     __tablename__ = "user_sessions"  # type: ignore[assignment]
+    __table_args__ = (Index("ix_user_sessions_user_expires", "user_id", "expires_at"),)
 
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="users.id", index=True)
     token_hash: str = Field(index=True, unique=True)
-    created_at: str = Field(default="")
-    expires_at: str = Field(default="")
+    expires_at: datetime = Field(sa_type=DateTime, sa_column_kwargs={"nullable": False})
 
     user: Optional["User"] = Relationship(back_populates="sessions")
 
 
-class GuideRequest(SQLModel, table=True):
+class GuideRequest(TimestampMixin, table=True):
     """Persisted guide booking request (no payments, demo only)."""
 
     __tablename__ = "guide_requests"  # type: ignore[assignment]
+    __table_args__ = (Index("ix_guide_requests_user_created", "user_id", "created_at"),)
 
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: Optional[int] = Field(default=None, foreign_key="users.id", index=True)
@@ -93,10 +120,9 @@ class GuideRequest(SQLModel, table=True):
     note: Optional[str] = Field(default=None)
     status: str = Field(default="confirmed_mock")
     booking_ref: str = Field(index=True)
-    created_at: str = Field(default="")
 
 
-class Itinerary(SQLModel, table=True):
+class Itinerary(TimestampMixin, table=True):
     """Optional itinerary container (secondary, hackathon-optional)."""
 
     __tablename__ = "itineraries"  # type: ignore[assignment]
@@ -105,15 +131,15 @@ class Itinerary(SQLModel, table=True):
     name: str = Field(default="My Mumbai Day")
     total_duration_min: int = Field(default=0)
     total_cost: int = Field(default=0)
-    created_at: str = Field(default="")
 
     stops: list["ItineraryStop"] = Relationship(back_populates="itinerary")
 
 
-class ItineraryStop(SQLModel, table=True):
+class ItineraryStop(TimestampMixin, table=True):
     """Optional itinerary stop (secondary, hackathon-optional)."""
 
     __tablename__ = "itinerary_stops"  # type: ignore[assignment]
+    __table_args__ = (Index("ix_itinerary_stops_itinerary_seq", "itinerary_id", "sequence"),)
 
     id: Optional[int] = Field(default=None, primary_key=True)
     itinerary_id: int = Field(foreign_key="itineraries.id", index=True)

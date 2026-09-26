@@ -9,6 +9,7 @@ Two layers live here:
 from __future__ import annotations
 
 import re
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
@@ -136,7 +137,7 @@ class GuideRequestResponse(BaseModel):
     message: str
     booking_ref: str
     booking_id: int | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 # --------------------------------------------------------------------------
@@ -179,7 +180,7 @@ class UserResponse(BaseModel):
     name: str
     email: str
     group_type: str | None = None
-    created_at: str
+    created_at: datetime
 
     model_config = {"from_attributes": True}
 

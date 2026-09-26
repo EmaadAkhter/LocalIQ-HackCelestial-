@@ -1,6 +1,7 @@
 .PHONY: help install install-backend install-frontend dev backend frontend-legacy \
 	tunnel tunnel-setup lint lint-backend lint-frontend typecheck typecheck-backend typecheck-frontend \
 	test infra-up infra-down infra-tunnel infra-logs \
+	db-migrate db-revision db-downgrade \
 	jenkins-up jenkins-down jenkins-logs k8s-apply k8s-delete
 
 help: ## Show available targets
@@ -67,6 +68,17 @@ tunnel: ## Alias for infra-tunnel
 
 tunnel-setup: ## One-time Cloudflare tunnel create + DNS routes
 	./scripts/tunnel-setup.sh
+
+# ---- Database migrations (Alembic) ----
+
+db-migrate: ## Apply pending DB migrations
+	cd backend && alembic upgrade head
+
+db-revision: ## Autogenerate a migration (make db-revision m="message")
+	cd backend && alembic revision --autogenerate -m "$(m)"
+
+db-downgrade: ## Roll back one migration
+	cd backend && alembic downgrade -1
 
 # ---- Jenkins ----
 

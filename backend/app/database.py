@@ -43,7 +43,15 @@ def get_engine():
                 echo=False,
             )
         else:
-            engine = create_engine(database_url, echo=False)
+            engine = create_engine(
+                database_url,
+                echo=False,
+                pool_size=settings.db_pool_size,
+                max_overflow=settings.db_max_overflow,
+                pool_recycle=settings.db_pool_recycle_seconds,
+                # Reconnect transparently if the DB dropped an idle connection.
+                pool_pre_ping=True,
+            )
         return engine
     except Exception as exc:
         logger.exception("Failed to create database engine: %s", exc)

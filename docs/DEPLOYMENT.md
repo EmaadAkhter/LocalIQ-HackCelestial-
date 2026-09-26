@@ -104,8 +104,30 @@ build on `main`.
 | `LOGIN_MAX_ATTEMPTS` | backend | failed logins before lockout (default `5`) |
 | `LOGIN_LOCKOUT_MINUTES` | backend | lockout window (default `15`) |
 | `AUTH_SECRET_KEY` | backend | HMAC key for session-token hashing |
+| `DB_POOL_SIZE` | backend | Postgres pool size (default `5`) |
+| `DB_MAX_OVERFLOW` | backend | Postgres overflow connections (default `10`) |
+| `DB_POOL_RECYCLE_SECONDS` | backend | recycle idle connections (default `1800`) |
 | `HTTP_PORT` | infra | host port for the Caddy edge (default `8080`) |
 | `FLUTTER_WEB_DIR` | infra | path to the Flutter web build |
+
+## Database migrations
+
+The schema is owned by **Alembic** (`backend/alembic/`). The backend applies
+pending migrations automatically on startup (except in tests, which use
+`create_all`). Manual commands, from `backend/`:
+
+```bash
+alembic upgrade head                       # apply all migrations
+alembic revision --autogenerate -m "msg"   # new revision from model changes
+alembic downgrade -1                       # roll back one
+alembic check                              # fail if models drift from migrations
+```
+
+Or via `make db-migrate` / `make db-revision m="msg"` / `make db-downgrade`.
+
+Tables carry `created_at` / `updated_at` (naive UTC) and composite indexes for
+the common query shapes (`experiences(category, rating)`, `experiences(lat, lng)`,
+`guide_requests(user_id, created_at)`, `user_sessions(user_id, expires_at)`).
 
 ## Observability & hardening
 

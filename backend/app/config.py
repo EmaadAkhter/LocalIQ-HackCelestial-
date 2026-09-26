@@ -31,6 +31,10 @@ class Settings(BaseSettings):
 
     # Database
     database_url: str = "sqlite:///./data/localiq.db"
+    # Connection pool (Postgres/other; SQLite uses StaticPool and ignores these).
+    db_pool_size: int = 5
+    db_max_overflow: int = 10
+    db_pool_recycle_seconds: int = 1800
 
     # Auth (local, self-hosted)
     auth_secret_key: str = "localiq-dev-secret-change-me"

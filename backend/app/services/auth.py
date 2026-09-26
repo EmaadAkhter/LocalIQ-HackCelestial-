@@ -13,7 +13,7 @@ import base64
 import hashlib
 import hmac
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -22,17 +22,24 @@ from sqlmodel import Session, select
 from app.config import get_settings
 from app.database import get_session
 from app.models import User
+from app.timeutil import utcnow
+
+__all__ = [
+    "utcnow",
+    "hash_password",
+    "verify_password",
+    "create_session",
+    "revoke_session",
+    "resolve_user",
+    "get_current_user",
+    "get_current_user_optional",
+]
 
 PBKDF2_ITERATIONS = 200_000
 SALT_BYTES = 16
 TOKEN_BYTES = 32
 
 _bearer = HTTPBearer(auto_error=False)
-
-
-def utcnow() -> datetime:
-    """Naive UTC timestamp (stored as ISO string; keeps SQLite comparisons simple)."""
-    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 # ---------------------------------------------------------------------------
@@ -93,8 +100,8 @@ def create_session(user_id: int, session: Session) -> tuple[str, datetime, datet
         UserSession(
             user_id=user_id,
             token_hash=_token_hash(token),
-            created_at=now.isoformat(timespec="seconds"),
-            expires_at=expires_at.isoformat(timespec="seconds"),
+            created_at=now,
+            expires_at=expires_at,
         )
     )
     session.commit()
@@ -113,13 +120,6 @@ def revoke_session(token: str, session: Session) -> None:
         session.commit()
 
 
-def _parse_iso(value: str) -> datetime | None:
-    try:
-        return datetime.fromisoformat(value)
-    except (TypeError, ValueError):
-        return None
-
-
 def resolve_user(token: str, session: Session) -> User | None:
     """Look up the active user for a bearer token, or None."""
     from app.models import UserSession
@@ -129,8 +129,7 @@ def resolve_user(token: str, session: Session) -> User | None:
     ).first()
     if not row:
         return None
-    expires = _parse_iso(row.expires_at)
-    if expires is None or expires < utcnow():
+    if row.expires_at < utcnow():
         session.delete(row)
         session.commit()
         return None

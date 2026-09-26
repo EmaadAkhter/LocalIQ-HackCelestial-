@@ -1,0 +1,10 @@
+Alembic migrations for LocalIQ.
+
+The app applies these automatically on startup (see app/migrations.py). To run
+them by hand from backend/:
+
+    alembic upgrade head                       # apply all
+    alembic revision --autogenerate -m "msg"   # new revision from model changes
+    alembic downgrade -1                       # roll back one
+
+DATABASE_URL (via .env) selects the database.

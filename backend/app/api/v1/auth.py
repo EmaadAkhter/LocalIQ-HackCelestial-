@@ -51,7 +51,6 @@ def register(
         name=payload.name.strip(),
         email=email,
         password_hash=hash_password(payload.password),
-        created_at=utcnow().isoformat(timespec="seconds"),
     )
     session.add(user)
     session.commit()

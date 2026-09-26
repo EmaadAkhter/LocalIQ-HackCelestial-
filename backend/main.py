@@ -19,6 +19,7 @@ from app.database import get_session, init_db  # noqa: E402
 from app.errors import error_response, register_exception_handlers  # noqa: E402
 from app.logging_config import configure_logging  # noqa: E402
 from app.middleware.access_log import AccessLogMiddleware  # noqa: E402
+from app.migrations import upgrade_to_head  # noqa: E402
 from app.middleware.request_id import RequestIDMiddleware  # noqa: E402
 from app.rate_limit import limiter  # noqa: E402
 from app.seed import seed_if_empty  # noqa: E402
@@ -33,7 +34,15 @@ logger = logging.getLogger("localiq")
 async def lifespan(app: FastAPI):
     logger.info("Starting LocalIQ backend...")
     try:
-        init_db()
+        if settings.app_env == "test":
+            init_db()
+        else:
+            try:
+                upgrade_to_head()
+                logger.info("Database migrations applied")
+            except Exception as exc:  # pragma: no cover - defensive
+                logger.exception("Migrations failed; falling back to create_all: %s", exc)
+                init_db()
         seeded = seed_if_empty()
         if seeded is not None:
             logger.info("Seeded %d experiences, %d guides", seeded["experiences"], seeded["guides"])

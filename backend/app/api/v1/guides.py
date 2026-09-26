@@ -10,7 +10,7 @@ from app.database import get_session
 from app.models import Experience, Guide, GuideRequest, User
 from app.rate_limit import PUBLIC_LIMIT, limiter
 from app.schemas import GuideRequestPayload, GuideRequestResponse, GuideResponse
-from app.services.auth import get_current_user, get_current_user_optional, utcnow
+from app.services.auth import get_current_user, get_current_user_optional
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -94,7 +94,6 @@ def request_guide(
         group_size=payload.group_size,
         note=payload.note,
         booking_ref=ref,
-        created_at=utcnow().isoformat(timespec="seconds"),
     )
     session.add(row)
     session.commit()
