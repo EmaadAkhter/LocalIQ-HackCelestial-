@@ -16,10 +16,9 @@ class JsonApiClient {
     required this.baseUrl,
     required this.timeout,
     this.apiKey,
-    String? Function()? tokenProvider,
+    this.tokenProvider,
     HttpClient? httpClient,
-  })  : _tokenProvider = tokenProvider,
-        _injected = httpClient;
+  }) : _injected = httpClient;
 
   final String baseUrl;
   final Duration timeout;
@@ -28,7 +27,7 @@ class JsonApiClient {
   /// Supplies the signed-in user's access token per request. Takes precedence
   /// over [apiKey] when it returns a value, so a session token always wins over
   /// the static first-party key.
-  final String? Function()? _tokenProvider;
+  final String? Function()? tokenProvider;
 
   /// Injected for tests; created lazily otherwise.
   final HttpClient? _injected;
@@ -40,7 +39,7 @@ class JsonApiClient {
     if (json) request.headers.set(HttpHeaders.contentTypeHeader, 'application/json');
     request.headers.set(HttpHeaders.acceptHeader, 'application/json');
     request.headers.set('X-Client', 'localiq-flutter');
-    final sessionToken = _tokenProvider?.call();
+    final sessionToken = tokenProvider?.call();
     final bearer = (sessionToken != null && sessionToken.isNotEmpty)
         ? sessionToken
         : apiKey;
@@ -121,7 +120,7 @@ class JsonApiClient {
       );
       request.headers.set(HttpHeaders.acceptHeader, 'application/json');
       request.headers.set('X-Client', 'localiq-flutter');
-      final sessionToken = _tokenProvider?.call();
+      final sessionToken = tokenProvider?.call();
       final bearer = (sessionToken != null && sessionToken.isNotEmpty)
           ? sessionToken
           : apiKey;

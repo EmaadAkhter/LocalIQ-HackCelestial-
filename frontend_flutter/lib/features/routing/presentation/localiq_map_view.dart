@@ -200,7 +200,9 @@ class _LocalIqMapViewState extends State<LocalIqMapView>
     final request = widget.controller?._pending;
     if (request == null) return;
     widget.controller?._consume();
-    final camera = _camera ?? _fit(_points())._camera;
+    final fit = _fit(_points());
+    final camera =
+        _camera ?? _MapCamera(lat: fit.lat, lng: fit.lng, zoom: 1);
     setState(() {
       _camera = camera.copyWith(
         lat: request.lat,

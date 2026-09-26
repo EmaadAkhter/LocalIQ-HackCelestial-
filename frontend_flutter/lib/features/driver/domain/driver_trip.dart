@@ -69,7 +69,7 @@ class TripRemaining {
   final double distanceKm;
   final int durationMin;
 
-  String get label => '${durationMin} min · ${distanceKm.toStringAsFixed(1)} km left';
+  String get label => '$durationMin min · ${distanceKm.toStringAsFixed(1)} km left';
 
   factory TripRemaining.fromJson(Map<String, dynamic> json) => TripRemaining(
         distanceKm: json.doubleValue('distanceKm'),

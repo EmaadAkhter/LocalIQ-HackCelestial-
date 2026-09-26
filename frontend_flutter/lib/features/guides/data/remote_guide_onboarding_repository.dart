@@ -28,7 +28,7 @@ class RemoteGuideOnboardingRepository implements GuideOnboardingRepository {
     String bio = '',
   }) async {
     final data = await _client.post('/guides/onboarding/start', body: {
-      if (name != null) 'name': name,
+      'name': ?name,
       'languages': languages,
       'city': city,
       'bio': bio,
@@ -65,8 +65,8 @@ class RemoteGuideOnboardingRepository implements GuideOnboardingRepository {
     final data = await _client.post('/guides/onboarding/apply', body: {
       'areas': areas,
       'niches': niches,
-      if (ratePerHour != null) 'rate_per_hour': ratePerHour,
-      if (bio != null) 'bio': bio,
+      'rate_per_hour': ?ratePerHour,
+      'bio': ?bio,
       'languages': languages,
     });
     return GuideOnboardingStatus.fromJson((data as Map).cast<String, dynamic>());

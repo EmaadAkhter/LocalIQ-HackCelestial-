@@ -7,7 +7,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/ui_kit.dart';
-import '../../auth/domain/auth_service.dart';
 import '../application/guide_onboarding_providers.dart';
 import '../domain/guide_onboarding.dart';
 
@@ -98,10 +97,12 @@ class _GuideOnboardingScreenState
                   languages: _selectedLanguages.toList(),
                   bio: _bio.text.trim(),
                 );
-        if (mounted) setState(() {
-          _status = status;
-          _step = 1;
-        });
+        if (mounted) {
+          setState(() {
+            _status = status;
+            _step = 1;
+          });
+        }
       });
 
   Future<void> _upload(String kind) => _run(() async {
@@ -123,10 +124,12 @@ class _GuideOnboardingScreenState
               bio: _bio.text.trim().isEmpty ? null : _bio.text.trim(),
               languages: _selectedLanguages.toList(),
             );
-        if (mounted) setState(() {
-          _status = status;
-          _step = 3;
-        });
+        if (mounted) {
+          setState(() {
+            _status = status;
+            _step = 3;
+          });
+        }
       });
 
   @override
