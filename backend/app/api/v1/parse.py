@@ -1,14 +1,164 @@
-"""Parse API endpoints: natural language -> structured constraints."""
+"""Natural-language constraint parser (Ollama strict JSON + heuristic fallback)."""
+
+import logging
+import re
 
 from fastapi import APIRouter
+from pydantic import ValidationError
 
-from app.schemas import ParseRequest, ParseResponse
-from app.services.parser import parse_constraints
+from app.schemas import ParsedConstraints, ParseRequest, ParseResponse
+from app.services.llm import get_client
+from app.services.recommender import KNOWN_AREAS
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
+INTEREST_KEYWORDS: dict[str, list[str]] = {
+    "food": ["food", "eat", "eating", "hungry", "restaurant", "cafe", "dinner", "lunch", "breakfast",
+             "chaat", "pani puri", "kebab", "street food", "thali", "misal", "vada pav", "pav bhaji", "biryani"],
+    "culture": ["culture", "cultural", "heritage", "history", "historic", "temple", "shrine", "dargah",
+                "church", "unesco", "museum", "fort", "old city", "spiritual"],
+    "shopping": ["shop", "shopping", "market", "bazaar", "mall", "boutique", "souvenir", "bargain", "antique"],
+    "art": ["art", "gallery", "galleries", "museum", "painting", "street art", "mural", "theatre",
+            "theater", "music", "performance", "opera", "exhibition", "craft"],
+    "nightlife": ["nightlife", "night", "bar", "bars", "pub", "club", "party", "beer", "cocktail",
+                  "brewery", "lounge", "late night", "karaoke"],
+    "outdoor": ["outdoor", "outside", "beach", "sea", "walk", "walking", "hike", "hiking", "park",
+                "garden", "trail", "sunset", "sunrise", "nature", "cycling", "promenade", "lake", "forest"],
+}
 
-@router.post("/", response_model=ParseResponse)
-async def parse_input(request: ParseRequest) -> ParseResponse:
-    """Extract structured constraints from a free-text request."""
-    return await parse_constraints(request.text)
+GROUP_KEYWORDS = ["friends", "family", "couple", "solo", "alone", "kids", "children", "colleagues", "date"]
+
+PARSE_SYSTEM = (
+    "You extract trip constraints from a user message. "
+    "Output ONLY valid JSON with exactly these keys: "
+    '{"location": string|null, "time_hours": number|null, "budget_inr": integer|null, '
+    '"group_type": string|null, "interests": string[], "accessibility": string|null, "start_time": string|null}. '
+    "location is a Mumbai area like Bandra, Colaba, Juhu. "
+    "time_hours is available hours as a number. budget_inr is budget in INR as integer. "
+    "interests use only: food, culture, shopping, art, nightlife, outdoor. "
+    "start_time is HH:MM 24h or null. No extra text."
+)
+
+
+def heuristic_parse(text: str) -> ParsedConstraints:
+    """Deterministic fallback: extract obvious numbers/areas/interests."""
+    low = text.lower()
+
+    # Budget: ₹1,500 / Rs 1500 / INR 1500 / 1500 rupees / "budget 1500".
+    budget = None
+    candidates: list[int] = []
+    for pat in [
+        r"₹\s*([\d,]+)",
+        r"(?:rs\.?|inr|rupees)\s*([\d,]+)",
+        r"([\d,]+)\s*(?:rupees|rs\.?|inr|budget)",
+        r"budget\D{0,6}([\d,]+)",
+    ]:
+        for mm in re.finditer(pat, text, flags=re.IGNORECASE):
+            try:
+                candidates.append(int(mm.group(1).replace(",", "")))
+            except ValueError:
+                pass
+    valid = [c for c in candidates if 50 <= c <= 1_000_000]
+    if valid:
+        budget = min(valid)
+
+    # Time: "4 hours", "4 hrs", "4h", "half day", "full day".
+    time_hours = None
+    m = re.search(r"(\d+(?:\.\d+)?)\s*(?:hours?|hrs?|h\b)", low)
+    if m:
+        try:
+            time_hours = float(m.group(1))
+        except ValueError:
+            time_hours = None
+    elif "full day" in low or "whole day" in low:
+        time_hours = 8.0
+    elif "half day" in low or "half-day" in low:
+        time_hours = 4.0
+    if time_hours is not None:
+        time_hours = max(0.5, min(24.0, time_hours))
+
+    # Location: known Mumbai areas mentioned verbatim.
+    location = None
+    for area in sorted(KNOWN_AREAS.keys(), key=len, reverse=True):
+        if re.search(rf"\b{re.escape(area)}\b", low):
+            display = " ".join(w.capitalize() for w in area.split())
+            location = {"Csm t": "CSMT", "Bkc": "BKC", "Mumbai": "Mumbai"}.get(display, display)
+            break
+
+    # Interests.
+    interests: list[str] = []
+    for cat, keywords in INTEREST_KEYWORDS.items():
+        if any(k in low for k in keywords):
+            interests.append(cat)
+
+    # Group type.
+    group_type = None
+    for g in GROUP_KEYWORDS:
+        if re.search(rf"\b{re.escape(g)}\b", low):
+            group_type = {"colleagues": "friends", "alone": "solo", "children": "kids", "date": "couple"}.get(g, g)
+            break
+
+    # Start time: "10am", "10:30pm", "10:00", morning/afternoon/evening.
+    start_time = None
+    m = re.search(r"\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b", low)
+    if m:
+        h = int(m.group(1))
+        mi = int(m.group(2) or 0)
+        if m.group(3) == "pm" and h < 12:
+            h += 12
+        if m.group(3) == "am" and h == 12:
+            h = 0
+        start_time = f"{h:02d}:{mi:02d}"
+    else:
+        m2 = re.search(r"\b([01]?\d|2[0-3]):([0-5]\d)\b", low)
+        if m2:
+            start_time = f"{int(m2.group(1)):02d}:{m2.group(2)}"
+        elif "morning" in low:
+            start_time = "09:00"
+        elif "afternoon" in low:
+            start_time = "14:00"
+        elif "evening" in low:
+            start_time = "18:00"
+        elif "night" in low:
+            start_time = "20:00"
+
+    # Accessibility.
+    accessibility = None
+    for key in ("wheelchair", "step-free", "step free", "accessible", "stroller", "elevator"):
+        if key in low:
+            accessibility = "wheelchair-accessible" if ("wheel" in key or "step" in key) else key
+            break
+
+    return ParsedConstraints(
+        location=location,
+        time_hours=time_hours,
+        budget_inr=budget,
+        group_type=group_type,
+        interests=interests,
+        accessibility=accessibility,
+        start_time=start_time,
+    )
+
+
+@router.post("/parse", response_model=ParseResponse, summary="Parse natural-language constraints")
+async def parse_constraints(payload: ParseRequest):
+    """Try Ollama strict JSON first; fall back to deterministic heuristic."""
+    # 1) Ollama attempt.
+    try:
+        client = get_client()
+        data = await client.generate_json(
+            f"User message: {payload.text!r}\nExtract constraints as JSON.",
+            system=PARSE_SYSTEM,
+        )
+        if data:
+            try:
+                constraints = ParsedConstraints.model_validate(data)
+                return ParseResponse(constraints=constraints, source="ollama")
+            except ValidationError as exc:
+                logger.warning("Ollama parse failed validation: %s", exc)
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning("Ollama parse raised: %s", exc)
+
+    # 2) Heuristic fallback — always succeeds.
+    return ParseResponse(constraints=heuristic_parse(payload.text), source="heuristic")

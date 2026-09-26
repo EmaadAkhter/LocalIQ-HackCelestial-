@@ -20,10 +20,16 @@ class Settings(BaseSettings):
     # Database
     database_url: str = "sqlite:///./data/localiq.db"
 
+    # Auth (local, self-hosted)
+    auth_secret_key: str = "localiq-dev-secret-change-me"
+    auth_token_ttl_minutes: int = 60 * 24 * 7
+
     # Local LLM (Ollama)
     ollama_url: str = "http://localhost:11434"
     ollama_model: str = "llama3.2:3b"
     ollama_timeout_seconds: float = 30.0
+    # API key for a shared/tunnelled Ollama behind Kong key-auth.
+    ollama_api_key: str = ""
     # Set when using a shared/tunnelled Ollama behind Kong key-auth.
     ollama_api_key: str = ""
 
@@ -35,8 +41,16 @@ class Settings(BaseSettings):
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
+    @property
+    def open_meteo_base_url(self) -> str:
+        """Alias kept for the weather service."""
+        return self.open_meteo_url
+
 
 @lru_cache
 def get_settings() -> Settings:
     """Return cached application settings."""
     return Settings()
+
+
+settings = get_settings()
