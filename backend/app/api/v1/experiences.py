@@ -103,13 +103,26 @@ def nearby_experiences(
     scored = [(d, e) for d, e in scored if d <= radius_km]
     scored.sort(key=lambda pair: pair[0])
 
+    # Flat items: identical shape to /experiences, plus distance + travel time.
     items = [
         NearbyExperience(
-            experience=ExperienceResponse.model_validate(e), distance_km=round(d, 2)
+            **ExperienceResponse.model_validate(e).model_dump(),
+            distance_km=round(d, 2),
+            travel_time_min=estimate_travel_time_min(d),
         )
         for d, e in scored[:limit]
     ]
-    return NearbyListResponse(total=len(scored), radius_km=radius_km, items=items)
+    # Legacy nested shape, so existing consumers are not broken by the change.
+    results = [
+        {
+            "experience": ExperienceResponse.model_validate(e).model_dump(),
+            "distance_km": round(d, 2),
+        }
+        for d, e in scored[:limit]
+    ]
+    return NearbyListResponse(
+        total=len(scored), radius_km=radius_km, items=items, results=results
+    )
 
 
 @router.get("/experiences/{experience_id}", response_model=ExperienceResponse, summary="Get experience by ID")

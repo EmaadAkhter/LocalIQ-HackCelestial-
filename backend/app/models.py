@@ -86,6 +86,12 @@ class User(TimestampMixin, table=True):
     email: str = Field(index=True, unique=True)
     password_hash: str
     group_type: Optional[str] = Field(default=None)
+    # PRD v2 trust tier: "basic" -> "standard" -> "trusted". Raised only by the
+    # simulated verification endpoint; never from a client-supplied value.
+    trust_tier: str = Field(default="basic", index=True)
+    # sa_type is explicit so the column stays naive UTC like every other
+    # timestamp in this codebase (see app/timeutil.py).
+    trust_verified_at: Optional[datetime] = Field(default=None, sa_type=DateTime)
 
     sessions: list["UserSession"] = Relationship(back_populates="user")
 

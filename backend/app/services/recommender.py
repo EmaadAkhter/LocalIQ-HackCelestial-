@@ -165,6 +165,75 @@ class FeasibilityResult:
     total_time_min: int = 0
 
 
+# ---------------------------------------------------------------------------
+# Accessibility capabilities
+# ---------------------------------------------------------------------------
+# A venue advertises capabilities; a traveller requests them. The match is
+# strict and per-capability: asking for "wheelchair-accessible" must NOT be
+# satisfied by a venue that only says "step-free", because a step-free entrance
+# can still have stairs, narrow doorways or no accessible restroom.
+
+#: Request token -> tokens that satisfy it in a venue's flag list.
+ACCESSIBILITY_ALIASES: dict[str, tuple[str, ...]] = {
+    "wheelchair-accessible": ("wheelchair-accessible", "wheelchair"),
+    "wheelchair": ("wheelchair-accessible", "wheelchair"),
+    "step-free": ("step-free", "step free", "stepfree"),
+    "accessible": ("wheelchair-accessible", "accessible"),
+    "sensory-friendly": ("sensory-friendly", "sensory friendly", "sensory"),
+    "stroller-friendly": ("stroller-friendly", "stroller"),
+    "elevator": ("elevator", "lift"),
+}
+
+
+def required_accessibility(
+    accessibility: str | list[str] | None,
+) -> list[str]:
+    """Normalise a request into canonical capability tokens."""
+    if not accessibility:
+        return []
+    raw = [accessibility] if isinstance(accessibility, str) else list(accessibility)
+    out: list[str] = []
+    for item in raw:
+        token = (item or "").strip().lower()
+        if not token:
+            continue
+        canonical = token.replace("_", "-").replace(" ", "-")
+        for key in ACCESSIBILITY_ALIASES:
+            if key in canonical:
+                if key not in out:
+                    out.append(key)
+                break
+        else:
+            if token not in out:
+                out.append(token)
+    return out
+
+
+def venue_capabilities(flags: list[str] | None) -> set[str]:
+    """Canonical capabilities a venue claims."""
+    caps: set[str] = set()
+    for flag in flags or []:
+        token = (flag or "").strip().lower()
+        if not token:
+            continue
+        for key, aliases in ACCESSIBILITY_ALIASES.items():
+            if any(alias in token for alias in aliases):
+                caps.add(key)
+    return caps
+
+
+def missing_capabilities(
+    accessibility: str | list[str] | None, flags: list[str] | None
+) -> list[str]:
+    """Requested capabilities the venue does not advertise (empty == OK)."""
+    required = required_accessibility(accessibility)
+    if not required:
+        return []
+    have = venue_capabilities(flags)
+    return [cap for cap in required if cap not in have]
+
+
+
 def check_feasibility(
     exp: Experience,
     *,
@@ -223,25 +292,16 @@ def check_feasibility(
             total_needed,
         )
 
-    # 7. Accessibility.
-    if accessibility:
-        needed = [accessibility] if isinstance(accessibility, str) else list(accessibility)
-        needed = [n.lower().strip() for n in needed if n]
-        flags = [(f or "").lower() for f in (exp.accessibility_flags or [])]
-        missing = [n for n in needed if n not in flags and n not in " ".join(flags)]
-        # Wheelchair request requires explicit wheelchair-accessible flag.
-        if any("wheelchair" in n or "step-free" in n or "accessible" in n for n in needed):
-            if not any("wheelchair" in f or "step-free" in f for f in flags):
-                return FeasibilityResult(
-                    False, ["does not meet wheelchair/step-free accessibility"], distance_km, travel_time_min, total_needed
-                )
-        elif missing and len(missing) == len(needed):
-            # Only fail if none of the requested flags match loosely.
-            joined = " ".join(flags)
-            if not any(n in joined for n in needed):
-                return FeasibilityResult(
-                    False, [f"missing accessibility: {', '.join(missing)}"], distance_km, travel_time_min, total_needed
-                )
+    # 7. Accessibility (strict, per requested capability).
+    missing = missing_capabilities(accessibility, exp.accessibility_flags)
+    if missing:
+        return FeasibilityResult(
+            False,
+            [f"missing accessibility: {', '.join(missing)}"],
+            distance_km,
+            travel_time_min,
+            total_needed,
+        )
 
     # 8. Location/distance already handled; near-zero distance venues pass.
     return FeasibilityResult(True, reasons, distance_km, travel_time_min, total_needed)
@@ -386,6 +446,57 @@ def weather_boost_for(exp: Experience, weather: dict | None) -> float:
             return 2.0
         return 0.0
     return 0.0
+
+
+
+@dataclass
+class RouteRecheck:
+    """Result of re-validating a hard constraint against *real* route data.
+
+    Feasibility (Phase A) runs on a fast local estimate so ranking can happen
+    without waiting on the network. When Google Routes returns authoritative
+    travel times those can be much longer than the estimate, so anything that
+    no longer fits must be dropped rather than shown with a broken promise.
+    """
+
+    ok: bool
+    total_minutes: int = 0
+    reason: str = ""
+
+
+def recheck_with_route(
+    exp: Experience,
+    *,
+    distance_km: float,
+    travel_minutes: int,
+    time_hours: float | None,
+    max_distance_km: float | None = None,
+) -> RouteRecheck:
+    """Re-run the distance + time hard constraints using measured values.
+
+    Mirrors Phase A exactly (same buffer, same round-trip assumption) so a
+    result that passed with real data is guaranteed to satisfy the same rules.
+    """
+    limit = MAX_CONSIDER_DISTANCE_KM if max_distance_km is None else max_distance_km
+    if distance_km > limit:
+        return RouteRecheck(
+            ok=False,
+            reason=f"{distance_km:.1f}km from the route exceeds the {limit:.0f}km limit",
+        )
+
+    total = exp.duration_min + travel_minutes * 2 + BUFFER_MIN
+    if time_hours is not None:
+        available = int(time_hours * 60)
+        if total > available:
+            return RouteRecheck(
+                ok=False,
+                total_minutes=total,
+                reason=(
+                    f"real travel time makes this {total}min, "
+                    f"over the {available}min available"
+                ),
+            )
+    return RouteRecheck(ok=True, total_minutes=total)
 
 
 def recommend(
