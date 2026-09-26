@@ -36,7 +36,7 @@ def upgrade() -> None:
     op.create_table(
         "guide_profiles",
         *_timestamps(),
-        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("id", sa.Integer(), nullable=False, primary_key=True),
         sa.Column("guide_id", sa.Integer(), nullable=False),
         sa.Column("user_id", sa.Integer(), nullable=True),
         sa.Column("onboarding_state", sa.String(), nullable=False),
@@ -69,7 +69,7 @@ def upgrade() -> None:
     op.create_table(
         "guide_availability",
         *_timestamps(),
-        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("id", sa.Integer(), nullable=False, primary_key=True),
         sa.Column("guide_id", sa.Integer(), nullable=False),
         sa.Column("date", sa.Date(), nullable=False),
         sa.Column("start_time", sa.String(), nullable=False),
@@ -89,7 +89,7 @@ def upgrade() -> None:
     op.create_table(
         "guide_bookings",
         *_timestamps(),
-        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("id", sa.Integer(), nullable=False, primary_key=True),
         sa.Column("user_id", sa.Integer(), nullable=False),
         sa.Column("guide_id", sa.Integer(), nullable=False),
         sa.Column("experience_id", sa.Integer(), nullable=True),
@@ -125,7 +125,7 @@ def upgrade() -> None:
     op.create_table(
         "guide_reviews",
         *_timestamps(),
-        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("id", sa.Integer(), nullable=False, primary_key=True),
         sa.Column("booking_id", sa.Integer(), nullable=False),
         sa.Column("user_id", sa.Integer(), nullable=False),
         sa.Column("guide_id", sa.Integer(), nullable=False),
@@ -145,7 +145,7 @@ def upgrade() -> None:
     op.create_table(
         "guide_trainings",
         *_timestamps(),
-        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("id", sa.Integer(), nullable=False, primary_key=True),
         sa.Column("guide_id", sa.Integer(), nullable=False),
         sa.Column("course_code", sa.String(), nullable=False),
         sa.Column("course_name", sa.String(), nullable=False),
@@ -166,7 +166,7 @@ def upgrade() -> None:
     op.create_table(
         "meetup_requests",
         *_timestamps(),
-        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("id", sa.Integer(), nullable=False, primary_key=True),
         sa.Column("user_id", sa.Integer(), nullable=False),
         sa.Column("experience_id", sa.Integer(), nullable=True),
         sa.Column("category", sa.String(), nullable=False),
@@ -192,7 +192,7 @@ def upgrade() -> None:
     op.create_table(
         "meetup_matches",
         *_timestamps(),
-        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("id", sa.Integer(), nullable=False, primary_key=True),
         sa.Column("request_id", sa.Integer(), nullable=False),
         sa.Column("experience_id", sa.Integer(), nullable=True),
         sa.Column("member_ids", sa.JSON(), nullable=False),
@@ -216,7 +216,7 @@ def upgrade() -> None:
     op.create_table(
         "meetup_reviews",
         *_timestamps(),
-        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("id", sa.Integer(), nullable=False, primary_key=True),
         sa.Column("match_id", sa.Integer(), nullable=False),
         sa.Column("user_id", sa.Integer(), nullable=False),
         sa.Column("experience_rating", sa.Integer(), nullable=False),
@@ -232,7 +232,7 @@ def upgrade() -> None:
     op.create_table(
         "meetup_blocks",
         *_timestamps(),
-        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("id", sa.Integer(), nullable=False, primary_key=True),
         sa.Column("blocker_id", sa.Integer(), nullable=False),
         sa.Column("blocked_id", sa.Integer(), nullable=False),
         sa.Column("reason", sa.String(), nullable=False),
@@ -250,7 +250,7 @@ def upgrade() -> None:
     op.create_table(
         "groups",
         *_timestamps(),
-        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("id", sa.Integer(), nullable=False, primary_key=True),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("owner_id", sa.Integer(), nullable=False),
         sa.Column("area", sa.String(), nullable=False),
@@ -272,7 +272,7 @@ def upgrade() -> None:
     op.create_table(
         "group_members",
         *_timestamps(),
-        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("id", sa.Integer(), nullable=False, primary_key=True),
         sa.Column("group_id", sa.Integer(), nullable=False),
         sa.Column("user_id", sa.Integer(), nullable=False),
         sa.Column("is_owner", sa.Boolean(), nullable=False),
@@ -291,7 +291,7 @@ def upgrade() -> None:
     op.create_table(
         "group_options",
         *_timestamps(),
-        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("id", sa.Integer(), nullable=False, primary_key=True),
         sa.Column("group_id", sa.Integer(), nullable=False),
         sa.Column("label", sa.String(), nullable=False),
         sa.Column("rank", sa.Integer(), nullable=False),
@@ -308,7 +308,7 @@ def upgrade() -> None:
     op.create_table(
         "group_votes",
         *_timestamps(),
-        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("id", sa.Integer(), nullable=False, primary_key=True),
         sa.Column("group_id", sa.Integer(), nullable=False),
         sa.Column("option_id", sa.Integer(), nullable=False),
         sa.Column("user_id", sa.Integer(), nullable=False),
@@ -329,7 +329,7 @@ def upgrade() -> None:
     op.create_table(
         "quests",
         *_timestamps(),
-        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("id", sa.Integer(), nullable=False, primary_key=True),
         sa.Column("code", sa.String(), nullable=False),
         sa.Column("title", sa.String(), nullable=False),
         sa.Column("story", sa.String(), nullable=False),
@@ -348,7 +348,7 @@ def upgrade() -> None:
     op.create_table(
         "quest_stops",
         *_timestamps(),
-        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("id", sa.Integer(), nullable=False, primary_key=True),
         sa.Column("quest_id", sa.Integer(), nullable=False),
         sa.Column("experience_id", sa.Integer(), nullable=False),
         sa.Column("position", sa.Integer(), nullable=False),
@@ -363,7 +363,7 @@ def upgrade() -> None:
     op.create_table(
         "quest_runs",
         *_timestamps(),
-        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("id", sa.Integer(), nullable=False, primary_key=True),
         sa.Column("quest_id", sa.Integer(), nullable=False),
         sa.Column("user_id", sa.Integer(), nullable=False),
         sa.Column("status", sa.String(), nullable=False),
@@ -386,7 +386,7 @@ def upgrade() -> None:
     op.create_table(
         "user_progress",
         *_timestamps(),
-        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("id", sa.Integer(), nullable=False, primary_key=True),
         sa.Column("user_id", sa.Integer(), nullable=False),
         sa.Column("xp", sa.Integer(), nullable=False),
         sa.Column("level", sa.Integer(), nullable=False),
@@ -401,7 +401,7 @@ def upgrade() -> None:
     op.create_table(
         "badges",
         *_timestamps(),
-        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("id", sa.Integer(), nullable=False, primary_key=True),
         sa.Column("code", sa.String(), nullable=False),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("description", sa.String(), nullable=False),
@@ -417,7 +417,7 @@ def upgrade() -> None:
     op.create_table(
         "sources",
         *_timestamps(),
-        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("id", sa.Integer(), nullable=False, primary_key=True),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("kind", sa.String(), nullable=False),
         sa.Column("url", sa.String(), nullable=False),
@@ -428,7 +428,7 @@ def upgrade() -> None:
     op.create_table(
         "hidden_gem_candidates",
         *_timestamps(),
-        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("id", sa.Integer(), nullable=False, primary_key=True),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("lat", sa.Float(), nullable=False),
         sa.Column("lng", sa.Float(), nullable=False),
@@ -459,7 +459,7 @@ def upgrade() -> None:
     op.create_table(
         "mentions",
         *_timestamps(),
-        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("id", sa.Integer(), nullable=False, primary_key=True),
         sa.Column("content_type", sa.String(), nullable=False),
         sa.Column("content_id", sa.Integer(), nullable=False),
         sa.Column("user_id", sa.Integer(), nullable=False),

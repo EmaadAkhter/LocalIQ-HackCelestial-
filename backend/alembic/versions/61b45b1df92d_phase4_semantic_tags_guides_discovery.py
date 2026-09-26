@@ -263,6 +263,11 @@ def upgrade() -> None:
         batch_op.create_index(batch_op.f('ix_package_reviews_package_id'), ['package_id'], unique=False)
         batch_op.create_index(batch_op.f('ix_package_reviews_user_id'), ['user_id'], unique=False)
 
+    # pgvector powers the embedding column, so the type must exist before the
+    # column can be added. Guarded to Postgres: SQLite stores it as JSON.
+    if op.get_bind().dialect.name == "postgresql":
+        op.execute("CREATE EXTENSION IF NOT EXISTS vector")
+
     with op.batch_alter_table('experiences', schema=None) as batch_op:
         batch_op.add_column(sa.Column('embedding', app.vector.Vector(), nullable=True))
         batch_op.add_column(sa.Column('vibe_vector', sa.JSON(), nullable=True))
@@ -279,7 +284,7 @@ def upgrade() -> None:
 
     with op.batch_alter_table('guides', schema=None) as batch_op:
         batch_op.add_column(sa.Column('verification_status', sqlmodel.sql.sqltypes.AutoString(length=20), nullable=False, server_default='unverified'))
-        batch_op.add_column(sa.Column('background_checked', sa.Boolean(), nullable=False, server_default=sa.text('0')))
+        batch_op.add_column(sa.Column('background_checked', sa.Boolean(), nullable=False, server_default=sa.false()))
         batch_op.add_column(sa.Column('uin', sqlmodel.sql.sqltypes.AutoString(length=50), nullable=True))
         batch_op.add_column(sa.Column('areas_covered', sa.JSON(), nullable=True))
         batch_op.add_column(sa.Column('energy_level', sqlmodel.sql.sqltypes.AutoString(length=20), nullable=False, server_default='relaxed'))

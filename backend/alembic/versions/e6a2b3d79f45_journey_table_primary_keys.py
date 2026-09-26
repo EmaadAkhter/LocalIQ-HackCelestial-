@@ -50,6 +50,23 @@ TABLES = [
 ]
 
 
+def _has_primary_key(table: str) -> bool:
+    """True when ``table`` already declares a primary key.
+
+    ``c3d9e1a47b20`` now creates its ``id`` columns as primary keys, so on a
+    fresh database every table is already correct and there is nothing to
+    rebuild. This stays tolerant of databases migrated by the earlier, buggy
+    revision (notably Postgres, where the missing constraint broke the very
+    migration that followed).
+    """
+    inspector = sa.inspect(op.get_bind())
+    try:
+        constraint = inspector.get_pk_constraint(table)
+    except Exception:  # pragma: no cover - defensive (table missing)
+        return True
+    return bool(constraint.get("constrained_columns"))
+
+
 def _rebuild_with_pk(table: str) -> None:
     """Recreate ``table`` with a primary key on ``id`` using batch mode."""
     with op.batch_alter_table(table, recreate="always") as batch_op:
@@ -58,6 +75,8 @@ def _rebuild_with_pk(table: str) -> None:
 
 def upgrade() -> None:
     for table in TABLES:
+        if _has_primary_key(table):
+            continue
         _rebuild_with_pk(table)
 
 

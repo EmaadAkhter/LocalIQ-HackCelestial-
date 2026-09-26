@@ -77,7 +77,7 @@ def upgrade() -> None:
     with op.batch_alter_table('users', schema=None) as batch_op:
         batch_op.add_column(sa.Column('taste_profile_text', sqlmodel.sql.sqltypes.AutoString(length=2000), nullable=True))
         batch_op.add_column(sa.Column('taste_profile_vector', sa.JSON(), nullable=True))
-        batch_op.add_column(sa.Column('personalization_enabled', sa.Boolean(), nullable=False, server_default=sa.text('1')))
+        batch_op.add_column(sa.Column('personalization_enabled', sa.Boolean(), nullable=False, server_default=sa.true()))
         batch_op.add_column(sa.Column('preferred_language', sqlmodel.sql.sqltypes.AutoString(length=8), nullable=False, server_default='en'))
 
     # ### end Alembic commands ###

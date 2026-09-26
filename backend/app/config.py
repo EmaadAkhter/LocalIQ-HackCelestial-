@@ -43,6 +43,11 @@ class Settings(BaseSettings):
         "http://localhost:8080,http://localhost:3000,https://localiq.tavesglobal.com"
     )
     demo_mode: bool = False
+    #: Public origin used to build absolute URLs (images, email links) that must
+    #: be reachable from outside the container network. Empty falls back to the
+    #: incoming request's base URL, which is correct for a direct dev server but
+    #: wrong behind a proxy (where the Host is an internal service name).
+    public_base_url: str = ""
 
     # Observability
     log_json: bool = True

@@ -54,6 +54,7 @@ services:
       S3_REGION: ${S3_REGION:-us-east-1}
       S3_USE_SSL: ${S3_USE_SSL:-false}
       S3_PUBLIC_BASE_URL: ${S3_PUBLIC_BASE_URL:-}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://localiq.tavesglobal.com}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:

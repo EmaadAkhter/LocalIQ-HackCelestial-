@@ -26,6 +26,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from sqlmodel import Session
 
+from app.config import get_settings
 from app.database import get_session
 from app.models import Experience
 from app.rate_limit import PUBLIC_LIMIT, limiter
@@ -36,7 +37,15 @@ router = APIRouter()
 
 
 def _base_url(request: Request) -> str:
-    """Scheme+host of this API, used to absolutise image paths."""
+    """Public origin for absolute URLs, falling back to this request's host.
+
+    Behind the tunnel the incoming Host is an internal service name (``backend``)
+    absorbed by Kong, so a configured ``PUBLIC_BASE_URL`` is what makes image
+    URLs reachable from a device.
+    """
+    configured = get_settings().public_base_url.strip().rstrip("/")
+    if configured:
+        return configured
     return str(request.base_url).rstrip("/")
 
 

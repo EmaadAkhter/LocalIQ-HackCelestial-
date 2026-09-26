@@ -45,6 +45,16 @@
 	# NOTE: /metrics is intentionally NOT routed here. Prometheus scrapes the
 	# backend from inside the network so metrics aren't exposed on the tunnel.
 
+	# Experience photos and uploaded media are served by the backend. Without
+	# these the Flutter web SPA fallback would answer with index.html.
+	route /static/* {
+		reverse_proxy backend:8000
+	}
+
+	route /media/* {
+		reverse_proxy backend:8000
+	}
+
 	route {
 		reverse_proxy nginx-flutter:80
 	}
