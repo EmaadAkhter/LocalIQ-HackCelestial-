@@ -117,7 +117,55 @@ class ExperienceResponse(BaseModel):
     right_now_label: str = "Okay right now"
     right_now_context: list[str] = Field(default_factory=list)
 
+    # App-facing mirror of the Flutter `Experience` model, so a client can parse
+    # one flat object. Populated from the canonical fields below.
+    title: str = ""
+    place_id: str = ""
+    tagline: str = ""
+    activity_minutes: int = 0
+    minimum_minutes: int = 0
+    flexible_timing: bool = True
+    typical_spend: int = 0
+    weather_suitability: str = "allWeather"
+    booking_note: str = "Walk-in"
+    local_score: float = 0.0
+    tourist_score: float = 0.0
+    secondary_category: str = ""
+    highlights: list[str] = Field(default_factory=list)
+    practical_tip: str | None = None
+
     model_config = {"from_attributes": True}
+
+    @model_validator(mode="after")
+    def _fill_app_mirror(self) -> "ExperienceResponse":
+        """Populate the app-facing Experience fields from our canonical ones."""
+        self.title = self.title or self.name
+        self.place_id = self.place_id or str(self.id)
+        if not self.tagline:
+            text = (self.description or "").strip()
+            self.tagline = self.best_visit_time or (text[:90] if text else "")
+        self.activity_minutes = self.activity_minutes or self.duration_min
+        self.minimum_minutes = self.minimum_minutes or max(15, min(30, self.duration_min))
+        self.typical_spend = self.typical_spend or self.avg_cost
+        self.local_score = self.local_score or round((self.local_gem_score or 0.0) * 100, 1)
+        self.tourist_score = self.tourist_score or round(
+            (1.0 - (self.local_gem_score or 0.0)) * 100, 1
+        )
+        self.highlights = self.highlights or list(self.tags or [])[:5]
+        self.practical_tip = self.practical_tip or self.best_visit_time
+        self.secondary_category = self.secondary_category or (
+            (self.tags or [""])[0] if self.tags else ""
+        )
+        tags = {str(t).lower() for t in (self.tags or [])}
+        if tags & {"rooftop", "sheltered", "covered", "indoor"}:
+            self.weather_suitability = "sheltered"
+        elif (self.indoor_outdoor or "").lower() == "indoor":
+            self.weather_suitability = "indoorOnly"
+        elif (self.indoor_outdoor or "").lower() == "outdoor":
+            self.weather_suitability = "weatherSensitive"
+        else:
+            self.weather_suitability = "allWeather"
+        return self
 
     @model_validator(mode="after")
     def _fill_image_placeholder(self) -> "ExperienceResponse":
@@ -743,6 +791,28 @@ class WeatherResponse(BaseModel):
     is_rainy: bool = False
     suitable_outdoor: bool = True
     description: str = ""
+    # App-facing mirror of the Flutter `WeatherSnapshot`. Shipped snake_case;
+    # the Dart `json_map_x.pick` accepts snake_case for its camelCase lookups.
+    temperature_c: float | None = None
+    apparent_temperature_c: float | None = None
+    humidity: int | None = None
+    precipitation_chance: int | None = None
+    wind_kph: float | None = None
+    uv_index: float | None = None
+    observed_at: datetime | None = None
+    sunrise: datetime | None = None
+    sunset: datetime | None = None
+
+
+class TrafficResponse(BaseModel):
+    level: str = "moderate"
+    speedMultiplier: float = 1.15
+    updatedAt: datetime | None = None
+
+
+class LiveContextResponse(BaseModel):
+    weather: WeatherResponse
+    traffic: TrafficResponse
 
 
 # --------------------------------------------------------------------------

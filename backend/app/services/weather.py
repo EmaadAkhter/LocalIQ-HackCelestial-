@@ -1,6 +1,7 @@
 """Weather service for LocalIQ (Open-Meteo, graceful fallback + TTL cache)."""
 
 import logging
+from datetime import datetime, timezone
 
 import httpx
 
@@ -39,6 +40,13 @@ def neutral_weather(reason: str = "unavailable") -> dict:
         "suitable_outdoor": True,
         "description": f"Weather unavailable ({reason}); showing all indoor/outdoor options.",
         "reason": reason,
+        # App-facing extras (see app.services.context.app_weather).
+        "precipitation_chance": None,
+        "wind_kph": None,
+        "uv_index": None,
+        "sunrise": None,
+        "sunset": None,
+        "observed_at": None,
     }
 
 
@@ -69,8 +77,13 @@ async def _fetch_weather_live(lat: float, lon: float) -> dict:
     params = {
         "latitude": lat,
         "longitude": lon,
-        "current": "temperature_2m,relative_humidity_2m,apparent_temperature,weathercode,rain",
+        "current": (
+            "temperature_2m,relative_humidity_2m,apparent_temperature,"
+            "weathercode,rain,precipitation,wind_speed_10m"
+        ),
+        "daily": "sunrise,sunset,uv_index_max,precipitation_probability_max",
         "timezone": "Asia/Kolkata",
+        "forecast_days": 1,
     }
     try:
         async with httpx.AsyncClient(timeout=TIMEOUT_S) as client:
@@ -83,6 +96,7 @@ async def _fetch_weather_live(lat: float, lon: float) -> dict:
 
     try:
         current = data.get("current", {}) or {}
+        daily = data.get("daily") or {}
         temp = current.get("temperature_2m")
         code = current.get("weathercode")
         rain = float(current.get("rain", 0) or 0)
@@ -92,6 +106,11 @@ async def _fetch_weather_live(lat: float, lon: float) -> dict:
             condition = "rain"
         suitable = not is_rainy and condition not in ("storm",)
         desc = f"{condition.replace('_', ' ').title()}, {temp}°C" if temp is not None else condition
+
+        def _first(key: str):
+            values = daily.get(key) or []
+            return values[0] if values else None
+
         return {
             "available": True,
             "temp_c": temp,
@@ -104,6 +123,13 @@ async def _fetch_weather_live(lat: float, lon: float) -> dict:
             "description": desc,
             "lat": lat,
             "lon": lon,
+            # App-facing extras.
+            "precipitation_chance": _first("precipitation_probability_max"),
+            "wind_kph": current.get("wind_speed_10m"),
+            "uv_index": _first("uv_index_max"),
+            "sunrise": _first("sunrise"),
+            "sunset": _first("sunset"),
+            "observed_at": datetime.now(timezone.utc).isoformat(),
         }
     except Exception as exc:
         logger.warning("Weather parse failed: %s", exc)

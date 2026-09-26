@@ -35,6 +35,7 @@ from app.api.v1 import (  # noqa: E402
     meetup,
     parse,
     personalization,
+    place_discovery,
     places,
     quests,
     recommendations,
@@ -177,6 +178,7 @@ app.include_router(experiences.router, prefix="/api/v1", tags=["experiences"])
 app.include_router(recommendations.router, prefix="/api/v1", tags=["recommendations"])
 app.include_router(right_now.router, prefix="/api/v1", tags=["right-now"])
 app.include_router(personalization.router, prefix="/api/v1", tags=["personalization"])
+app.include_router(place_discovery.router, prefix="/api/v1", tags=["place-discovery"])
 app.include_router(media.router, tags=["media"])
 app.include_router(agent.router, prefix="/api/v1", tags=["agent"])
 app.include_router(wallet.router, prefix="/api/v1", tags=["wallet"])
