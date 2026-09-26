@@ -125,6 +125,14 @@ class Settings(BaseSettings):
     # Page text is truncated to this many characters before prompting.
     discovery_page_chars: int = 2000
 
+    # --- Geocoding (OpenStreetMap Nominatim; free, no key) ------------------
+    geocode_enabled: bool = True
+    geocode_base_url: str = "https://nominatim.openstreetmap.org/search"
+    geocode_user_agent: str = "LocalIQBot/0.1 (+https://localiq.example.com)"
+    geocode_timeout_seconds: float = 10.0
+    # Nominatim usage policy: at most one request per second.
+    geocode_min_interval_seconds: float = 1.1
+
     # --- Server-side Google APIs (never sent to any client) -----------------
     # These are *different* keys from the client map keys above: restrict them
     # by IP (and keep the Places/Routes APIs enabled) so they are useless if

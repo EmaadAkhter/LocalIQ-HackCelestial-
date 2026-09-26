@@ -81,14 +81,17 @@ def _cleanup_test_rows():
 
     from app.database import engine
     from app.models import (
+        ConversationSession,
         Experience,
         Favorite,
         Guide,
         GuideRequest,
         Itinerary,
         ItineraryStop,
+        PreferenceSignal,
         RecommendationFeedback,
         User,
+        UserActivityInteraction,
         UserSession,
     )
     from app.models_prd import (
@@ -190,6 +193,19 @@ def _cleanup_test_rows():
                 session.exec(
                     delete(RecommendationFeedback).where(
                         RecommendationFeedback.user_id == user.id
+                    )
+                )
+                session.exec(
+                    delete(UserActivityInteraction).where(
+                        UserActivityInteraction.user_id == user.id
+                    )
+                )
+                session.exec(
+                    delete(PreferenceSignal).where(PreferenceSignal.user_id == user.id)
+                )
+                session.exec(
+                    delete(ConversationSession).where(
+                        ConversationSession.user_id == user.id
                     )
                 )
                 session.exec(delete(GuideRequest).where(GuideRequest.user_id == user.id))
