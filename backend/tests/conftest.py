@@ -20,9 +20,14 @@ rows are never touched: they are matched by name/email prefix, not by id.
 """
 
 import os
+import tempfile
 
 os.environ.setdefault("APP_ENV", "test")
 os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
+# Media: force the filesystem backend and a throwaway root so tests never need a
+# running object store and never leave files in the repo.
+os.environ.setdefault("S3_ENABLED", "false")
+os.environ.setdefault("MEDIA_ROOT", tempfile.mkdtemp(prefix="localiq-media-"))
 
 import pytest  # noqa: E402
 from sqlmodel import delete, select  # noqa: E402

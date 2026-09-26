@@ -46,5 +46,8 @@ typing-inspection==0.4.4
 psycopg2-binary>=2.9.9
 pgvector==0.4.0
 
+# --- object storage (self-hosted S3: MinIO / s3mock; also used for photos) ---
+boto3>=1.34
+
 # Test-only dependencies live in requirements-dev.txt so the runtime image
 # stays lean.

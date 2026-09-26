@@ -94,6 +94,7 @@ class ExperienceResponse(BaseModel):
     rating: float
     description: str
     image_url: str | None = None
+    image_key: str | None = None
     tags: list[str] = Field(default_factory=list)
     accessibility_flags: list[str] = Field(default_factory=list)
     indoor_outdoor: str = "indoor"
@@ -115,9 +116,13 @@ class ExperienceResponse(BaseModel):
     def _fill_image_placeholder(self) -> "ExperienceResponse":
         """Guarantee an image so the UI never shows an empty card.
 
-        Curated ``image_url`` values win; otherwise a deterministic placeholder
-        is generated from the venue name.
+        A self-hosted ``image_key`` (object storage) wins by being turned into
+        the media URL; then a curated ``image_url``; otherwise a deterministic
+        placeholder is generated from the venue name.
         """
+        if not self.image_url and self.image_key:
+            base = get_settings().s3_public_base_url.strip().rstrip("/")
+            self.image_url = f"{base}/{self.image_key}" if base else f"/media/{self.image_key}"
         if not self.image_url:
             template = get_settings().image_placeholder_url_template
             if template:

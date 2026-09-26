@@ -65,6 +65,9 @@ class Experience(TimestampMixin, table=True):
     rating: float = Field(default=4.0, ge=0.0, le=5.0)
     description: str = Field(default="")
     image_url: Optional[str] = Field(default=None)
+    #: Object-storage key for the self-hosted photo (S3/MinIO). Preferred over
+    #: ``image_url`` so images survive a change of CDN/base URL.
+    image_key: Optional[str] = Field(default=None, max_length=500)
     tags: list[str] = Field(default_factory=list, sa_column=Column(JSON))
     accessibility_flags: list[str] = Field(default_factory=list, sa_column=Column(JSON))
     indoor_outdoor: str = Field(default="indoor")

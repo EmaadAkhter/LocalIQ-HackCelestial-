@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 # Secrets that may be provided as files (Docker/K8s secrets):
 #   DATABASE_URL_FILE=/run/secrets/database_url  -> DATABASE_URL
-_SECRET_KEYS = ("DATABASE_URL", "AUTH_SECRET_KEY", "OLLAMA_API_KEY", "ADMIN_API_KEY")
+_SECRET_KEYS = ("DATABASE_URL", "AUTH_SECRET_KEY", "OLLAMA_API_KEY", "ADMIN_API_KEY", "S3_ACCESS_KEY", "S3_SECRET_KEY")
 
 
 def _load_secret_files() -> None:
@@ -177,6 +177,29 @@ class Settings(BaseSettings):
 
     # Admin API (content management). Empty disables the admin endpoints.
     admin_api_key: str = ""
+
+    # --- Object storage (S3-compatible: MinIO / s3mock) ---------------------
+    # Self-hosted media store for experience photos and generated share cards.
+    # When S3 is unreachable the storage service transparently falls back to the
+    # filesystem, so local dev and the test suite never require a running store.
+    s3_enabled: bool = True
+    s3_endpoint: str = "http://localhost:9000"
+    s3_access_key: str = "minioadmin"
+    s3_secret_key: str = "minioadmin"
+    s3_bucket: str = "localiq"
+    s3_region: str = "us-east-1"
+    s3_use_ssl: bool = False
+    # "path" works with MinIO and s3mock (and most non-AWS endpoints).
+    s3_addressing_style: str = "path"
+    # Public base for object URLs (e.g. a CDN). Empty -> serve via /media/{key}.
+    s3_public_base_url: str = ""
+    # Filesystem fallback root when S3 is disabled or unreachable.
+    media_root: str = "./data/media"
+
+    # Google Places photo enrichment: download the first place photo and store
+    # it in object storage so cards are self-hosted.
+    photo_enrich_enabled: bool = True
+    photo_max_width_px: int = 1200
 
     # Ranking: weight applied to aggregated user feedback (score in -1..1).
     feedback_weight: float = 4.0
