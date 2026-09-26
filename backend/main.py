@@ -41,6 +41,7 @@ from app.api.v1 import (  # noqa: E402
     solo,
     tags,
     trust,
+    wallet,
     weather,
 )
 from app.config import get_settings  # noqa: E402
@@ -177,6 +178,7 @@ app.include_router(right_now.router, prefix="/api/v1", tags=["right-now"])
 app.include_router(personalization.router, prefix="/api/v1", tags=["personalization"])
 app.include_router(media.router, tags=["media"])
 app.include_router(agent.router, prefix="/api/v1", tags=["agent"])
+app.include_router(wallet.router, prefix="/api/v1", tags=["wallet"])
 app.include_router(tags.router, prefix="/api/v1", tags=["tags"])
 app.include_router(discovery.router, prefix="/api/v1", tags=["discovery"])
 app.include_router(guides.router, prefix="/api/v1", tags=["guides"])

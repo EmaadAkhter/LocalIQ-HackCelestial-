@@ -592,3 +592,62 @@ class ConversationSession(TimestampMixin, table=True):
     state_json: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
     last_active_at: Optional[datetime] = Field(default=None)
 
+
+# -----------------------------------------------------------------------------
+# Experience Wallet & Passport (PRD 4.9)
+# -----------------------------------------------------------------------------
+
+
+class ExperienceWallet(TimestampMixin, table=True):
+    """Per-user rollup shown on the Passport (PRD 4.9)."""
+
+    __tablename__ = "experience_wallets"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="users.id", index=True, unique=True)
+    total_experiences: int = Field(default=0, ge=0)
+    hidden_gem_count: int = Field(default=0, ge=0)
+    total_spent_inr: int = Field(default=0, ge=0)
+    total_duration_min: int = Field(default=0, ge=0)
+    categories_json: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+    cities_visited_json: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+
+
+class ExperienceLog(TimestampMixin, table=True):
+    """Append-only record of a completed experience (PRD 4.9).
+
+    Unique per ``(user, experience)`` so re-marking "Done" updates the existing
+    entry instead of double-counting the stats.
+    """
+
+    __tablename__ = "experience_logs"
+    __table_args__ = (
+        UniqueConstraint("user_id", "experience_id", name="uq_experience_log_user_experience"),
+        Index("ix_experience_logs_user_completed", "user_id", "completed_at"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="users.id", index=True)
+    experience_id: int = Field(foreign_key="experiences.id", index=True)
+    completed_at: Optional[datetime] = Field(default=None)
+    rating: Optional[float] = Field(default=None, ge=0.0, le=5.0)
+    notes: Optional[str] = Field(default=None, max_length=2000)
+    context_json: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+
+
+class UserBadge(TimestampMixin, table=True):
+    """One row per badge a user has earned (PRD 4.9)."""
+
+    __tablename__ = "user_badges"
+    __table_args__ = (
+        UniqueConstraint("user_id", "badge_code", name="uq_user_badge_code"),
+        Index("ix_user_badges_user_earned", "user_id", "earned_at"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="users.id", index=True)
+    badge_code: str = Field(max_length=60, index=True)
+    badge_id: Optional[int] = Field(default=None, foreign_key="badges.id")
+    earned_at: Optional[datetime] = Field(default=None)
+    context_json: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+

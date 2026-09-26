@@ -88,6 +88,8 @@ def _cleanup_test_rows():
     from app.models import (
         ConversationSession,
         Experience,
+        ExperienceLog,
+        ExperienceWallet,
         Favorite,
         Guide,
         GuideRequest,
@@ -97,6 +99,7 @@ def _cleanup_test_rows():
         RecommendationFeedback,
         User,
         UserActivityInteraction,
+        UserBadge,
         UserSession,
     )
     from app.models_prd import (
@@ -212,6 +215,15 @@ def _cleanup_test_rows():
                     delete(ConversationSession).where(
                         ConversationSession.user_id == user.id
                     )
+                )
+                session.exec(
+                    delete(UserBadge).where(UserBadge.user_id == user.id)
+                )
+                session.exec(
+                    delete(ExperienceLog).where(ExperienceLog.user_id == user.id)
+                )
+                session.exec(
+                    delete(ExperienceWallet).where(ExperienceWallet.user_id == user.id)
                 )
                 session.exec(delete(GuideRequest).where(GuideRequest.user_id == user.id))
                 session.exec(delete(ItineraryStop).where(ItineraryStop.itinerary_id.in_(

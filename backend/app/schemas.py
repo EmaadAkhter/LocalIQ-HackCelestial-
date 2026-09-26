@@ -799,6 +799,81 @@ class ItineraryShareResponse(BaseModel):
 
 
 # --------------------------------------------------------------------------
+# Experience Wallet & Passport (PRD 4.9)
+# --------------------------------------------------------------------------
+
+
+class WalletLogRequest(BaseModel):
+    experience_id: int
+    rating: float | None = Field(default=None, ge=0.0, le=5.0)
+    notes: str | None = Field(default=None, max_length=2000)
+    context: dict[str, Any] = Field(default_factory=dict)
+
+
+class WalletStats(BaseModel):
+    total_experiences: int = 0
+    hidden_gem_count: int = 0
+    total_spent_inr: int = 0
+    total_duration_min: int = 0
+    categories: dict[str, int] = Field(default_factory=dict)
+    cities: dict[str, int] = Field(default_factory=dict)
+
+
+class WalletBadge(BaseModel):
+    code: str
+    name: str
+    description: str = ""
+    tier: str = "bronze"
+    xp_bonus: int = 0
+    earned: bool = False
+    earned_at: datetime | None = None
+
+
+class WalletTimelineItem(BaseModel):
+    experience_id: int
+    name: str
+    category: str
+    lat: float
+    lng: float
+    image_url: str | None = None
+    image_key: str | None = None
+    completed_at: datetime | None = None
+    rating: float | None = None
+    notes: str | None = None
+
+    @model_validator(mode="after")
+    def _resolve_image(self) -> "WalletTimelineItem":
+        if not self.image_url and self.image_key:
+            base = get_settings().s3_public_base_url.strip().rstrip("/")
+            self.image_url = f"{base}/{self.image_key}" if base else f"/media/{self.image_key}"
+        return self
+
+
+class WalletPassport(BaseModel):
+    stats: WalletStats
+    badges: list[WalletBadge] = Field(default_factory=list)
+    timeline: list[WalletTimelineItem] = Field(default_factory=list)
+    pins: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class WalletLogResponse(BaseModel):
+    experience_id: int
+    completed_at: datetime | None = None
+    new_badges: list[WalletBadge] = Field(default_factory=list)
+    stats: WalletStats
+
+
+class WalletShareSummary(BaseModel):
+    period: str
+    total_experiences: int
+    hidden_gem_count: int
+    total_spent_inr: int
+    top_categories: list[str] = Field(default_factory=list)
+    highlights: list[str] = Field(default_factory=list)
+    badges: list[str] = Field(default_factory=list)
+
+
+# --------------------------------------------------------------------------
 # Geospatial
 # --------------------------------------------------------------------------
 

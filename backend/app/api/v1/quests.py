@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from sqlmodel import Session, select
 
 from app.database import get_session
-from app.models import Experience
+from app.models import Experience, User
 from app.models_prd import Badge, Quest, QuestRun, QuestStop, UserProgress
 from app.schemas_prd import (
     QuestProgressResponse,
@@ -397,6 +397,24 @@ async def complete_quest(
     logger.info(
         "Quest run %s completed: +%s xp, badges=%s", run_id, xp_total, [b["code"] for b in badge_rows]
     )
+
+    # Mirror the completion into the Experience Wallet (PRD 4.9): each stop
+    # becomes a logged experience and can trigger wallet badges too.
+    user = session.get(User, x_user_id)
+    if user is not None:
+        from app.services import wallet as wallet_service
+
+        rainy = bool((weather or {}).get("is_rainy"))
+        for stop_id in stops:
+            experience = session.get(Experience, stop_id)
+            if experience is None:
+                continue
+            wallet_service.log_experience(
+                session,
+                user,
+                experience,
+                context={"city": "Mumbai", "quest": quest.code, "rainy": rainy},
+            )
     return _run_payload(session, run, quest)
 
 
