@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 # Secrets that may be provided as files (Docker/K8s secrets):
 #   DATABASE_URL_FILE=/run/secrets/database_url  -> DATABASE_URL
-_SECRET_KEYS = ("DATABASE_URL", "AUTH_SECRET_KEY", "OLLAMA_API_KEY", "ADMIN_API_KEY", "S3_ACCESS_KEY", "S3_SECRET_KEY")
+_SECRET_KEYS = ("DATABASE_URL", "AUTH_SECRET_KEY", "OLLAMA_API_KEY", "ADMIN_API_KEY", "S3_ACCESS_KEY", "S3_SECRET_KEY", "RESEND_API_KEY")
 
 
 def _load_secret_files() -> None:
@@ -48,6 +48,19 @@ class Settings(BaseSettings):
     #: incoming request's base URL, which is correct for a direct dev server but
     #: wrong behind a proxy (where the Host is an internal service name).
     public_base_url: str = ""
+
+    # Email (Resend). Same integration shape as taves-website: a plain REST call
+    # to api.resend.com, no SDK. An empty key disables sending, and the auth
+    # endpoints keep their dev fallbacks so the app works without a provider.
+    resend_api_key: str = ""
+    #: Must be on a domain verified in Resend; onboarding@resend.dev works for
+    #: testing until a domain is added.
+    resend_from: str = "LocalIQ <onboarding@resend.dev>"
+    #: Origin used in emailed links. Empty falls back to ``public_base_url``.
+    app_public_url: str = ""
+    email_verification_ttl_hours: int = 48
+    #: Minimum gap between verification emails for one account.
+    email_resend_cooldown_seconds: int = 60
 
     # Observability
     log_json: bool = True
@@ -227,6 +240,17 @@ class Settings(BaseSettings):
     def rate_limiting_on(self) -> bool:
         """Rate limiting is disabled in tests so the suite is never throttled."""
         return self.rate_limit_enabled and self.app_env != "test"
+
+    @property
+    def email_enabled(self) -> bool:
+        """True when a Resend API key is configured."""
+        return bool(self.resend_api_key.strip())
+
+    @property
+    def app_public_origin(self) -> str:
+        """Origin used to build links for email (never has a trailing slash)."""
+        origin = (self.app_public_url or self.public_base_url).strip()
+        return (origin or "http://localhost:8080").rstrip("/")
 
 
 @lru_cache

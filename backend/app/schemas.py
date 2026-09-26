@@ -447,6 +447,9 @@ class UserResponse(BaseModel):
     tier: str = "free"
     home_city: str = "Mumbai"
     is_anonymous: bool = False
+    #: True once the address is confirmed (Resend verification link, or a
+    #: provider that vouches for it).
+    email_verified: bool = False
 
     model_config = {"from_attributes": True}
 
@@ -471,6 +474,10 @@ class RefreshRequest(BaseModel):
 
 class ForgotPasswordRequest(BaseModel):
     email: str = Field(..., min_length=5, max_length=200)
+
+
+class VerifyEmailRequest(BaseModel):
+    token: str = Field(..., min_length=10, max_length=512)
 
 
 class GoogleAuthRequest(BaseModel):

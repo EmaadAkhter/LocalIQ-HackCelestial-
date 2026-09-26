@@ -170,6 +170,12 @@ class User(TimestampMixin, table=True):
     home_city: str = Field(default="Mumbai", max_length=80)
     is_anonymous: bool = Field(default=False)
 
+    # Email verification (Resend). Marks the address as confirmed and remembers
+    # when the last verification email went out so resends can be throttled.
+    email_verified: bool = Field(default=False)
+    email_verified_at: Optional[datetime] = Field(default=None, sa_type=DateTime)
+    email_verification_sent_at: Optional[datetime] = Field(default=None, sa_type=DateTime)
+
     sessions: list["UserSession"] = Relationship(back_populates="user")
 
 
@@ -189,6 +195,25 @@ class UserSession(TimestampMixin, table=True):
     refresh_expires_at: Optional[datetime] = Field(default=None, sa_type=DateTime)
 
     user: Optional["User"] = Relationship(back_populates="sessions")
+
+
+class EmailVerificationToken(TimestampMixin, table=True):
+    """Single-use email verification token.
+
+    Only the hash is stored (same scheme as sessions), so a database leak cannot
+    be replayed. Issuing a new token invalidates any earlier unconsumed one.
+    """
+
+    __tablename__ = "email_verification_tokens"
+    __table_args__ = (
+        Index("ix_email_verification_user_expires", "user_id", "expires_at"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="users.id", index=True)
+    token_hash: str = Field(index=True, unique=True)
+    expires_at: datetime = Field(sa_type=DateTime, sa_column_kwargs={"nullable": False})
+    consumed_at: Optional[datetime] = Field(default=None, sa_type=DateTime)
 
 
 class GuideRequest(TimestampMixin, table=True):

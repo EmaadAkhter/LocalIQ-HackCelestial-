@@ -28,6 +28,7 @@ __all__ = [
     "utcnow",
     "hash_password",
     "verify_password",
+    "hash_token",
     "create_session",
     "create_session_pair",
     "resolve_refresh",
@@ -89,6 +90,15 @@ def _token_hash(token: str) -> str:
     return hmac.new(
         settings.auth_secret_key.encode("utf-8"), token.encode("utf-8"), hashlib.sha256
     ).hexdigest()
+
+
+def hash_token(token: str) -> str:
+    """Public alias of the token hash.
+
+    Email-verification and password-reset tokens reuse the session scheme, so a
+    leaked database cannot be replayed for any of them.
+    """
+    return _token_hash(token)
 
 
 def create_session_pair(

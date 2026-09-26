@@ -30,6 +30,8 @@ Sprints 1–3 of §10 are largely closed. Verified against a running backend
 | §5.1 | Empty images | 107/234 experiences have self-hosted photos (scraper photo enrichment); `image_key` → `/media/*` |
 | §7.11 | `LOCALIQ_OFFLINE` default | now `false` (backend-first) |
 | §11.1 / §11.2 | Both shape mismatches | fixed |
+| §3.6 | **Email verification** | `services/email.py` (Resend, no SDK) + `services/verification.py`: `users.email_verified`, `POST /auth/verify-email`, `POST /auth/resend-verification`, and `forgot-password` now actually emails the reset link |
+| §7.x | Docker/Postgres deployment | migrations now boot on pgvector Postgres (PKs, boolean defaults, `CREATE EXTENSION vector`); Caddy routes `/static/*` + `/media/*`; `PUBLIC_BASE_URL` for device-reachable photo URLs |
 | — | **New** | Driver trip map (`/driver/trips*`, `bookings/{id}/tracking`) + guided onboarding (taste chat, guide onboarding) |
 
 **Still open**
@@ -37,6 +39,7 @@ Sprints 1–3 of §10 are largely closed. Verified against a running backend
 - §3.2 `restore()` is still not called at app start; §3.3 `signOut()` does not hit `/auth/logout`.
 - §3.4 rate limiting on login, §3.5 `AUTH_SECRET_KEY` production guard.
 - §2.4 saved, §4.x product backends (wallet/quests/safety/social), §4.10 notifications, §4.12 admin.
+- §3.6 **account deletion** (email verification is done; deletion is not).
 - §8 app-side contract tests.
 - §1.12 app-side `google_sign_in`.
 

@@ -24,6 +24,9 @@ import tempfile
 
 os.environ.setdefault("APP_ENV", "test")
 os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
+# Never contact a real mail provider from the suite, even if the developer has a
+# key in .env. Tests that assert on email monkeypatch the service directly.
+os.environ["RESEND_API_KEY"] = ""
 # Media: force the filesystem backend and a throwaway root so tests never need a
 # running object store and never leave files in the repo.
 os.environ.setdefault("S3_ENABLED", "false")
