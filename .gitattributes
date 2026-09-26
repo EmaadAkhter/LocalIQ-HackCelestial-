@@ -1,0 +1,26 @@
+* text=auto eol=lf
+
+# Binaries
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.so binary
+*.wasm binary
+
+# Scripts and manifests stay LF
+*.sh text eol=lf
+Dockerfile text eol=lf
+Jenkinsfile text eol=lf
+*.py text eol=lf
+*.dart text eol=lf
+
+# Keep docs and infra out of language stats noise
+docs/** linguist-documentation
+infra/** linguist-documentation
+gateway/** linguist-documentation
