@@ -46,6 +46,33 @@ async def generate(
     return response.json().get("response", "")
 
 
+async def chat(
+    messages: list[dict],
+    *,
+    temperature: float = 0.4,
+    max_tokens: int = 300,
+    timeout: float | None = None,
+) -> str:
+    """Call Ollama's multi-turn /api/chat and return the assistant text."""
+    settings = get_settings()
+    payload = {
+        "model": settings.ollama_model,
+        "messages": messages,
+        "stream": False,
+        "options": {"temperature": temperature, "num_predict": max_tokens},
+    }
+
+    url = f"{settings.ollama_url.rstrip('/')}/api/chat"
+    try:
+        async with httpx.AsyncClient(timeout=timeout or settings.ollama_timeout_seconds) as client:
+            response = await client.post(url, json=payload)
+            response.raise_for_status()
+    except httpx.HTTPError as exc:
+        raise LLMError(f"Ollama chat failed: {exc}") from exc
+
+    return response.json().get("message", {}).get("content", "")
+
+
 async def generate_json(prompt: str, **kwargs) -> dict:
     """Call Ollama in JSON mode and parse the response into a dict."""
     raw = await generate(prompt, json_mode=True, **kwargs)

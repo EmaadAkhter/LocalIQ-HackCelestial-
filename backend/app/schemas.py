@@ -33,3 +33,39 @@ class ParseResponse(BaseModel):
 
     constraints: Constraints
     source: ParseSource
+
+
+class ExperienceContext(BaseModel):
+    """Minimal experience context used to scope the AI guide chat."""
+
+    id: str | None = None
+    name: str
+    category: str | None = None
+    description: str | None = None
+    price_inr: int | None = None
+    duration_minutes: int | None = None
+    opening_hours: str | None = None
+    area: str | None = None
+    rating: float | None = None
+
+
+class ChatMessage(BaseModel):
+    """A single turn in the guide conversation."""
+
+    role: Literal["user", "assistant"]
+    content: str
+
+
+class ChatRequest(BaseModel):
+    """A question about a specific experience."""
+
+    experience: ExperienceContext
+    message: str = Field(min_length=1, max_length=1000)
+    history: list[ChatMessage] = Field(default_factory=list)
+
+
+class ChatResponse(BaseModel):
+    """The guide's reply."""
+
+    reply: str
+    source: Literal["llm", "canned"]
