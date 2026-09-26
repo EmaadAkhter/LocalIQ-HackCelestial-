@@ -99,6 +99,13 @@ class RemoteAuthService implements AuthService {
 
   @override
   Future<void> signOut() async {
+    // Best-effort server revoke so the token stops working immediately; a
+    // failure here must never block the local sign-out.
+    try {
+      await _client.post('/auth/logout');
+    } on AppException {
+      // Ignored on purpose.
+    }
     await _tokenStore.clear();
     _emit(null);
   }

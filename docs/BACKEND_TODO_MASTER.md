@@ -11,6 +11,37 @@
 
 ---
 
+## STATUS — updated 2026-09-27
+
+Sprints 1–3 of §10 are largely closed. Verified against a running backend
+(`362 passed, 1 skipped`) and the Flutter app (`flutter analyze`: no issues).
+
+**Closed since this audit**
+
+| Ref | Item | Where it lives now |
+|---|---|---|
+| §1.1–1.6 | `GET /places`, `/places/{id}`, `/{id}/experiences`, `/popular`, `/gems`, `/discover` | `backend/app/api/v1/place_discovery.py` + `services/places.py` (Place synthesised over `Experience`, no new table) |
+| §1.7 / §1.8 | `/traffic`, `/context/live` | `services/context.py` (honest ist-hour heuristic + area nudge); weather cache already present (§6.7 ✅) |
+| §1.9–1.11 | `/auth/refresh`, `/auth/guest`, `/auth/forgot-password` (+ `/auth/reset-password`) | `api/v1/auth.py`, `services/auth.py` (rotating refresh tokens) |
+| §1.12 | `/auth/google` | tokeninfo verify with a dev-mode fallback; the **app** still needs `google_sign_in` to supply an idToken |
+| §2.1 / §2.2 | Place shape, Experience app fields | `schemas.py` (`Place` projection + `title/placeId/tagline/activityMinutes/typicalSpend/localScore/touristScore/highlights/bookingNote/weatherSuitability/practicalTip`) |
+| §2.7 / §7.1 | Alembic migrations | `backend/alembic/` (18 revisions); dev DB stamped at head |
+| §3.1 | **Token never attached** | `AuthTokenHolder` → `JsonApiClient.tokenProvider` (access token sent on every request) |
+| §5.1 | Empty images | 107/234 experiences have self-hosted photos (scraper photo enrichment); `image_key` → `/media/*` |
+| §7.11 | `LOCALIQ_OFFLINE` default | now `false` (backend-first) |
+| §11.1 / §11.2 | Both shape mismatches | fixed |
+| — | **New** | Driver trip map (`/driver/trips*`, `bookings/{id}/tracking`) + guided onboarding (taste chat, guide onboarding) |
+
+**Still open**
+
+- §3.2 `restore()` is still not called at app start; §3.3 `signOut()` does not hit `/auth/logout`.
+- §3.4 rate limiting on login, §3.5 `AUTH_SECRET_KEY` production guard.
+- §2.4 saved, §4.x product backends (wallet/quests/safety/social), §4.10 notifications, §4.12 admin.
+- §8 app-side contract tests.
+- §1.12 app-side `google_sign_in`.
+
+---
+
 ## 0. THE HEADLINE PROBLEM 🔴
 
 **The Flutter app and the backend currently share almost nothing.**

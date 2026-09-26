@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/providers.dart';
 import '../core/theme/app_theme.dart';
 import 'router/app_router.dart';
 
@@ -14,6 +17,16 @@ class LocalIqApp extends ConsumerStatefulWidget {
 
 class _LocalIqAppState extends ConsumerState<LocalIqApp> {
   final _router = createAppRouter();
+
+  @override
+  void initState() {
+    super.initState();
+    // Cold start: try to restore a persisted session via /auth/refresh. A no-op
+    // for the offline service and when there is nothing to restore.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(ref.read(authServiceProvider).restore());
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
