@@ -21,26 +21,23 @@ pipeline {
         }
 
         stage('Backend: tests') {
-            when { expression { fileExists('backend/tests') } }
             steps {
-                sh 'docker run --rm -v "$PWD/backend":/app -w /app localiq-backend:${BUILD_NUMBER} python -m pytest -q'
+                // Run inside the image: the workspace path is not visible to the
+                // host Docker daemon, so bind mounts would resolve to nothing.
+                sh 'docker run --rm -e APP_ENV=test localiq-backend:${BUILD_NUMBER} python -m pytest -q'
             }
         }
 
-        stage('Stack: smoke test') {
+        stage('Backend: API smoke') {
             steps {
-                sh 'bash tests/smoke/smoke.sh'
+                sh 'docker run --rm -e APP_ENV=test localiq-backend:${BUILD_NUMBER} bash tests/api_smoke.sh'
             }
         }
 
-        stage('Flutter: analyze') {
-            when { expression { fileExists('frontend_flutter/pubspec.yaml') } }
+        stage('Frontend: build image') {
+            when { expression { fileExists('frontend_flutter/Dockerfile') } }
             steps {
-                sh '''
-                    docker run --rm -v "$PWD/frontend_flutter":/app -w /app \
-                      ghcr.io/cirruslabs/flutter:stable \
-                      sh -c "flutter pub get && flutter analyze"
-                '''
+                sh 'docker build -t localiq-frontend:${BUILD_NUMBER} frontend_flutter/'
             }
         }
     }

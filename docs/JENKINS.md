@@ -36,9 +36,14 @@ Jenkins is configured via JCasC (`infra/jenkins/casc/jenkins.yaml`):
 |---|---|
 | Checkout | clone the repo |
 | Backend: build image | `docker build backend/` — validates the Python app |
-| Backend: tests | `pytest` if `backend/tests/` exists |
-| Stack: smoke test | `tests/smoke/smoke.sh` — full edge → Kong → backend chain |
-| Flutter: analyze | runs only if `frontend_flutter/pubspec.yaml` exists |
+| Backend: tests | runs `pytest` inside the built image |
+| Backend: API smoke | starts the server in the image and checks health + parsing |
+| Frontend: build image | builds `frontend_flutter/` if a Dockerfile exists |
+
+> **Note (docker-outside-of-docker):** the Jenkins container talks to the host
+> Docker daemon, so workspace paths are **not** visible to the daemon. Pipeline
+> stages therefore run inside built images rather than bind-mounting the
+> workspace. The full gateway-chain smoke test runs on the host via `make test`.
 
 ## Security
 
