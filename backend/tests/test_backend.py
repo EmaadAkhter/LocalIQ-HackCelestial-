@@ -195,7 +195,8 @@ def test_guides_endpoints():
     assert guide is not None
     r2 = client.post(f"/api/v1/guides/{guide.id}/request", json={"name": "Test User", "hours": 2})
     assert r2.status_code == 200
-    assert r2.json()["status"] == "confirmed_mock"
+    # A request starts unconfirmed; the booking state machine advances it.
+    assert r2.json()["status"] == "requested"
     r3 = client.post("/api/v1/guides/999999/request", json={"name": "X"})
     assert r3.status_code == 404
 

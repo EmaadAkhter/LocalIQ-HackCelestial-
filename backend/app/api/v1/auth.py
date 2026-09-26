@@ -29,6 +29,7 @@ from app.schemas import (
 )
 from app.services import email as email_service
 from app.services import lockout, verification
+from app.services.account import purge_user_rows
 from app.services.auth import (
     create_session_pair,
     get_current_user,
@@ -163,6 +164,32 @@ def logout(
 def me(current_user: User = Depends(get_current_user)):
     """Return the authenticated user."""
     return UserResponse.model_validate(current_user)
+
+
+@router.delete(
+    "/me",
+    status_code=http_status.HTTP_204_NO_CONTENT,
+    summary="Delete my account",
+)
+def delete_account(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Erase the account and everything owned by it.
+
+    Irreversible. Sessions, tokens, saved items, requests, bookings and every
+    other row referencing the user are removed along with the account, so no
+    personal data is left behind.
+    """
+    user_id = current_user.id
+    if user_id is None:  # pragma: no cover - a persisted user always has an id
+        raise HTTPException(status_code=400, detail="Account not found")
+
+    removed = purge_user_rows(session, user_id)
+    session.delete(current_user)
+    session.commit()
+    logger.info("Deleted account user id=%s (%d related rows purged)", user_id, removed)
+    return Response(status_code=http_status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/status", summary="Auth + optional AI/weather service status")

@@ -231,7 +231,7 @@ class GuideRequest(TimestampMixin, table=True):
     hours: int = Field(default=2)
     group_size: int = Field(default=2)
     note: Optional[str] = Field(default=None)
-    status: str = Field(default="confirmed_mock")
+    status: str = Field(default="requested")
     booking_ref: str = Field(index=True)
 
 

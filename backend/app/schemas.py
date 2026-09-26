@@ -268,7 +268,9 @@ class GuideRequestPayload(BaseModel):
 
 
 class GuideRequestResponse(BaseModel):
-    status: Literal["confirmed_mock", "requested"] = "confirmed_mock"
+    #: Mirrors ``GuideRequest.status``. Requests start as ``requested``; the
+    #: guide-package booking state machine advances them from there.
+    status: Literal["requested", "confirmed", "declined", "cancelled", "completed"] = "requested"
     guide_id: int
     experience_id: int | None = None
     message: str

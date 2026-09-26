@@ -27,6 +27,15 @@ services:
       context: ../backend
     environment:
       APP_ENV: ${APP_ENV:-production}
+      # Required: Settings refuses to boot in production with the shipped dev
+      # default, so a missing/placeholder value fails loudly instead of silently
+      # making every session and email token forgeable.
+      AUTH_SECRET_KEY: ${AUTH_SECRET_KEY:?set AUTH_SECRET_KEY in infra/.env (openssl rand -hex 32)}
+      # Email (Resend). Empty key disables sending; the app keeps its dev
+      # fallbacks, so the tunnel works without a provider.
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM: ${RESEND_FROM:-LocalIQ <onboarding@resend.dev>}
+      APP_PUBLIC_URL: ${APP_PUBLIC_URL:-https://localiq.tavesglobal.com}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080,http://localhost:3000,https://localiq.tavesglobal.com}
       LOG_JSON: ${LOG_JSON:-true}
       RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}

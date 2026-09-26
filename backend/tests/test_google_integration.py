@@ -467,7 +467,7 @@ def test_existing_endpoints_still_work():
     assert guide is not None
     r = client.post(f"/api/v1/guides/{guide.id}/request", json={"hours": 2})
     assert r.status_code == 200
-    assert r.json()["status"] == "confirmed_mock"
+    assert r.json()["status"] == "requested"
 
 
 def test_config_endpoint_never_returns_server_keys():

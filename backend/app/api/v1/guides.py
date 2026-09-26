@@ -43,10 +43,13 @@ def my_requests(
     ).all()
     return [
         GuideRequestResponse(
-            status="confirmed_mock",
+            status=r.status,
             guide_id=r.guide_id,
             experience_id=r.experience_id,
-            message=f"Request for {r.hours}h with {r.group_size} guests on {r.date or 'unspecified date'}.",
+            message=(
+                f"Request for {r.hours}h with {r.group_size} guests on "
+                f"{r.date or 'an unspecified date'}."
+            ),
             booking_ref=r.booking_ref,
             booking_id=r.id,
             created_at=r.created_at,
@@ -101,12 +104,12 @@ def request_guide(
 
     logger.info("Guide request stored: ref=%s guide=%s user=%s", ref, guide_id, row.user_id)
     return GuideRequestResponse(
-        status="confirmed_mock",
+        status=row.status,
         guide_id=guide_id,
         experience_id=guide.experience_id,
         message=(
-            f"Mock booking confirmed with {guide.name} ({guide.specialty}) "
-            f"for {payload.hours}h, {payload.group_size} guests. No payment taken."
+            f"Request sent to {guide.name} ({guide.specialty}) for {payload.hours}h, "
+            f"{payload.group_size} guests. Awaiting the guide's confirmation."
         ),
         booking_ref=ref,
         booking_id=row.id,

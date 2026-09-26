@@ -7,6 +7,7 @@ import os
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 logger = logging.getLogger(__name__)
@@ -14,6 +15,11 @@ logger = logging.getLogger(__name__)
 # Secrets that may be provided as files (Docker/K8s secrets):
 #   DATABASE_URL_FILE=/run/secrets/database_url  -> DATABASE_URL
 _SECRET_KEYS = ("DATABASE_URL", "AUTH_SECRET_KEY", "OLLAMA_API_KEY", "ADMIN_API_KEY", "S3_ACCESS_KEY", "S3_SECRET_KEY", "RESEND_API_KEY")
+
+#: The value shipped for local development. Every session, refresh and email
+#: token is HMAC'd with this key, so leaving it in place in production makes all
+#: of them forgeable. ``Settings`` refuses to load with it outside development.
+DEFAULT_AUTH_SECRET_KEY = "localiq-dev-secret-change-me"
 
 
 def _load_secret_files() -> None:
@@ -81,7 +87,7 @@ class Settings(BaseSettings):
     db_pool_recycle_seconds: int = 1800
 
     # Auth (local, self-hosted)
-    auth_secret_key: str = "localiq-dev-secret-change-me"
+    auth_secret_key: str = DEFAULT_AUTH_SECRET_KEY
     auth_token_ttl_minutes: int = 60 * 24 * 7
     # Refresh tokens outlive access tokens; the app exchanges one on cold start.
     auth_refresh_ttl_days: int = 30
@@ -251,6 +257,24 @@ class Settings(BaseSettings):
         """Origin used to build links for email (never has a trailing slash)."""
         origin = (self.app_public_url or self.public_base_url).strip()
         return (origin or "http://localhost:8080").rstrip("/")
+
+    @model_validator(mode="after")
+    def _reject_default_secret_outside_dev(self) -> "Settings":
+        """Refuse to boot in production/staging with the shipped dev secret.
+
+        Failing here is deliberate: a silently-forgeable session key is far worse
+        than a container that refuses to start. Development and test are exempt so
+        the local workflow and the suite need no setup.
+        """
+        if self.app_env.lower() in {"production", "staging"} and (
+            self.auth_secret_key == DEFAULT_AUTH_SECRET_KEY
+        ):
+            raise ValueError(
+                "AUTH_SECRET_KEY is still the development default. Generate one with "
+                "`openssl rand -hex 32` and set it in the environment before running "
+                f"with APP_ENV={self.app_env}."
+            )
+        return self
 
 
 @lru_cache
