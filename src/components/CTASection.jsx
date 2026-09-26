@@ -1,9 +1,11 @@
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { fadeUp, scaleIn, viewportOnce } from '../lib/animations';
+import { fadeUp, spring, viewportOnce } from '../lib/animations';
 
-export default function CTASection() {
+export default function CTASection({ id = 'about', onOpenAuth }) {
+  const navigate = useNavigate();
   return (
-    <section className="w-full px-5 py-space-xl bg-inverse-surface overflow-hidden relative">
+    <section id={id} className="w-full px-5 py-space-xl bg-inverse-surface overflow-hidden relative">
       {/* Atmospheric glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-primary-container/20 blur-3xl pointer-events-none" />
 
@@ -39,19 +41,26 @@ export default function CTASection() {
           viewport={{ ...viewportOnce, margin: '-40px' }}
         >
           <motion.button
+            type="button"
+            onClick={() => navigate('/discover')}
             className="bg-primary-container text-on-primary font-label-lg text-label-lg px-10 py-4 rounded-full shadow-lg flex items-center gap-2 hover:bg-[#e44e2c] transition-colors cursor-pointer"
             whileHover={{ scale: 1.06, y: -3, boxShadow: '0 16px 36px -4px rgba(255,90,54,0.5)' }}
             whileTap={{ scale: 0.96 }}
-            transition={{ duration: 0.22 }}
+            transition={spring}
           >
             <span className="material-symbols-outlined text-[20px]">explore</span>
             Start exploring Mumbai
           </motion.button>
           <motion.button
+            type="button"
+            onClick={() => {
+              onOpenAuth?.();
+              navigate('/guide-studio');
+            }}
             className="border border-inverse-on-surface/30 text-inverse-on-surface font-label-lg text-label-lg px-10 py-4 rounded-full hover:bg-inverse-on-surface/10 transition-colors cursor-pointer"
             whileHover={{ scale: 1.04, y: -2 }}
             whileTap={{ scale: 0.97 }}
-            transition={{ duration: 0.2 }}
+            transition={spring}
           >
             Become a contributor
           </motion.button>

@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
-import { fadeUp, scaleIn, staggerContainer, viewportOnce } from '../lib/animations';
+import { fadeUp, scaleIn, spring, staggerContainer, viewportOnce } from '../lib/animations';
+import { useCountUp } from '../lib/motionHooks';
 
 const steps = [
   {
@@ -26,15 +27,37 @@ const steps = [
 ];
 
 const statItems = [
-  { value: '140+', label: 'Local contributors', icon: 'groups' },
-  { value: '600+', label: 'Curated experiences', icon: 'explore' },
-  { value: '24', label: 'Neighborhoods mapped', icon: 'map' },
-  { value: '4.9★', label: 'Average experience rating', icon: 'star' },
+  { target: 140, decimals: 0, suffix: '+', label: 'Local contributors', icon: 'groups' },
+  { target: 600, decimals: 0, suffix: '+', label: 'Curated experiences', icon: 'explore' },
+  { target: 24, decimals: 0, suffix: '', label: 'Neighborhoods mapped', icon: 'map' },
+  { target: 4.9, decimals: 1, suffix: '★', label: 'Average experience rating', icon: 'star' },
 ];
 
-export default function HowItWorksSection() {
+function StatCard({ stat }) {
+  const { ref, value } = useCountUp(stat.target);
   return (
-    <section className="w-full px-5 py-space-xl bg-surface-container-low">
+    <motion.div
+      ref={ref}
+      className="flex flex-col items-center gap-2 p-5 rounded-2xl bg-surface-container-lowest text-center shadow-sm"
+      variants={fadeUp}
+      whileHover={{ y: -3 }}
+      transition={spring}
+    >
+      <span className="material-symbols-outlined text-primary text-[24px]">{stat.icon}</span>
+      <span className="font-[Manrope] text-[28px] font-bold tracking-[-0.03em] text-on-surface tabular-nums">
+        {value.toFixed(stat.decimals)}
+        {stat.suffix}
+      </span>
+      <span className="font-label-md text-label-md text-on-surface-variant">
+        {stat.label}
+      </span>
+    </motion.div>
+  );
+}
+
+export default function HowItWorksSection({ id = 'guides' }) {
+  return (
+    <section id={id} className="w-full px-5 py-space-xl bg-surface-container-low">
       <div className="max-w-7xl mx-auto flex flex-col gap-10">
         {/* Header */}
         <motion.div
@@ -112,20 +135,7 @@ export default function HowItWorksSection() {
           viewport={viewportOnce}
         >
           {statItems.map((stat) => (
-            <motion.div
-              key={stat.label}
-              className="flex flex-col items-center gap-2 p-5 rounded-2xl bg-surface-container-lowest text-center shadow-sm"
-              variants={fadeUp}
-              whileHover={{ y: -3, transition: { duration: 0.2 } }}
-            >
-              <span className="material-symbols-outlined text-primary text-[24px]">{stat.icon}</span>
-              <span className="font-[Manrope] text-[28px] font-bold tracking-[-0.03em] text-on-surface">
-                {stat.value}
-              </span>
-              <span className="font-label-md text-label-md text-on-surface-variant">
-                {stat.label}
-              </span>
-            </motion.div>
+            <StatCard key={stat.label} stat={stat} />
           ))}
         </motion.div>
       </div>
