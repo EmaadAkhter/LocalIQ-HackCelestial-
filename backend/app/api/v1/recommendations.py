@@ -246,6 +246,7 @@ async def get_recommendations(
     )
 
     items: list[RecommendationItem] = []
+    dropped_by_route: list[str] = []
     for index, scored in enumerate(top):
         exp: Experience = scored.experience
         google_route = routes[index] if index < len(routes) else None
@@ -261,6 +262,21 @@ async def get_recommendations(
                 travel_mode=google_route.travel_mode,
                 source=google_route.source,
             )
+
+            # Hard constraints were screened with a fast local estimate. Real
+            # route data can be much slower/farther, so re-validate before the
+            # result is ever shown: a recommendation must never exceed the
+            # requested window or the distance cap.
+            recheck = recommender.recheck_with_route(
+                exp,
+                distance_km=distance_km,
+                travel_minutes=travel_minutes,
+                time_hours=payload.time_hours,
+            )
+            if not recheck.ok:
+                dropped_by_route.append(f"{exp.name}: {recheck.reason}")
+                logger.info("Dropped after route recheck: %s (%s)", exp.name, recheck.reason)
+                continue
         else:
             distance_km = scored.distance_km
             travel_minutes = scored.travel_time_min
@@ -318,9 +334,18 @@ async def get_recommendations(
             )
         )
 
+    if dropped_by_route:
+        logger.info(
+            "Route recheck dropped %d/%d recommendations: %s",
+            len(dropped_by_route),
+            len(top),
+            "; ".join(dropped_by_route),
+        )
+
     out = RecommendationResponse(
         total_candidates=total_candidates,
-        feasible_count=result["feasible_count"],
+        # Post-enrichment truth: exactly what the client will receive.
+        feasible_count=len(items),
         weather_used=result["weather_used"],
         weather_summary=weather.get("description"),
         weather=weather_block,

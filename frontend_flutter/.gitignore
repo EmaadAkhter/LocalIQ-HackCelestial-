@@ -44,8 +44,5 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Secrets - the Google Maps keys live in the backend env, never in the app
-/android/local.properties
-**/ios/Flutter/Maps.xcconfig
-**/ios/Runner/GoogleService-Info.plist
-**/android/app/google-services.json
+# Widget Preview related
+.widget_preview/

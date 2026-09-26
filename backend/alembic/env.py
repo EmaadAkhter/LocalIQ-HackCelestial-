@@ -16,6 +16,7 @@ if str(BACKEND_ROOT) not in sys.path:
 
 from app.config import get_settings  # noqa: E402
 import app.models  # noqa: E402,F401  (registers tables on SQLModel.metadata)
+import app.models_prd  # noqa: E402,F401  (registers PRD v2 journey tables)
 
 config = context.config
 

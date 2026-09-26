@@ -121,7 +121,11 @@ def test_experiences_have_image_placeholder():
     assert response.status_code == 200
     for item in response.json()["items"]:
         assert item["image_url"], "every card needs an image"
-        assert item["image_url"].startswith("http")
+        # Images are either a backend-hosted curated asset (served at
+        # /static/images/...) or an absolute http(s) URL (e.g. Google proxy).
+        assert item["image_url"].startswith(("/static/images/", "http://", "https://")), (
+            f"unexpected image_url: {item['image_url']}"
+        )
 
 
 def test_provided_image_url_is_preserved():

@@ -15,6 +15,7 @@ LocalIQ proxy in :mod:`app.api.v1.places`.
 from __future__ import annotations
 
 import logging
+import time
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import Response
@@ -23,11 +24,43 @@ from sqlmodel import Session, select
 from app.database import get_session
 from app.models import Experience
 from app.schemas import PlaceSearchResponse, PlaceSearchResult
+from app.config import get_settings
 from app.services import google_places, google_routes
+from app.services.cache import TTLCache
 from app.services.recommender import estimate_travel_time_min, haversine_km
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+# ---------------------------------------------------------------------------
+# Search cache
+# ---------------------------------------------------------------------------
+# Typing in the search box repeats the same query, and every miss costs a Google
+# Places round-trip (~1.2s measured). Identical searches inside the TTL are
+# served from memory instead.
+
+_settings = get_settings()
+_places_cache = TTLCache(
+    maxsize=_settings.places_cache_maxsize,
+    ttl_seconds=_settings.places_cache_ttl_seconds,
+)
+
+
+def clear_places_cache() -> None:
+    """Drop cached place searches (used by tests)."""
+    _places_cache.clear()
+
+
+def places_cache_stats() -> dict[str, int]:
+    return _places_cache.stats()
+
+
+def _search_cache_key(
+    q: str, lat: float | None, lng: float | None, radius_m: int, limit: int
+) -> str:
+    return f"{q.strip().lower()}|{lat}|{lng}|{radius_m}|{limit}"
+
 
 
 def _local_results(
@@ -107,7 +140,17 @@ async def search_places(
     Places key configured (or on any Google error) the curated SQLite dataset is
     searched instead and ``source`` reports ``sqlite``.
     """
-    return await _search(q, lat, lng, radius_m, limit, session)
+    cache_key = _search_cache_key(q, lat, lng, radius_m, limit)
+    if _settings.places_cache_enabled:
+        cached = _places_cache.get(cache_key)
+        if cached is not None:
+            logger.debug("places cache hit for %r", q)
+            return cached
+
+    response = await _search(q, lat, lng, radius_m, limit, session)
+    if _settings.places_cache_enabled:
+        _places_cache.set(cache_key, response)
+    return response
 
 
 async def _search(q: str, lat, lng, radius_m, limit, session) -> PlaceSearchResponse:
@@ -258,11 +301,41 @@ async def place_photo(
     )
 
 
+_status_cache: dict[str, object] = {"at": 0.0, "payload": None}
+
+
+def clear_integrations_status_cache() -> None:
+    """Force the next /integrations/status call to re-probe (used by tests)."""
+    _status_cache["at"] = 0.0
+    _status_cache["payload"] = None
+
+
 @router.get("/integrations/status", summary="Google integration health")
-async def integrations_status():
-    """Which Google features are live right now. Never fails."""
-    return {
+async def integrations_status(refresh: bool = False):
+    """Which Google features are live.
+
+    Probing Google costs two network round-trips, so the result is cached for
+    ``integrations_cache_ttl_seconds``. Pass ``?refresh=true`` to force a
+    re-probe. Never fails: the payload always reports the fallback chain.
+    """
+    now = time.monotonic()
+    ttl = get_settings().integrations_cache_ttl_seconds
+    if (
+        not refresh
+        and _status_cache["payload"] is not None
+        and (now - float(_status_cache["at"])) < ttl
+    ):
+        payload = dict(_status_cache["payload"])  # type: ignore[arg-type]
+        payload["cached"] = True
+        return payload
+
+    payload = {
         "places": await google_places.google_health(),
         "routes": await google_routes.google_health(),
         "fallback": "sqlite+haversine",
+        "cached": False,
+        "ttl_seconds": ttl,
     }
+    _status_cache["at"] = now
+    _status_cache["payload"] = payload
+    return payload

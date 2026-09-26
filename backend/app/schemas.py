@@ -33,7 +33,7 @@ class ErrorResponse(BaseModel):
 
 
 # --------------------------------------------------------------------------
-# Shared value objects (used by services/parser.py, guide.py, explain.py)
+# Shared value objects (used by the ranking/AI service layer)
 # --------------------------------------------------------------------------
 
 
@@ -700,15 +700,27 @@ class ItineraryResponse(BaseModel):
 # --------------------------------------------------------------------------
 
 
-class NearbyExperience(BaseModel):
-    experience: ExperienceResponse
-    distance_km: float
+class NearbyExperience(ExperienceResponse):
+    """A nearby experience: the usual experience fields, plus distance/travel.
+
+    ``/experiences/nearby`` used to nest the experience under
+    ``{"experience": {...}, "distance_km": n}``, which was inconsistent with
+    every other experience endpoint. The item is now flat (same fields as
+    ``/experiences``) with ``distance_km``/``travel_time_min`` added, and
+    ``NearbyListResponse.results`` still exposes the legacy nested form so
+    older clients keep working.
+    """
+
+    distance_km: float = 0.0
+    travel_time_min: int = 0
 
 
 class NearbyListResponse(BaseModel):
     total: int
     radius_km: float
     items: list[NearbyExperience] = Field(default_factory=list)
+    #: Legacy shape, kept for backwards compatibility.
+    results: list[dict] = Field(default_factory=list)
 
 
 # --------------------------------------------------------------------------

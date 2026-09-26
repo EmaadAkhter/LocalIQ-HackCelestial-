@@ -150,6 +150,19 @@ class Settings(BaseSettings):
     recommend_cache_enabled: bool = True
     recommend_cache_ttl_seconds: int = 60
     recommend_cache_maxsize: int = 256
+    # Google Places text/nearby search: repeated identical queries are common
+    # (typing in the search box), so results are cached briefly.
+    places_cache_enabled: bool = True
+    places_cache_ttl_seconds: int = 120
+    places_cache_maxsize: int = 128
+    # Integration health probes: cached so /integrations/status never calls
+    # Google on every request.
+    integrations_cache_ttl_seconds: int = 300
+
+    # LLM circuit breaker: after N consecutive connection failures, stop trying
+    # for `cooldown` seconds and fall back immediately.
+    llm_circuit_failure_threshold: int = 3
+    llm_circuit_cooldown_seconds: float = 60.0
 
     # Images: {seed} is replaced with a slug of the experience name.
     image_placeholder_url_template: str = "https://picsum.photos/seed/{seed}/800/600"

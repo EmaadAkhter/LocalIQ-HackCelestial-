@@ -84,8 +84,10 @@ def get_session() -> Generator[Session, None, None]:
 def init_db() -> None:
     """Create tables. Safe to call repeatedly on startup."""
     try:
-        # Import models so SQLModel metadata is populated.
+        # Import models so SQLModel metadata is populated. Both modules are
+        # required: PRD v2 journey tables live in app.models_prd.
         import app.models  # noqa: F401
+        import app.models_prd  # noqa: F401
 
         SQLModel.metadata.create_all(engine)
         logger.info("Database initialized: %s", settings.database_url)

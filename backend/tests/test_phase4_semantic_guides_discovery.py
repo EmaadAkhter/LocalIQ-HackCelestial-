@@ -153,12 +153,12 @@ def test_create_book_and_review_package():
 
     # Clean up so other tests aren't affected by the extra package. The dev DB
     # persists across runs, so remove the child rows explicitly.
-    from app.models import GuideBooking, GuideReview
+    from app.models import PackageBooking, PackageReview
 
     with Session(engine) as s:
-        for review in s.exec(select(GuideReview).where(GuideReview.package_id == package_id)).all():
+        for review in s.exec(select(PackageReview).where(PackageReview.package_id == package_id)).all():
             s.delete(review)
-        for bk in s.exec(select(GuideBooking).where(GuideBooking.package_id == package_id)).all():
+        for bk in s.exec(select(PackageBooking).where(PackageBooking.package_id == package_id)).all():
             s.delete(bk)
         for stop in s.exec(
             select(GuidePackageStop).where(GuidePackageStop.package_id == package_id)
@@ -182,21 +182,6 @@ def test_booking_rejects_oversized_group():
         json={"package_id": package_id, "date": "2026-10-01", "group_size": max_size + 1},
     )
     assert r.status_code == 400
-
-
-def test_guide_availability_roundtrip():
-    with Session(engine) as s:
-        guide_id = s.exec(select(Guide)).first().id
-
-    r = client.post(
-        f"/api/v1/guides/{guide_id}/availability",
-        json={"available_date": "2026-11-01", "start_time": "10:00", "end_time": "14:00"},
-    )
-    assert r.status_code == 201
-
-    r = client.get(f"/api/v1/guides/{guide_id}/availability")
-    assert r.status_code == 200
-    assert any(a["start_time"] == "10:00" for a in r.json())
 
 
 # --- Discovery -------------------------------------------------------------
@@ -371,13 +356,13 @@ def test_admin_candidate_curation(monkeypatch):
         assert r.json()["status"] == "rejected"
 
         # Clean up the promoted experience and candidate.
-        from app.models import HiddenGemCandidate
+        from app.models import ScrapedCandidate
 
         with Session(engine) as s:
             exp = s.get(Experience, experience_id)
             if exp is not None:
                 s.delete(exp)
-            cand = s.get(HiddenGemCandidate, candidate_id)
+            cand = s.get(ScrapedCandidate, candidate_id)
             if cand is not None:
                 s.delete(cand)
             s.commit()

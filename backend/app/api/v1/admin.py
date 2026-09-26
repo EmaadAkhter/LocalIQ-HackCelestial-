@@ -19,7 +19,7 @@ from sqlmodel import Session, select
 
 from app.config import get_settings
 from app.database import engine, get_session
-from app.models import Experience, HiddenGemCandidate
+from app.models import Experience, ScrapedCandidate
 from app.rate_limit import PUBLIC_LIMIT, limiter
 from app.schemas import ExperienceCreate, ExperienceResponse, ExperienceUpdate
 from app.services.embeddings import embed_text
@@ -183,9 +183,9 @@ def list_candidates(
 ):
     """List hidden gem candidates by status (pending/approved/rejected)."""
     rows = session.exec(
-        select(HiddenGemCandidate)
-        .where(HiddenGemCandidate.status == status)
-        .order_by(HiddenGemCandidate.mention_count.desc(), HiddenGemCandidate.id.desc())
+        select(ScrapedCandidate)
+        .where(ScrapedCandidate.status == status)
+        .order_by(ScrapedCandidate.mention_count.desc(), ScrapedCandidate.id.desc())
         .limit(max(1, min(limit, 200)))
     ).all()
     return [
@@ -217,7 +217,7 @@ def approve_candidate(
     session: Session = Depends(get_session),
 ):
     """Promote a discovery candidate to a real experience."""
-    candidate = session.get(HiddenGemCandidate, candidate_id)
+    candidate = session.get(ScrapedCandidate, candidate_id)
     if candidate is None:
         raise HTTPException(status_code=404, detail="Candidate not found")
     if candidate.experience_id is not None:
@@ -271,7 +271,7 @@ def reject_candidate(
     candidate_id: int,
     session: Session = Depends(get_session),
 ):
-    candidate = session.get(HiddenGemCandidate, candidate_id)
+    candidate = session.get(ScrapedCandidate, candidate_id)
     if candidate is None:
         raise HTTPException(status_code=404, detail="Candidate not found")
     candidate.status = "rejected"

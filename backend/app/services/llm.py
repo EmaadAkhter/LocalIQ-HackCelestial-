@@ -18,6 +18,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import time
 import logging
 
 import httpx
@@ -39,6 +40,7 @@ _RETRYABLE_EXC = (
 )
 
 _client: httpx.AsyncClient | None = None
+_client_loop: asyncio.AbstractEventLoop | None = None
 _cache: TTLCache | None = None
 
 
@@ -52,9 +54,23 @@ class LLMError(RuntimeError):
 
 
 def get_http_client() -> httpx.AsyncClient:
-    """Return the shared connection-pooled client, creating it on first use."""
-    global _client
-    if _client is None or _client.is_closed:
+    """Return the shared connection-pooled client, creating it on first use.
+
+    The client is bound to the event loop that created it. If the running loop
+    has changed (e.g. successive ``asyncio.run`` calls in tests) the stale
+    client is discarded and a fresh one is built, so we never await a client
+    tied to an already-closed loop.
+    """
+    global _client, _client_loop
+    try:
+        loop: asyncio.AbstractEventLoop | None = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+    if (
+        _client is None
+        or _client.is_closed
+        or (_client_loop is not None and _client_loop is not loop)
+    ):
         settings = get_settings()
         _client = httpx.AsyncClient(
             timeout=settings.ollama_timeout_seconds,
@@ -63,15 +79,17 @@ def get_http_client() -> httpx.AsyncClient:
                 max_keepalive_connections=settings.llm_http_max_keepalive,
             ),
         )
+        _client_loop = loop
     return _client
 
 
 async def close_http_client() -> None:
     """Close the shared client (called on app shutdown)."""
-    global _client
+    global _client, _client_loop
     if _client is not None and not _client.is_closed:
         await _client.aclose()
     _client = None
+    _client_loop = None
 
 
 def _auth_headers() -> dict[str, str]:
@@ -125,6 +143,83 @@ def _cache_key(kind: str, model: str, payload: dict) -> str:
 # ---------------------------------------------------------------------------
 
 
+class _CircuitBreaker:
+    """Stop hammering an unreachable local LLM.
+
+    Without this, every ``/chat`` or ``/parse`` request pays the full retry
+    ladder (3 attempts + exponential backoff) even though Ollama is simply not
+    running — an ~8s freeze per click during a demo. After `threshold`
+    consecutive connection failures the breaker opens for `cooldown` seconds and
+    short-circuits to the caller's fallback immediately. A single success closes
+    it again, so normal behaviour is restored as soon as Ollama comes back.
+    """
+
+    def __init__(self, threshold: int, cooldown_seconds: float) -> None:
+        self.threshold = max(1, threshold)
+        self.cooldown_seconds = max(0.0, cooldown_seconds)
+        self.failures = 0
+        self.opened_at: float | None = None
+
+    @property
+    def is_open(self) -> bool:
+        if self.opened_at is None:
+            return False
+        if (time.monotonic() - self.opened_at) >= self.cooldown_seconds:
+            # Cooldown elapsed: half-open and let the next call try again.
+            self.opened_at = None
+            self.failures = 0
+            return False
+        return True
+
+    def record_failure(self) -> None:
+        self.failures += 1
+        if self.failures >= self.threshold and self.opened_at is None:
+            self.opened_at = time.monotonic()
+            logger.warning(
+                "LLM circuit opened after %d failures; skipping calls for %.0fs",
+                self.failures,
+                self.cooldown_seconds,
+            )
+
+    def record_success(self) -> None:
+        if self.failures or self.opened_at is not None:
+            logger.info("LLM circuit closed; local model is reachable again")
+        self.failures = 0
+        self.opened_at = None
+
+    def state(self) -> dict[str, object]:
+        remaining = 0.0
+        if self.opened_at is not None:
+            remaining = max(0.0, self.cooldown_seconds - (time.monotonic() - self.opened_at))
+        return {
+            "open": self.is_open,
+            "consecutive_failures": self.failures,
+            "threshold": self.threshold,
+            "cooldown_remaining_s": round(remaining, 1),
+        }
+
+    def reset(self) -> None:
+        self.failures = 0
+        self.opened_at = None
+
+
+_circuit = _CircuitBreaker(
+    get_settings().llm_circuit_failure_threshold,
+    get_settings().llm_circuit_cooldown_seconds,
+)
+
+
+def circuit_state() -> dict[str, object]:
+    """Introspection for tests and the status endpoints."""
+    return _circuit.state()
+
+
+def reset_circuit() -> None:
+    """Force the breaker closed (used by tests and manual recovery)."""
+    _circuit.reset()
+
+
+
 async def _post_json(
     url: str, payload: dict, *, timeout: float, attempts_override: int | None = None
 ) -> httpx.Response:
@@ -138,6 +233,12 @@ async def _post_json(
     attempts = max(1, attempts_override if attempts_override is not None else settings.llm_max_retries + 1)
     last_exc: Exception | None = None
 
+    # Fast path: the local LLM is known to be down, so skip the retry ladder and
+    # let the caller fall back to its heuristic/canned response immediately.
+    if _circuit.is_open:
+        logger.info("LLM circuit open; skipping call and falling back")
+        raise LLMError("local LLM unavailable (circuit open)")
+
     for attempt in range(attempts):
         try:
             response = await client.post(
@@ -147,15 +248,20 @@ async def _post_json(
                 await asyncio.sleep(settings.llm_retry_backoff_seconds * (2**attempt))
                 continue
             response.raise_for_status()
+            _circuit.record_success()
             return response
         except _RETRYABLE_EXC as exc:
             last_exc = exc
             if attempt < attempts - 1:
                 await asyncio.sleep(settings.llm_retry_backoff_seconds * (2**attempt))
                 continue
+            # Last attempt: count the failure *before* re-raising, otherwise the
+            # breaker never sees connection errors and the freeze persists.
+            _circuit.record_failure()
             raise
 
     if last_exc is not None:
+        _circuit.record_failure()
         raise last_exc
     raise LLMError("LLM request failed")
 

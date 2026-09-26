@@ -2,11 +2,13 @@
 
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi.errors import RateLimitExceeded
 from sqlalchemy import text
 from sqlmodel import Session
@@ -21,17 +23,25 @@ from app.api.v1 import (  # noqa: E402
     discovery,
     experiences,
     favorites,
+    gems,
+    groups,
     guide_packages,
     guides,
+    guides_ops,
     itineraries,
+    meetup,
     parse,
     places,
+    quests,
     recommendations,
+    solo,
     tags,
+    trust,
     weather,
 )
 from app.config import get_settings  # noqa: E402
 from app.database import get_session, init_db  # noqa: E402
+import app.models_prd  # noqa: E402,F401  (registers PRD v2 tables)
 from app.errors import error_response, register_exception_handlers  # noqa: E402
 from app.logging_config import configure_logging  # noqa: E402
 from app.metrics import init_metrics, metrics_payload  # noqa: E402
@@ -130,12 +140,33 @@ app.add_middleware(
 register_exception_handlers(app)
 app.add_exception_handler(RateLimitExceeded, _rate_limit_handler)
 
+# --- Curated experience images (static assets) -----------------------------
+# The 48 curated experiences ship with locally hosted, freely-licensed photos so
+# the demo looks complete even when the Google Places key is not configured.
+# Google's photo proxy still takes priority at request time.
+_IMAGE_DIR = Path(__file__).resolve().parent / "data" / "images"
+if _IMAGE_DIR.is_dir():
+    # Mounted at /static/images so a dataset value of "/static/images/x.jpg"
+    # resolves to <data>/images/x.jpg.
+    app.mount("/static/images", StaticFiles(directory=str(_IMAGE_DIR)), name="static-images")
+    logger.info("Serving curated images from %s at /static/images", _IMAGE_DIR)
+
 # --- Routes ----------------------------------------------------------------
 # All v1 routers share /api/v1 so routes match the API contract:
 # GET /api/v1/experiences, POST /api/v1/recommend, POST /api/v1/parse, ...
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(config.router, prefix="/api/v1", tags=["config"])
 app.include_router(places.router, prefix="/api/v1", tags=["places"])
+# PRD v2 journeys (sections 4-6). Mounted under /api/v1 so the whole client
+# surface is one base URL.
+app.include_router(solo.router, prefix="/api/v1", tags=["journey-solo"])
+app.include_router(meetup.router, prefix="/api/v1", tags=["journey-meetup"])
+app.include_router(groups.router, prefix="/api/v1", tags=["journey-groups"])
+app.include_router(quests.router, prefix="/api/v1", tags=["journey-quests"])
+app.include_router(guides_ops.router, prefix="/api/v1", tags=["journey-guides"])
+app.include_router(gems.router, prefix="/api/v1", tags=["journey-gems"])
+app.include_router(trust.router, prefix="/api/v1", tags=["journey-trust"])
+
 app.include_router(experiences.router, prefix="/api/v1", tags=["experiences"])
 app.include_router(recommendations.router, prefix="/api/v1", tags=["recommendations"])
 app.include_router(tags.router, prefix="/api/v1", tags=["tags"])

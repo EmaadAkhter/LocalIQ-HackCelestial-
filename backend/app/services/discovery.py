@@ -8,8 +8,8 @@ The pipeline is self-hosted end to end and never requires paid APIs:
    the master tag taxonomy and known Mumbai areas.
 4. Fall back to a deterministic heuristic extractor when the model is
    unavailable (no Ollama, timeout, unparseable JSON, tests).
-5. Normalize tags against the taxonomy and store ``HiddenGemCandidate``,
-   ``Source`` and ``Mention`` rows for admin curation.
+5. Normalize tags against the taxonomy and store ``ScrapedCandidate``,
+   ``DiscoverySource`` and ``CandidateCitation`` rows for admin curation.
 
 When SearXNG is unavailable the endpoint degrades gracefully and returns an
 empty list.
@@ -32,7 +32,7 @@ from sqlmodel import Session, select
 
 from app.config import get_settings
 from app.database import engine
-from app.models import HiddenGemCandidate, Mention, Source
+from app.models import ScrapedCandidate, CandidateCitation, DiscoverySource
 
 logger = logging.getLogger(__name__)
 
@@ -520,14 +520,14 @@ async def extract_candidates(
 # ---------------------------------------------------------------------------
 
 
-def _get_or_create_source(session: Session, page: dict[str, Any]) -> Source:
+def _get_or_create_source(session: Session, page: dict[str, Any]) -> DiscoverySource:
     """Return an existing source by URL or create a new one."""
     url = page.get("url", "")
     parsed = urlparse(url)
     base = f"{parsed.scheme}://{parsed.netloc}" if parsed.netloc else url
-    source = session.exec(select(Source).where(Source.base_url == base)).first()
+    source = session.exec(select(DiscoverySource).where(DiscoverySource.base_url == base)).first()
     if source is None:
-        source = Source(
+        source = DiscoverySource(
             name=page.get("title", parsed.netloc or "unknown"),
             base_url=base,
             source_type="blog",
@@ -547,11 +547,11 @@ def _get_or_create_source(session: Session, page: dict[str, Any]) -> Source:
 def _store_candidate(
     session: Session,
     candidate: dict[str, Any],
-    source: Source | None,
-) -> HiddenGemCandidate:
+    source: DiscoverySource | None,
+) -> ScrapedCandidate:
     """Store a candidate and its mention, avoiding duplicate titles."""
     existing = session.exec(
-        select(HiddenGemCandidate).where(HiddenGemCandidate.raw_title == candidate["raw_title"])
+        select(ScrapedCandidate).where(ScrapedCandidate.raw_title == candidate["raw_title"])
     ).first()
     if existing is not None:
         existing.mention_count = (existing.mention_count or 0) + 1
@@ -564,7 +564,7 @@ def _store_candidate(
     tags = data.get("tags") or _normalize_tags(candidate["raw_title"], data.get("sentence", ""))
     method = data.get("extraction_method", "heuristic")
 
-    db_candidate = HiddenGemCandidate(
+    db_candidate = ScrapedCandidate(
         raw_title=candidate["raw_title"],
         url=candidate.get("url"),
         area=candidate.get("area"),
@@ -582,7 +582,7 @@ def _store_candidate(
     session.refresh(db_candidate)
 
     if source is not None:
-        mention = Mention(
+        mention = CandidateCitation(
             candidate_id=db_candidate.id,
             source_id=source.id,
             url=candidate.get("url"),

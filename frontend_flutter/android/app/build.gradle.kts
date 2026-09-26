@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.localiq.localiq"
+    namespace = "com.nexify.localiq.localiq"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -16,22 +16,17 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.localiq.localiq"
+        applicationId = "com.nexify.localiq.localiq"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
+        // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
+        // is added automatically by Flutter. (https://developer.android.com/studio/build/configure-apk-splits#configure-APK-versions)
+        // You can force using the value of versionCode by specifying the `-P force-version-code-ignoring-abi=true`
+        // flag during build.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-
-        // Google Maps key for Android. Supplied by the backend env
-        // (GOOGLE_MAPS_API_KEY_ANDROID in backend/.env or infra/.env) - never
-        // committed. Resolution order: -PGOOGLE_MAPS_API_KEY, environment
-        // variable GOOGLE_MAPS_API_KEY, android/local.properties.
-        manifestPlaceholders["GOOGLE_MAPS_API_KEY"] =
-            (project.findProperty("GOOGLE_MAPS_API_KEY") as String?)
-                ?: System.getenv("GOOGLE_MAPS_API_KEY")
-                ?: ""
     }
 
     buildTypes {

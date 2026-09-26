@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import logging
 import secrets
-from datetime import date as date_type
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -17,17 +16,14 @@ from sqlmodel import Session, select
 from app.database import get_session
 from app.models import (
     Guide,
-    GuideAvailability,
-    GuideBooking,
     GuidePackage,
     GuidePackageStop,
-    GuideReview,
+    PackageBooking,
+    PackageReview,
     User,
 )
 from app.rate_limit import PUBLIC_LIMIT, limiter
 from app.schemas import (
-    GuideAvailabilityCreate,
-    GuideAvailabilityResponse,
     GuideBookingCreate,
     GuideBookingResponse,
     GuidePackageCreate,
@@ -184,7 +180,7 @@ def book_guide_package(
             detail=f"Group size exceeds maximum of {package.max_group_size}",
         )
 
-    booking = GuideBooking(
+    booking = PackageBooking(
         guide_id=package.guide_id,
         package_id=package_id,
         user_id=current_user.id if current_user else None,
@@ -226,69 +222,11 @@ def my_guide_bookings(
     if current_user is None:
         return []
     rows = session.exec(
-        select(GuideBooking)
-        .where(GuideBooking.user_id == current_user.id)
-        .order_by(GuideBooking.id.desc())
+        select(PackageBooking)
+        .where(PackageBooking.user_id == current_user.id)
+        .order_by(PackageBooking.id.desc())
     ).all()
     return [GuideBookingResponse.model_validate(r) for r in rows]
-
-
-@router.get(
-    "/guides/{guide_id}/availability",
-    response_model=list[GuideAvailabilityResponse],
-    summary="Guide availability",
-)
-@limiter.limit(PUBLIC_LIMIT)
-def guide_availability(
-    request: Request,
-    response: Response,
-    guide_id: int,
-    session: Session = Depends(get_session),
-):
-    guide = session.get(Guide, guide_id)
-    if guide is None:
-        raise HTTPException(status_code=404, detail="Guide not found")
-    rows = session.exec(
-        select(GuideAvailability)
-        .where(GuideAvailability.guide_id == guide_id)
-        .order_by(GuideAvailability.available_date)
-    ).all()
-    return [GuideAvailabilityResponse.model_validate(r) for r in rows]
-
-
-@router.post(
-    "/guides/{guide_id}/availability",
-    response_model=GuideAvailabilityResponse,
-    status_code=201,
-    summary="Add a guide availability slot",
-)
-@limiter.limit(PUBLIC_LIMIT)
-def add_guide_availability(
-    request: Request,
-    response: Response,
-    guide_id: int,
-    payload: GuideAvailabilityCreate,
-    session: Session = Depends(get_session),
-):
-    guide = session.get(Guide, guide_id)
-    if guide is None:
-        raise HTTPException(status_code=404, detail="Guide not found")
-    try:
-        available_date = date_type.fromisoformat(payload.available_date)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="available_date must be YYYY-MM-DD")
-
-    row = GuideAvailability(
-        guide_id=guide_id,
-        available_date=available_date,
-        start_time=payload.start_time,
-        end_time=payload.end_time,
-        is_available=payload.is_available,
-    )
-    session.add(row)
-    session.commit()
-    session.refresh(row)
-    return GuideAvailabilityResponse.model_validate(row)
 
 
 @router.post(
@@ -309,11 +247,11 @@ def review_guide_package(
     package = session.get(GuidePackage, package_id)
     if package is None:
         raise HTTPException(status_code=404, detail="Package not found")
-    booking = session.get(GuideBooking, payload.booking_id)
+    booking = session.get(PackageBooking, payload.booking_id)
     if booking is None or booking.package_id != package_id:
         raise HTTPException(status_code=404, detail="Booking not found for package")
 
-    review = GuideReview(
+    review = PackageReview(
         booking_id=payload.booking_id,
         guide_id=package.guide_id,
         package_id=package_id,
@@ -340,8 +278,8 @@ def list_guide_package_reviews(
     session: Session = Depends(get_session),
 ):
     rows = session.exec(
-        select(GuideReview)
-        .where(GuideReview.package_id == package_id)
-        .order_by(GuideReview.id.desc())
+        select(PackageReview)
+        .where(PackageReview.package_id == package_id)
+        .order_by(PackageReview.id.desc())
     ).all()
     return [GuideReviewResponse.model_validate(r) for r in rows]
