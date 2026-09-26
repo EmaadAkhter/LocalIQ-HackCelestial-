@@ -29,6 +29,9 @@ __all__ = [
     "hash_password",
     "verify_password",
     "create_session",
+    "create_session_pair",
+    "resolve_refresh",
+    "rotate_refresh",
     "revoke_session",
     "resolve_user",
     "get_current_user",
@@ -88,11 +91,20 @@ def _token_hash(token: str) -> str:
     ).hexdigest()
 
 
-def create_session(user_id: int, session: Session) -> tuple[str, datetime, datetime]:
-    """Create a persisted session. Returns (token, expires_at, created_at)."""
+def create_session_pair(
+    user_id: int, session: Session
+) -> tuple[str, str, datetime, datetime]:
+    """Create a persisted session with a refresh token.
+
+    Returns ``(access_token, refresh_token, access_expires_at, created_at)``.
+    Only hashes are stored, so the database cannot be replayed.
+    """
+    settings = get_settings()
     now = utcnow()
-    expires_at = now + timedelta(minutes=get_settings().auth_token_ttl_minutes)
+    expires_at = now + timedelta(minutes=settings.auth_token_ttl_minutes)
+    refresh_expires_at = now + timedelta(days=settings.auth_refresh_ttl_days)
     token = secrets.token_urlsafe(TOKEN_BYTES)
+    refresh_token = secrets.token_urlsafe(TOKEN_BYTES)
 
     from app.models import UserSession  # local import to avoid cycles
 
@@ -102,10 +114,52 @@ def create_session(user_id: int, session: Session) -> tuple[str, datetime, datet
             token_hash=_token_hash(token),
             created_at=now,
             expires_at=expires_at,
+            refresh_token_hash=_token_hash(refresh_token),
+            refresh_expires_at=refresh_expires_at,
         )
     )
     session.commit()
-    return token, expires_at, now
+    return token, refresh_token, expires_at, now
+
+
+def create_session(user_id: int, session: Session) -> tuple[str, datetime, datetime]:
+    """Create a persisted session. Returns (token, expires_at, created_at)."""
+    token, _refresh, expires_at, created_at = create_session_pair(user_id, session)
+    return token, expires_at, created_at
+
+
+def resolve_refresh(refresh_token: str, session: Session) -> "UserSession | None":
+    """Look up an unexpired session by its refresh token, or None."""
+    from app.models import UserSession
+
+    row = session.exec(
+        select(UserSession).where(
+            UserSession.refresh_token_hash == _token_hash(refresh_token)
+        )
+    ).first()
+    if not row:
+        return None
+    if row.refresh_expires_at is not None and row.refresh_expires_at < utcnow():
+        session.delete(row)
+        session.commit()
+        return None
+    return row
+
+
+def rotate_refresh(
+    refresh_token: str, session: Session
+) -> tuple[tuple[str, str, datetime, datetime], int] | None:
+    """Exchange a refresh token for a fresh session pair (rotating the old one).
+
+    Returns ``((access, refresh, expires_at, created_at), user_id)`` or None.
+    """
+    row = resolve_refresh(refresh_token, session)
+    if row is None:
+        return None
+    user_id = row.user_id
+    session.delete(row)
+    session.commit()
+    return create_session_pair(user_id, session), user_id
 
 
 def revoke_session(token: str, session: Session) -> None:

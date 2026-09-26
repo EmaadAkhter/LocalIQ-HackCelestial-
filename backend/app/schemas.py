@@ -358,6 +358,7 @@ class RegisterRequest(BaseModel):
     name: str = Field(..., min_length=2, max_length=80, examples=["Aarav Sharma"])
     email: str = Field(..., min_length=5, max_length=200, examples=["aarav@example.com"])
     password: str = Field(..., min_length=8, max_length=128, examples=["Secret123"])
+    terms_accepted: bool | None = Field(default=None)
 
     model_config = {"json_schema_extra": {"example": {"name": "Aarav Sharma", "email": "aarav@example.com", "password": "Secret123"}}}
 
@@ -390,15 +391,42 @@ class UserResponse(BaseModel):
     email: str
     group_type: str | None = None
     created_at: datetime
+    # App-facing mirror of the Flutter `LocalIqUser` model so the client can
+    # parse one flat object without a translation layer.
+    display_name: str = ""
+    avatar_url: str | None = None
+    provider: str = "email"
+    tier: str = "free"
+    home_city: str = "Mumbai"
+    is_anonymous: bool = False
 
     model_config = {"from_attributes": True}
+
+    @model_validator(mode="after")
+    def _fill_display_name(self) -> "UserResponse":
+        if not self.display_name:
+            self.display_name = self.name
+        return self
 
 
 class TokenResponse(BaseModel):
     access_token: str
+    refresh_token: str = ""
     token_type: str = "bearer"
     expires_in: int
     user: UserResponse
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str = Field(..., min_length=10)
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: str = Field(..., min_length=5, max_length=200)
+
+
+class GoogleAuthRequest(BaseModel):
+    id_token: str = Field(..., min_length=10)
 
 
 # --------------------------------------------------------------------------

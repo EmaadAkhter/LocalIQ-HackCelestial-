@@ -162,6 +162,14 @@ class User(TimestampMixin, table=True):
     personalization_enabled: bool = Field(default=True)
     preferred_language: str = Field(default="en", max_length=8)
 
+    # App-facing account metadata, mirroring the Flutter `LocalIqUser` model.
+    # ``provider`` is how the account was created; ``tier`` is the subscription
+    # level (guest/free/plus/pro) — distinct from the PRD ``trust_tier``.
+    provider: str = Field(default="email", max_length=20)
+    tier: str = Field(default="free", max_length=20)
+    home_city: str = Field(default="Mumbai", max_length=80)
+    is_anonymous: bool = Field(default=False)
+
     sessions: list["UserSession"] = Relationship(back_populates="user")
 
 
@@ -175,6 +183,10 @@ class UserSession(TimestampMixin, table=True):
     user_id: int = Field(foreign_key="users.id", index=True)
     token_hash: str = Field(index=True, unique=True)
     expires_at: datetime = Field(sa_type=DateTime, sa_column_kwargs={"nullable": False})
+    # Long-lived refresh token paired with this session, so ``/auth/refresh``
+    # can mint a new access token without a password.
+    refresh_token_hash: Optional[str] = Field(default=None, index=True, unique=True)
+    refresh_expires_at: Optional[datetime] = Field(default=None, sa_type=DateTime)
 
     user: Optional["User"] = Relationship(back_populates="sessions")
 

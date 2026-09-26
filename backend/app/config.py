@@ -65,6 +65,11 @@ class Settings(BaseSettings):
     # Auth (local, self-hosted)
     auth_secret_key: str = "localiq-dev-secret-change-me"
     auth_token_ttl_minutes: int = 60 * 24 * 7
+    # Refresh tokens outlive access tokens; the app exchanges one on cold start.
+    auth_refresh_ttl_days: int = 30
+    # Google Sign-In: when set, /auth/google verifies the ID token against
+    # Google's tokeninfo endpoint. Empty falls back to dev-mode claim decoding.
+    google_oauth_client_id: str = ""
 
     # Local LLM (Ollama)
     ollama_url: str = "http://localhost:11434"

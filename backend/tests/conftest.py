@@ -34,7 +34,7 @@ from sqlmodel import delete, select  # noqa: E402
 
 # Name / email fragments that only ever appear on rows created by the test suite.
 _TEST_NAME_FRAGMENTS = ("TS-", "P5 ", "P6 ", "P5Test", "Test User", "Demo User", "tmp-", "temp-")
-_TEST_EMAIL_FRAGMENTS = ("@localiq.test", "@example.com", "nobody@", "p5user", "testuser")
+_TEST_EMAIL_FRAGMENTS = ("@localiq.test", "@example.com", "nobody@", "p5user", "testuser", "@guest.localiq")
 
 
 def _is_test_row(name: str) -> bool:
