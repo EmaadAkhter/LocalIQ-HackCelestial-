@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import '../../../core/error/app_exception.dart';
+import '../../../core/network/auth_token_holder.dart';
 import '../../../core/network/json_api_client.dart';
 import '../../../core/utils/json_map_x.dart';
 import '../../context/domain/discovery_context.dart';
@@ -20,10 +21,16 @@ import '../domain/auth_service.dart';
 /// refresh token with `flutter_secure_storage` and call /auth/refresh on
 /// cold start; `restore()` is the seam for that.
 class RemoteAuthService implements AuthService {
-  RemoteAuthService(this._client, {AuthTokenStore? tokenStore})
-      : _tokenStore = tokenStore ?? InMemoryAuthTokenStore();
+  RemoteAuthService(this._client, {AuthTokenStore? tokenStore, AuthTokenHolder? tokenHolder})
+      : _tokenStore = tokenStore ?? InMemoryAuthTokenStore(),
+        _tokenHolder = tokenHolder;
 
   final JsonApiClient _client;
+
+  /// Mirrors the access token into the transport so authenticated calls
+  /// (onboarding, driver trips, wallet) carry it. Null in tests that construct
+  /// the service directly.
+  final AuthTokenHolder? _tokenHolder;
 
   final _controller = StreamController<AuthSession?>.broadcast();
   AuthSession? _session;
@@ -134,6 +141,7 @@ class RemoteAuthService implements AuthService {
 
   void _emit(AuthSession? session) {
     _session = session;
+    _tokenHolder?.set(session?.accessToken);
     if (!_controller.isClosed) _controller.add(session);
   }
 

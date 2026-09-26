@@ -10,11 +10,15 @@ import '../../features/auth/presentation/screens/guide_signup_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/signup_screen.dart';
 import '../../features/director/presentation/director_screen.dart';
+import '../../features/driver/presentation/driver_trip_screen.dart';
+import '../../features/driver/presentation/driver_trips_screen.dart';
 import '../../features/explorer/discover/presentation/discover_screen.dart';
 import '../../features/explorer/home/presentation/home_screen.dart';
 import '../../features/guides/presentation/guide_dashboard_screen.dart';
 import '../../features/guides/presentation/guide_marketplace_screen.dart';
+import '../../features/guides/presentation/guide_onboarding_screen.dart';
 import '../../features/itinerary/presentation/plan_screen.dart';
+import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/places/presentation/screens/explore_screen.dart';
 import '../../features/places/presentation/screens/place_details_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
@@ -64,6 +68,16 @@ GoRouter createAppRouter() {
         path: '/forgot-password',
         pageBuilder: (context, state) =>
             const NoTransitionPage(child: ForgotPasswordScreen()),
+      ),
+      GoRoute(
+        path: '/onboarding',
+        pageBuilder: (context, state) =>
+            const MaterialPage(child: OnboardingScreen()),
+      ),
+      GoRoute(
+        path: '/guide-onboarding',
+        pageBuilder: (context, state) =>
+            const MaterialPage(child: GuideOnboardingScreen()),
       ),
       GoRoute(
         path: '/guide-login',
@@ -177,6 +191,21 @@ GoRouter createAppRouter() {
         path: '/guide/dashboard',
         pageBuilder: (context, state) =>
             const MaterialPage(child: GuideDashboardScreen()),
+      ),
+      // Driver: trip list + live trip map (pickup -> stops -> drop)
+      GoRoute(
+        path: '/driver',
+        pageBuilder: (context, state) =>
+            const MaterialPage(child: DriverTripsScreen()),
+      ),
+      GoRoute(
+        path: '/driver/trip/:id',
+        pageBuilder: (context, state) => MaterialPage(
+          key: state.pageKey,
+          child: DriverTripScreen(
+            bookingId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+          ),
+        ),
       ),
       // Phase 13: Taste Profile
       GoRoute(

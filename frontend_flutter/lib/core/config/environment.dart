@@ -111,7 +111,7 @@ class Environment {
         const String.fromEnvironment('LOCALIQ_GOOGLE_PLACES_API_KEY'),
     useOfflineData: const bool.fromEnvironment(
       'LOCALIQ_OFFLINE',
-      defaultValue: true,
+      defaultValue: false,
     ),
     requestTimeout: Duration(
       seconds: const int.fromEnvironment(

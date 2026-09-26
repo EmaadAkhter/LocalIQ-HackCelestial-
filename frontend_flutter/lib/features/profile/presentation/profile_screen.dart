@@ -390,6 +390,36 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                       const Divider(height: 1),
                       ListTile(
+                        leading: const Icon(Icons.local_taxi_rounded, color: AppColors.blue),
+                        title: const Text('Driver trips & live map'),
+                        subtitle: const Text('Pickup, stops and drop-off for your trips'),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () {
+                          if (isGuest) {
+                            _showAccountRequiredDialog(context, 'Driver trips');
+                          } else {
+                            context.push('/driver');
+                          }
+                        },
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(Icons.badge_outlined, color: AppColors.success),
+                        title: const Text('Become a guide'),
+                        subtitle: const Text('Upload licences, pick areas & start earning'),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => context.push('/guide-onboarding'),
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(Icons.restaurant_menu_rounded, color: AppColors.violet),
+                        title: const Text('Taste onboarding'),
+                        subtitle: const Text('Let us learn what you love, in a minute'),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => context.push('/onboarding'),
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
                         leading: const Icon(Icons.auto_awesome_outlined),
                         title: const Text('Companion'),
                         subtitle: Text('$chat messages'),

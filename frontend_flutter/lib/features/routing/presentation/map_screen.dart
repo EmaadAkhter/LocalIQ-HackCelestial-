@@ -68,7 +68,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 lat: place.centre.latitude,
                 lng: place.centre.longitude,
               ),
-              tone: place.localFavourite ? 'gem' : 'primary',
+              kind: place.localFavourite ? PinKind.gem : PinKind.place,
+              tone: place.localFavourite ? 'gem' : 'place',
               selected: isSelected,
               onTap: () {
                 setState(() => _selectedPlace = place);
@@ -94,6 +95,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   height: MediaQuery.sizeOf(context).height,
                   showLabels: true,
                   interactive: true,
+                  showControls: true,
+                  padding: 0.5,
                 ),
               ),
 

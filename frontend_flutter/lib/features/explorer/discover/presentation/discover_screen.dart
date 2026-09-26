@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/providers.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../context/application/discovery_context_controller.dart';
 import '../../../places/domain/place.dart';
+import '../../../places/presentation/widgets/search_map_view.dart';
 import '../widgets/discover_filter_sheet.dart';
 
 /// Discover screen — full search experience with filter sheet.
@@ -24,6 +26,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   late final TextEditingController _searchCtrl;
   String _query = '';
   _DiscoverSort _sort = _DiscoverSort.relevance;
+  _DiscoverView _view = _DiscoverView.list;
 
   @override
   void initState() {
@@ -65,10 +68,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               onFilter: () => _showFilterSheet(context),
             ),
 
-            // ── Sort + active filters
+            // ── Sort + active filters + list/map switch
             _DiscoverSortRow(
               sort: _sort,
               onSort: (s) => setState(() => _sort = s),
+              view: _view,
+              onView: (v) => setState(() => _view = v),
             ),
 
             // ── Results
@@ -78,6 +83,16 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   final results = _filter(places);
                   if (results.isEmpty) {
                     return _EmptyState(query: _query);
+                  }
+                  if (_view == _DiscoverView.map) {
+                    final centre = ref.watch(discoveryContextProvider).centre;
+                    return SearchMapView(
+                      places: results,
+                      userLocation: (
+                        lat: centre.latitude,
+                        lng: centre.longitude,
+                      ),
+                    );
                   }
                   return _DiscoverResults(places: results);
                 },
@@ -167,6 +182,8 @@ class _DiscoverSearchBar extends StatelessWidget {
 
 enum _DiscoverSort { relevance, distance, rating, price }
 
+enum _DiscoverView { list, map }
+
 extension _DiscoverSortX on _DiscoverSort {
   String get label => switch (this) {
         _DiscoverSort.relevance => 'Relevant',
@@ -177,10 +194,17 @@ extension _DiscoverSortX on _DiscoverSort {
 }
 
 class _DiscoverSortRow extends StatelessWidget {
-  const _DiscoverSortRow({required this.sort, required this.onSort});
+  const _DiscoverSortRow({
+    required this.sort,
+    required this.onSort,
+    required this.view,
+    required this.onView,
+  });
 
   final _DiscoverSort sort;
   final ValueChanged<_DiscoverSort> onSort;
+  final _DiscoverView view;
+  final ValueChanged<_DiscoverView> onView;
 
   @override
   Widget build(BuildContext context) {
@@ -241,7 +265,82 @@ class _DiscoverSortRow extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(width: 8),
+          _ViewToggle(view: view, onView: onView),
         ],
+      ),
+    );
+  }
+}
+
+/// List/map switch for the search results.
+class _ViewToggle extends StatelessWidget {
+  const _ViewToggle({required this.view, required this.onView});
+
+  final _DiscoverView view;
+  final ValueChanged<_DiscoverView> onView;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: AppColors.border),
+      ),
+      padding: const EdgeInsets.all(2),
+      child: Row(
+        children: [
+          _ViewToggleButton(
+            icon: Icons.view_list_rounded,
+            tooltip: 'List',
+            selected: view == _DiscoverView.list,
+            onTap: () => onView(_DiscoverView.list),
+          ),
+          _ViewToggleButton(
+            icon: Icons.map_rounded,
+            tooltip: 'Map',
+            selected: view == _DiscoverView.map,
+            onTap: () => onView(_DiscoverView.map),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ViewToggleButton extends StatelessWidget {
+  const _ViewToggleButton({
+    required this.icon,
+    required this.tooltip,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: AppMotion.fast,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+          ),
+          child: Icon(
+            icon,
+            size: 16,
+            color: selected ? Colors.white : AppColors.textSecondary,
+          ),
+        ),
       ),
     );
   }

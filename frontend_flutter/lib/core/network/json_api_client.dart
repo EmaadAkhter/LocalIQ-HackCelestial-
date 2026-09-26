@@ -16,12 +16,19 @@ class JsonApiClient {
     required this.baseUrl,
     required this.timeout,
     this.apiKey,
+    String? Function()? tokenProvider,
     HttpClient? httpClient,
-  }) : _injected = httpClient;
+  })  : _tokenProvider = tokenProvider,
+        _injected = httpClient;
 
   final String baseUrl;
   final Duration timeout;
   final String? apiKey;
+
+  /// Supplies the signed-in user's access token per request. Takes precedence
+  /// over [apiKey] when it returns a value, so a session token always wins over
+  /// the static first-party key.
+  final String? Function()? _tokenProvider;
 
   /// Injected for tests; created lazily otherwise.
   final HttpClient? _injected;
@@ -33,8 +40,12 @@ class JsonApiClient {
     if (json) request.headers.set(HttpHeaders.contentTypeHeader, 'application/json');
     request.headers.set(HttpHeaders.acceptHeader, 'application/json');
     request.headers.set('X-Client', 'localiq-flutter');
-    if (apiKey != null) {
-      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $apiKey');
+    final sessionToken = _tokenProvider?.call();
+    final bearer = (sessionToken != null && sessionToken.isNotEmpty)
+        ? sessionToken
+        : apiKey;
+    if (bearer != null && bearer.isNotEmpty) {
+      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $bearer');
     }
   }
 
@@ -84,6 +95,57 @@ class JsonApiClient {
     return _send(() async {
       final request = await _client.deleteUrl(_uri(path));
       _applyHeaders(request, json: false);
+      return request.close();
+    });
+  }
+
+  /// Multipart form upload (a single file plus optional text fields).
+  ///
+  /// `dart:io` only, so this lives beside the JSON verbs rather than in a
+  /// repository; callers stay transport-agnostic.
+  Future<dynamic> postMultipart(
+    String path, {
+    required String fileField,
+    required List<int> bytes,
+    required String filename,
+    String? contentType,
+    Map<String, String> fields = const {},
+  }) {
+    return _send(() async {
+      final boundary =
+          '----localiq${DateTime.now().microsecondsSinceEpoch.toRadixString(16)}';
+      final request = await _client.postUrl(_uri(path));
+      request.headers.set(
+        HttpHeaders.contentTypeHeader,
+        'multipart/form-data; boundary=$boundary',
+      );
+      request.headers.set(HttpHeaders.acceptHeader, 'application/json');
+      request.headers.set('X-Client', 'localiq-flutter');
+      final sessionToken = _tokenProvider?.call();
+      final bearer = (sessionToken != null && sessionToken.isNotEmpty)
+          ? sessionToken
+          : apiKey;
+      if (bearer != null && bearer.isNotEmpty) {
+        request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $bearer');
+      }
+
+      final body = <int>[];
+      void write(String text) => body.addAll(utf8.encode(text));
+
+      for (final entry in fields.entries) {
+        write('--$boundary\r\n');
+        write('Content-Disposition: form-data; name="${entry.key}"\r\n\r\n');
+        write('${entry.value}\r\n');
+      }
+      write('--$boundary\r\n');
+      write(
+        'Content-Disposition: form-data; name="$fileField"; filename="$filename"\r\n',
+      );
+      write('Content-Type: ${contentType ?? 'application/octet-stream'}\r\n\r\n');
+      body.addAll(bytes);
+      write('\r\n--$boundary--\r\n');
+
+      request.add(body);
       return request.close();
     });
   }

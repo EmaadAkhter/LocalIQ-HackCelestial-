@@ -22,6 +22,7 @@ import '../features/saved/data/saved_repository.dart';
 import '../features/assistant/data/contextual_assistant_service.dart';
 import '../features/assistant/domain/assistant_service.dart';
 import 'config/providers.dart';
+import 'network/auth_token_holder.dart';
 import 'network/json_api_client.dart';
 
 /// ---------------------------------------------------------------------------
@@ -34,14 +35,24 @@ import 'network/json_api_client.dart';
 
 final apiClientProvider = Provider<JsonApiClient>((ref) {
   final env = ref.watch(environmentProvider);
+  final tokenHolder = ref.watch(authTokenHolderProvider);
   final client = JsonApiClient(
     baseUrl: env.apiBaseUrl,
     timeout: env.requestTimeout,
     apiKey: env.apiKey,
+    tokenProvider: () => tokenHolder.accessToken,
   );
   ref.onDispose(client.dispose);
   return client;
 }, name: 'localiq.apiClient');
+
+/// Carries the signed-in user's access token to [JsonApiClient]. Owned here so
+/// the client (built early) and the auth service (built later) never form a
+/// dependency cycle.
+final authTokenHolderProvider = Provider<AuthTokenHolder>(
+  (ref) => AuthTokenHolder(),
+  name: 'localiq.authTokenHolder',
+);
 
 // ------------------------------------------------------------------- places
 
@@ -103,9 +114,11 @@ final contextRepositoryProvider = Provider<ContextRepository>((ref) {
 // -------------------------------------------------------------------- auth
 
 final authServiceProvider = Provider<AuthService>((ref) {
-  return ref.watch(remoteDataEnabledProvider)
-      ? RemoteAuthService(ref.watch(apiClientProvider))
-      : LocalAuthService();
+  if (!ref.watch(remoteDataEnabledProvider)) return LocalAuthService();
+  return RemoteAuthService(
+    ref.watch(apiClientProvider),
+    tokenHolder: ref.watch(authTokenHolderProvider),
+  );
 }, name: 'localiq.authService');
 
 /// Current session, seeded from the auth service and updated on every change.
