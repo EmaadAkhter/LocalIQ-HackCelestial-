@@ -30,6 +30,7 @@ TRUST_GATES: dict[str, str] = {
     "book_guide": "basic",
     "leave_review": "standard",
     "start_quest": "basic",
+    "promote_gem": "standard",
 }
 
 
@@ -486,11 +487,16 @@ def next_guide_tier(
     average_rating: float,
     certifications: int,
 ) -> str | None:
-    """The next tier this guide qualifies for, or None."""
+    """The highest tier this guide already qualifies for, or None.
+
+    Returns the best tier available rather than the first one that matches, so
+    the growth screen does not tell a platinum-ready guide to chase silver.
+    """
     try:
         index = GUIDE_TIERS.index(tier)
     except ValueError:
         return None
+    best: str | None = None
     for candidate in GUIDE_TIERS[index + 1 :]:
         req = TIER_REQUIREMENTS.get(candidate, {})
         if (
@@ -498,8 +504,8 @@ def next_guide_tier(
             and average_rating >= req.get("rating", 0.0)
             and certifications >= req.get("certifications", 0)
         ):
-            return candidate
-    return None
+            best = candidate
+    return best
 
 
 def tier_features(tier: str) -> list[str]:

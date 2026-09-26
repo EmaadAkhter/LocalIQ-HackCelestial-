@@ -478,7 +478,7 @@ def tally_votes(
                 "stops": stops,
                 "total_minutes": winner.total_minutes,
                 "total_cost": winner.total_cost,
-                "votes": winner.votes,
+                "votes": tally.get(winner_id, {}).get("votes", 0),
             }
             group.final_plan = final_plan
             group.status = "locked"
@@ -528,12 +528,28 @@ def lock_group(
     options = session.exec(
         select(GroupOption).where(GroupOption.group_id == group_id)
     ).all()
-    winner = next((o for o in options if o.votes > 0), None)
+    # Use the same tally the GET /votes endpoint uses: counting rows in
+    # GroupOption.votes would always read zero because votes live in GroupVote.
+    votes = list(session.exec(select(GroupVote).where(GroupVote.group_id == group_id)).all())
+    vote_dicts = [{"option_id": v.option_id, "user_id": v.user_id, "rank": v.rank} for v in votes]
+    option_rank = {o.id or 0: o.rank for o in options}
+    tally = rules.tally_votes(vote_dicts, option_rank)
+    votes_cast = len({v["user_id"] for v in vote_dicts})
+    if not rules.quorum_reached(votes_cast, len(_members(session, group_id))):
+        raise HTTPException(
+            status_code=409,
+            detail=f"quorum not reached ({votes_cast} of {len(_members(session, group_id))} voted)",
+        )
+    winner_id, tie = rules.resolve_winner(tally, len(vote_dicts))
+    if tie:
+        raise HTTPException(status_code=409, detail="vote is tied; members must vote again")
+    winner = next((o for o in options if o.id == winner_id), None)
     if winner is None:
         raise HTTPException(status_code=409, detail="no votes cast yet")
 
     for option in options:
         option.is_winner = option.id == winner.id
+        option.votes = tally.get(winner.id, {}).get("votes", 0)
         session.add(option)
     group.final_plan = {
         "option_id": winner.id,
@@ -541,7 +557,7 @@ def lock_group(
         "stops": list(winner.stops or []),
         "total_minutes": winner.total_minutes,
         "total_cost": winner.total_cost,
-        "votes": winner.votes,
+        "votes": tally.get(winner.id, {}).get("votes", 0),
     }
     group.status = "locked"
     group.locked_at = utcnow()

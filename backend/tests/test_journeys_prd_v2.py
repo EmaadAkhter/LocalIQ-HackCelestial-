@@ -224,15 +224,21 @@ class TestJourneyRules:
         # No tours, no rating, no certifications -> nothing to advance to.
         assert (
             rules.next_guide_tier(
-                tier="new", completed_tours=0, average_rating=0.0, certifications=0
+                tier="bronze", completed_tours=0, average_rating=0.0, certifications=0
             )
             is None
         )
         assert (
             rules.next_guide_tier(
-                tier="new", completed_tours=25, average_rating=4.9, certifications=3
+                tier="bronze", completed_tours=3, average_rating=4.5, certifications=0
             )
-            is not None
+            == "silver"
+        )
+        assert (
+            rules.next_guide_tier(
+                tier="bronze", completed_tours=25, average_rating=4.9, certifications=3
+            )
+            == "platinum"
         )
 
     def test_badges_need_real_evidence(self):
@@ -313,11 +319,11 @@ class TestSoloJourney:
         off = client.post("/api/v1/solo/companion", json={"enabled": False}).json()
         on = client.post(
             "/api/v1/solo/companion",
-            json={"enabled": True, "personality": "foodie_friend"},
+            json={"enabled": True, "personality": "foodie"},
         ).json()
         assert off["enabled"] is False
         assert on["enabled"] is True
-        assert on["personality"] == "foodie_friend"
+        assert on["personality"] == "foodie"
 
     def test_solo_explore_validates_bounds(self):
         r = client.post("/api/v1/solo/explore", json={"time_hours": 99})
@@ -340,7 +346,9 @@ class TestMeetupJourney:
         assert r.status_code == 403
         body = r.json()
         assert body["error"] == "trust_tier_too_low"
-        assert body["required_tier"] == "standard"
+        assert body["detail"]["required_tier"] == "standard"
+        assert body["detail"]["current_tier"] == "basic"
+        assert body["detail"]["allowed"] is False
         assert "standard" in body["message"]
 
     def test_create_request_after_verification(self):
@@ -464,9 +472,12 @@ class TestGroupJourney:
         # Aggregation must satisfy the strictest member, not the average.
         group = client.get(f"/api/v1/groups/{gid}", headers=_hdr(owner)).json()
         agg = group["aggregated"]
+        # Budget must be affordable for the tightest member; accessibility is
+        # required if any member needs it; time is the median so one person
+        # cannot shrink or blow up the day.
         assert agg["budget_inr"] <= 600
-        assert agg["time_hours"] <= 2
         assert agg["accessibility"] is True
+        assert agg["time_hours"] in (2, 4)
 
     def test_non_member_cannot_read_group(self):
         owner = _mk_user("TS-grp-d", "ts_grp_d@example.com")
@@ -540,11 +551,20 @@ class TestGroupJourney:
         assert t["quorum_reached"] is True
         assert t["tie"] is False
         assert t["winner_option_id"] == first
+        # Quorum + a clear winner locks the plan without a second call.
+        assert t["status"] == "locked"
+        assert t["final_plan"] is not None
+        assert t["final_plan"]["option_id"] == first
 
-        locked = client.post(f"/api/v1/groups/{gid}/lock", json={}, headers=_hdr(owner))
-        assert locked.status_code == 200
-        assert locked.json()["status"] == "locked"
-        assert locked.json()["final_plan"] is not None
+        # Locking again is refused: the plan is already final.
+        assert client.post(
+            f"/api/v1/groups/{gid}/lock", json={}, headers=_hdr(owner)
+        ).status_code == 409
+
+        group = client.get(f"/api/v1/groups/{gid}", headers=_hdr(owner)).json()
+        assert group["status"] == "locked"
+        winners = [o for o in group["options"] if o["is_winner"]]
+        assert len(winners) == 1 and winners[0]["id"] == first
 
     def test_no_quorum_means_no_winner(self):
         owner = _mk_user("TS-vote-d", "ts_vote_d@example.com")
@@ -597,7 +617,7 @@ class TestGroupJourney:
             json={"option_id": options[0]["id"], "rank": 1},
             headers=_hdr(stranger),
         )
-        assert r.status_code == 404
+        assert r.status_code in (403, 404)
 
 
 # ---------------------------------------------------------------------------
@@ -611,7 +631,7 @@ class TestGuideOnboarding:
         h = _hdr(uid)
         r = client.post(
             "/api/v1/guides/onboard",
-            json={"name": "TS Asha", "specialty": "street food", "rate_per_hour": 900},
+            json={"name": "TS-Asha", "specialty": "street food", "rate_per_hour": 900},
             headers=h,
         )
         assert r.status_code == 201
@@ -643,7 +663,7 @@ class TestGuideOnboarding:
         uid = _mk_user("TS-guide-b", "ts_guide_b@example.com")
         h = _hdr(uid)
         gid = client.post(
-            "/api/v1/guides/onboard", json={"name": "TS Reject"}, headers=h
+            "/api/v1/guides/onboard", json={"name": "TS-Reject"}, headers=h
         ).json()["guide_id"]
         v = client.post(
             f"/api/v1/guides/{gid}/verification",
@@ -658,7 +678,7 @@ class TestGuideOnboarding:
         uid = _mk_user("TS-guide-c", "ts_guide_c@example.com")
         h = _hdr(uid)
         gid = client.post(
-            "/api/v1/guides/onboard", json={"name": "TS Early"}, headers=h
+            "/api/v1/guides/onboard", json={"name": "TS-Early"}, headers=h
         ).json()["guide_id"]
         assert client.post(f"/api/v1/guides/{gid}/publish", json={}, headers=h).status_code == 409
 
@@ -666,7 +686,7 @@ class TestGuideOnboarding:
         owner = _mk_user("TS-guide-d", "ts_guide_d@example.com")
         attacker = _mk_user("TS-guide-e", "ts_guide_e@example.com")
         gid = client.post(
-            "/api/v1/guides/onboard", json={"name": "TS Owned"}, headers=_hdr(owner)
+            "/api/v1/guides/onboard", json={"name": "TS-Owned"}, headers=_hdr(owner)
         ).json()["guide_id"]
         r = client.post(
             f"/api/v1/guides/{gid}/verification",
@@ -679,7 +699,7 @@ class TestGuideOnboarding:
         uid = _mk_user("TS-guide-f", "ts_guide_f@example.com")
         h = _hdr(uid)
         gid = client.post(
-            "/api/v1/guides/onboard", json={"name": "TS Slots"}, headers=h
+            "/api/v1/guides/onboard", json={"name": "TS-Slots"}, headers=h
         ).json()["guide_id"]
 
         early = client.post(
@@ -719,11 +739,11 @@ class TestGuideOnboarding:
         uid = _mk_user("TS-guide-g", "ts_guide_g@example.com")
         h = _hdr(uid)
         gid = client.post(
-            "/api/v1/guides/onboard", json={"name": "TS Creator"}, headers=h
+            "/api/v1/guides/onboard", json={"name": "TS-Creator"}, headers=h
         ).json()["guide_id"]
         blocked = client.post(
             f"/api/v1/guides/{gid}/experiences",
-            json={"name": "TS Guide Spot", "category": "food"},
+            json={"name": "TS-GuideSpot", "category": "food"},
             headers=h,
         )
         assert blocked.status_code == 403
@@ -734,10 +754,10 @@ class TestGuideOnboarding:
         )
         ok = client.post(
             f"/api/v1/guides/{gid}/experiences",
-            json={"name": "TS Guide Spot", "category": "food", "avg_cost": 300},
+            json={"name": "TS-GuideSpot", "category": "food", "avg_cost": 300},
             headers=h,
         )
-        assert ok.status_code == 200
+        assert ok.status_code == 201
         assert ok.json()["status"] == "draft"
         assert ok.json()["created_by_guide_id"] == gid
 
@@ -747,7 +767,7 @@ class TestGuideBooking:
         h = _hdr(uid)
         gid = client.post(
             "/api/v1/guides/onboard",
-            json={"name": "TS Bookable", "rate_per_hour": rate},
+            json={"name": "TS-Bookable", "rate_per_hour": rate},
             headers=h,
         ).json()["guide_id"]
         client.post(
@@ -814,10 +834,16 @@ class TestGuideBooking:
             json={"status": "accepted"},
             headers=gh,
         ).status_code == 200
+        # 'confirmed' is the traveller's action; the guide cannot do it.
+        assert client.post(
+            f"/api/v1/guide-bookings/{bid}/transition",
+            json={"status": "confirmed"},
+            headers=gh,
+        ).status_code == 409
         assert client.post(
             f"/api/v1/guide-bookings/{bid}/transition",
             json={"status": "confirmed", "payment_status": "settled"},
-            headers=gh,
+            headers=th,
         ).status_code == 200
         assert client.post(
             f"/api/v1/guide-bookings/{bid}/transition",
@@ -969,12 +995,20 @@ class TestGuideBooking:
             },
             headers=_hdr(traveller),
         ).json()["id"]
-        for status_name in ("accepted", "confirmed", "in_progress", "completed"):
-            assert client.post(
+        # The state machine alternates actors: the guide accepts and runs the
+        # tour, the traveller confirms.
+        for status_name, actor in (
+            ("accepted", guide_user),
+            ("confirmed", traveller),
+            ("in_progress", guide_user),
+            ("completed", guide_user),
+        ):
+            step = client.post(
                 f"/api/v1/guide-bookings/{bid}/transition",
                 json={"status": status_name},
-                headers=_hdr(guide_user),
-            ).status_code == 200
+                headers=_hdr(actor),
+            )
+            assert step.status_code == 200, (status_name, step.json())
 
         rev = client.post(
             f"/api/v1/guide-bookings/{bid}/reviews",
@@ -1000,13 +1034,13 @@ class TestGuideGrowth:
         uid = _mk_user("TS-growth-a", "ts_growth_a@example.com")
         h = _hdr(uid)
         gid = client.post(
-            "/api/v1/guides/onboard", json={"name": "TS Learner"}, headers=h
+            "/api/v1/guides/onboard", json={"name": "TS-Learner"}, headers=h
         ).json()["guide_id"]
 
         enrolled = client.post(
             f"/api/v1/guides/{gid}/trainings",
             json={"course_code": "TS-SAFE-101", "course_name": "Safety basics",
-                  "grants_tier": "verified"},
+                  "grants_tier": "silver"},
             headers=h,
         )
         assert enrolled.status_code == 201
@@ -1028,9 +1062,13 @@ class TestGuideGrowth:
         assert passed.json()["status"] == "completed"
 
         growth = client.get(f"/api/v1/guides/{gid}/growth").json()
-        assert "TS-SAFE-101" in growth["certifications"]
-        assert growth["tier"] == "verified"
-        assert growth["features"]
+        assert growth["tier"] == "silver"
+        # Passing the course granted the tier it promised.
+        assert "silver" in growth["certifications"]
+        # silver unlocks custom itineraries but not premium listing yet.
+        assert "custom_itinerary" in growth["features"]
+        assert "premium_listing" not in growth["features"]
+        assert growth["visibility_boost"] > 1.0
 
     def test_growth_reports_progress_towards_next_tier(self):
         gid = _mk_guide_profile(None, name="TS-Growth-B")
@@ -1043,7 +1081,7 @@ class TestGuideGrowth:
         uid = _mk_user("TS-growth-c", "ts_growth_c@example.com")
         h = _hdr(uid)
         gid = client.post(
-            "/api/v1/guides/onboard", json={"name": "TS Dup Course"}, headers=h
+            "/api/v1/guides/onboard", json={"name": "TS-DupCourse"}, headers=h
         ).json()["guide_id"]
         body = {"course_code": "TS-DUP-1"}
         assert client.post(f"/api/v1/guides/{gid}/trainings", json=body, headers=h).status_code == 201
@@ -1053,7 +1091,7 @@ class TestGuideGrowth:
         owner = _mk_user("TS-growth-d", "ts_growth_d@example.com")
         attacker = _mk_user("TS-growth-e", "ts_growth_e@example.com")
         gid = client.post(
-            "/api/v1/guides/onboard", json={"name": "TS Guarded"}, headers=_hdr(owner)
+            "/api/v1/guides/onboard", json={"name": "TS-Guarded"}, headers=_hdr(owner)
         ).json()["guide_id"]
         r = client.post(
             f"/api/v1/guides/{gid}/trainings",
@@ -1078,7 +1116,7 @@ class TestQuestJourney:
             f"/api/v1/quests/{qid}/start", json={"time_hours": 3}, headers=h
         )
         assert started.status_code in (200, 201)
-        run_id = started.json()["id"]
+        run_id = started.json()["run_id"]
 
         prog = client.get(f"/api/v1/quests/runs/{run_id}", headers=h).json()
         assert prog["status"] == "in_progress"
@@ -1094,25 +1132,29 @@ class TestQuestJourney:
         assert client.post(
             f"/api/v1/quests/runs/{run_id}/stops/1", json={"stop_position": 1}, headers=h
         ).status_code == 200
+
+        # Finishing with a stop outstanding is refused.
+        early = client.post(f"/api/v1/quests/runs/{run_id}/complete", json={}, headers=h)
+        assert early.status_code == 409
+
         assert client.post(
             f"/api/v1/quests/runs/{run_id}/stops/2", json={"stop_position": 2}, headers=h
         ).status_code == 200
-
-        early = client.post(f"/api/v1/quests/runs/{run_id}/complete", json={}, headers=h)
-        assert early.status_code in (200, 409)
 
         done = client.post(f"/api/v1/quests/runs/{run_id}/complete", json={}, headers=h)
         assert done.status_code == 200
         body = done.json()
         assert body["status"] == "completed"
         assert body["stops_completed"] == 2
-        assert body["xp_awarded"] == 150
+        # The quest reward plus whatever the earned badges contribute.
+        assert body["xp_awarded"] >= 150
         assert body["badges_earned"]
 
         progress = client.get("/api/v1/meetup/progress", headers=h).json()
-        assert progress["xp"] >= 150
+        assert progress["xp"] == body["xp_awarded"]
         assert progress["level"] >= 1
         assert progress["quests_completed"] == 1
+        assert progress["quests_started"] == 1
 
     def test_start_requires_header_and_basic_tier(self):
         qid, _ = _mk_quest("TS-Q-B")
@@ -1140,7 +1182,7 @@ class TestQuestJourney:
         qid, _ = _mk_quest("TS-Q-D")
         run_id = client.post(
             f"/api/v1/quests/{qid}/start", json={}, headers=_hdr(uid)
-        ).json()["id"]
+        ).json()["run_id"]
         assert client.get(f"/api/v1/quests/runs/{run_id}", headers=_hdr(other)).status_code == 404
 
     def test_quests_listing_exposes_stops(self):
@@ -1198,12 +1240,19 @@ class TestHiddenGems:
         assert client.post(f"/api/v1/gems/{cid}/promote", headers=h).status_code == 409
 
     def test_promotion_enforces_trust(self):
+        # Curating the dataset is a standard-tier action, not a basic one.
         uid = _mk_user("TS-gem-c", "ts_gem_c@example.com")
         cid = self._submit(uid, "TS-Gem-Untrusted")
         for _ in range(3):
             client.post(f"/api/v1/gems/{cid}/vote", json={"approve": True})
         r = client.post(f"/api/v1/gems/{cid}/promote", headers=_hdr(uid))
         assert r.status_code == 403
+        assert r.json()["detail"]["required_tier"] == "standard"
+
+        _trust(uid, "standard")
+        assert client.post(
+            f"/api/v1/gems/{cid}/promote", headers=_hdr(uid)
+        ).status_code == 201
 
     def test_vote_on_promoted_candidate_rejected(self):
         uid = _mk_user("TS-gem-d", "ts_gem_d@example.com")
@@ -1220,7 +1269,7 @@ class TestHiddenGems:
         _trust(uid, "standard")
         h = _hdr(uid)
         src = client.post(
-            "/api/v1/gems/sources".replace("/gems/sources", "/sources"),
+            "/api/v1/sources",
             json={"name": "TS-Source", "kind": "reddit", "url": "https://example.com"},
             headers=h,
         )

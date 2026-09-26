@@ -272,7 +272,7 @@ def activate_guide(
 
 @router.post(
     "/guides/{guide_id}/experiences",
-    response_model=dict,
+    response_model=GuideExperienceResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Guide creates their own experience (journey 6, step 5)",
 )

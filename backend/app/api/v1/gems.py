@@ -130,7 +130,7 @@ def promote_gem(
     """Turn an approved candidate into a real, rankable experience."""
     from app.api.v1.journey_deps import enforce_trust
 
-    enforce_trust(session, x_user_id, "create_group")  # basic+ trust required
+    enforce_trust(session, x_user_id, "promote_gem")  # curation is standard+ only
     candidate = session.get(HiddenGemCandidate, candidate_id)
     if candidate is None:
         raise HTTPException(status_code=404, detail="Candidate not found")
@@ -187,7 +187,7 @@ def create_source(
     """Record where gem candidates come from (PRD v2 ``Source`` entity)."""
     from app.api.v1.journey_deps import enforce_trust
 
-    enforce_trust(session, x_user_id, "create_group")
+    enforce_trust(session, x_user_id, "promote_gem")
     name = str(payload.get("name") or "").strip()
     if not name:
         raise HTTPException(status_code=422, detail="name is required")

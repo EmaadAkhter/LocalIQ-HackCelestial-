@@ -104,6 +104,16 @@ class MatchCandidate(BaseModel):
     reason: str
 
 
+class MeetupMatchRequest(BaseModel):
+    """Optional: name the people to match with.
+
+    Leave it empty and the server picks the best eligible candidates it already
+    ranked, which is the default the journey describes.
+    """
+
+    member_ids: list[int] = Field(default_factory=list)
+
+
 class MeetupMatchResponse(BaseModel):
     id: int
     request_id: int
@@ -495,6 +505,9 @@ class QuestStartRequest(BaseModel):
 
 
 class QuestProgressResponse(BaseModel):
+    #: The run this progress refers to. Needed to address
+    #: /quests/runs/{run_id}/... for stop visits and completion.
+    run_id: int = 0
     quest_id: int
     quest_code: str
     quest_title: str

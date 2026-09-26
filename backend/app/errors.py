@@ -66,9 +66,25 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(StarletteHTTPException)
     async def _http_exception(request: Request, exc: StarletteHTTPException) -> JSONResponse:
+        detail = exc.detail
+        if isinstance(detail, dict):
+            # Structured details (e.g. the trust-gate payload) must stay
+            # machine-readable instead of being flattened into a string.
+            body = error_body(
+                request,
+                exc.status_code,
+                str(detail.get("error") or "HTTPException"),
+                str(detail.get("message") or detail),
+            )
+            body["detail"] = detail
+            return JSONResponse(
+                status_code=exc.status_code,
+                content=body,
+                headers=getattr(exc, "headers", None),
+            )
         return JSONResponse(
             status_code=exc.status_code,
-            content=error_body(request, exc.status_code, "HTTPException", str(exc.detail)),
+            content=error_body(request, exc.status_code, "HTTPException", str(detail)),
             headers=getattr(exc, "headers", None),
         )
 

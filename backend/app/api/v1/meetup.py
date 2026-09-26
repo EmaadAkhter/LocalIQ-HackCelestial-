@@ -23,6 +23,7 @@ from sqlmodel import Session, select
 from app.database import get_session
 from app.models import Experience, User
 from app.models_prd import (
+    GuideProfile,
     MeetupBlock,
     MeetupMatch,
     MeetupRequest,
@@ -33,11 +34,13 @@ from app.schemas_prd import (
     BlockCreate,
     BlockResponse,
     MatchCandidate,
+    MeetupMatchRequest,
     MeetupRequestCreate,
     MeetupRequestResponse,
     MeetupReviewCreate,
     MeetupReviewResponse,
     MeetupStatusRequest,
+    TrustGate,
 )
 from app.services import journey_rules as rules
 from app.timeutil import utcnow
@@ -51,7 +54,12 @@ def _expired(request: MeetupRequest) -> bool:
     return rules.is_expired(request.expires_at).expired
 
 
-def _request_payload(session: Session, request: MeetupRequest) -> MeetupRequestResponse:
+def _request_payload(
+    session: Session, request: MeetupRequest, gate: dict | None = None
+) -> MeetupRequestResponse:
+    trust_gate = None
+    if gate is not None:
+        trust_gate = TrustGate(**gate)
     return MeetupRequestResponse(
         id=request.id or 0,
         user_id=request.user_id,
@@ -63,6 +71,7 @@ def _request_payload(session: Session, request: MeetupRequest) -> MeetupRequestR
         budget_inr=request.budget_inr,
         group_size_pref=request.group_size_pref,
         interests=list(request.interests or []),
+        trust_gate=trust_gate,
         created_at=request.created_at,
         expires_at=request.expires_at,
     )
@@ -144,8 +153,7 @@ def create_meetup_request(
     session.commit()
     session.refresh(request)
 
-    response = _request_payload(session, request)
-    response.trust_gate = gate
+    response = _request_payload(session, request, gate)
     logger.info("Meetup request %s by user %s (tier %s)", request.id, x_user_id, gate["current_tier"])
     return response
 
@@ -263,11 +271,17 @@ def list_candidates(
 )
 def form_match(
     request_id: int,
-    member_ids: list[int],
+    payload: MeetupMatchRequest | None = None,
     session: Session = Depends(get_session),
     x_user_id: int = Header(..., alias="X-User-Id"),
 ):
-    """Step 3: form the micro-group and build the shared plan + safety state."""
+    """Step 3: form the micro-group and build the shared plan + safety state.
+
+    ``member_ids`` is optional: when the client does not choose anyone, the
+    server picks the best eligible candidates it already ranked, which is the
+    behaviour the journey describes ("we find you a group").
+    """
+    member_ids = list(payload.member_ids) if payload else []
     request = session.get(MeetupRequest, request_id)
     if request is None or request.user_id != x_user_id:
         raise HTTPException(status_code=404, detail="Meetup request not found")
@@ -277,6 +291,20 @@ def form_match(
         raise HTTPException(status_code=409, detail=f"request is '{request.status}', not open")
 
     gate = enforce_trust(session, x_user_id, "be_matched")
+
+    if not member_ids:
+        ranked = list_candidates(
+            request_id,
+            session=session,
+            x_user_id=x_user_id,
+        )
+        wanted = max(1, (request.group_size_pref or 2) - 1)
+        member_ids = [row.user_id for row in ranked if row.eligible][:wanted]
+        if not member_ids:
+            raise HTTPException(
+                status_code=409, detail="no eligible candidates to match with right now"
+            )
+
     if len(member_ids) + 1 < 2:
         raise HTTPException(status_code=400, detail="A meetup needs at least 2 people")
     if len(member_ids) + 1 > 5:

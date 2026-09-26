@@ -142,7 +142,28 @@ async def start_quest(
         raise HTTPException(status_code=409, detail="quest is not active")
 
     progress = _get_progress(session, x_user_id)
-    if progress.quests_started and quest.code in (progress.badges or []):
+    # One run per quest at a time: a live run must be finished or abandoned
+    # first, and a completed quest cannot be restarted.
+    live_run = session.exec(
+        select(QuestRun).where(
+            QuestRun.quest_id == quest_id,
+            QuestRun.user_id == x_user_id,
+            QuestRun.status == "in_progress",
+        )
+    ).first()
+    if live_run is not None:
+        raise HTTPException(
+            status_code=409,
+            detail=f"quest already in progress (run {live_run.id}); finish it first",
+        )
+    already_done = session.exec(
+        select(QuestRun).where(
+            QuestRun.quest_id == quest_id,
+            QuestRun.user_id == x_user_id,
+            QuestRun.status == "completed",
+        )
+    ).first()
+    if already_done is not None:
         raise HTTPException(status_code=409, detail="quest already completed")
 
     stops = session.exec(
@@ -229,6 +250,7 @@ def _run_payload(session: Session, run, quest: Quest) -> QuestProgressResponse:
     percent = int(round((done / total) * 100)) if total else 0
     allowed = rules.QUEST_TRANSITIONS.get(run.status, set())
     return QuestProgressResponse(
+        run_id=run.id or 0,
         quest_id=run.quest_id,
         quest_code=quest.code,
         quest_title=quest.title,
