@@ -152,7 +152,7 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen>
                     onPressed: () {
                       ref.read(userRoleProvider.notifier).setRole(
                           UserRole.explorer);
-                      context.go('/explore');
+                      context.go('/home');
                     },
                     style: TextButton.styleFrom(
                       foregroundColor: const Color(0xFF8FA3C4),

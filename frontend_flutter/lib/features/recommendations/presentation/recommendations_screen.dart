@@ -35,7 +35,7 @@ class RecommendationsScreen extends ConsumerWidget {
           ),
           IconButton(
             tooltip: 'Assistant',
-            onPressed: () => context.push('/assistant'),
+            onPressed: () => context.push('/travel-buddy'),
             icon: const Icon(Icons.auto_awesome_rounded),
           ),
           const SizedBox(width: 4),

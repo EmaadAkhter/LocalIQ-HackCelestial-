@@ -100,21 +100,21 @@ GoRouter createAppRouter() {
         builder: (context, state, navigationShell) =>
             AppShell(navigationShell: navigationShell),
         branches: [
-          // Branch 0: Explorer Home (Phase 2)
+          // Branch 0: Home — feed, quick actions, proactive suggestions.
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/explore',
+                path: '/home',
                 pageBuilder: (context, state) =>
                     const NoTransitionPage(child: ExplorerHomeScreen()),
               ),
             ],
           ),
-          // Branch 1: Discover (Phase 3)
+          // Branch 1: Explore — places, search, filters.
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/discover',
+                path: '/explore',
                 pageBuilder: (context, state) => NoTransitionPage(
                   child: DiscoverScreen(
                     initialQuery: state.uri.queryParameters['q'],
@@ -123,17 +123,27 @@ GoRouter createAppRouter() {
               ),
             ],
           ),
-          // Branch 2: People / Matching (Phase 9)
+          // Branch 2: Travel Buddy — agentic conversational companion.
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/people',
+                path: '/travel-buddy',
                 pageBuilder: (context, state) =>
-                    const NoTransitionPage(child: PeopleScreen()),
+                    const NoTransitionPage(child: CompanionScreen()),
               ),
             ],
           ),
-          // Branch 3: Plan / Itinerary (Phase 7)
+          // Branch 3: Guides — discover and book local guides.
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/guides',
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: GuideMarketplaceScreen()),
+              ),
+            ],
+          ),
+          // Branch 4: Plan / Itinerary.
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -143,7 +153,7 @@ GoRouter createAppRouter() {
               ),
             ],
           ),
-          // Branch 4: Profile / Settings (Phase 13 Taste Profile entry)
+          // Branch 5: Profile / Settings.
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -180,12 +190,6 @@ GoRouter createAppRouter() {
         pageBuilder: (context, state) =>
             const MaterialPage(child: SafetyScreen()),
       ),
-      // Phase 11: Guide Marketplace
-      GoRoute(
-        path: '/guides',
-        pageBuilder: (context, state) =>
-            const MaterialPage(child: GuideMarketplaceScreen()),
-      ),
       // Phase 12: Guide Workspace / App
       GoRoute(
         path: '/guide/dashboard',
@@ -212,12 +216,6 @@ GoRouter createAppRouter() {
         path: '/taste-profile',
         pageBuilder: (context, state) =>
             const MaterialPage(child: TasteProfileScreen()),
-      ),
-      // Phase 14: LocalIQ Companion
-      GoRoute(
-        path: '/companion',
-        pageBuilder: (context, state) =>
-            const MaterialPage(child: CompanionScreen()),
       ),
       // Phase 15: Quests
       GoRoute(
@@ -259,21 +257,25 @@ GoRouter createAppRouter() {
         builder: (context, state) => const WhatIfLab(),
       ),
       GoRoute(
-        path: '/assistant',
-        pageBuilder: (context, state) =>
-            const MaterialPage(child: CompanionScreen()),
-      ),
-      GoRoute(
         path: '/legacy-explore',
         pageBuilder: (context, state) =>
             const MaterialPage(child: ExploreScreen()),
       ),
 
+      // People now lives under Profile, but keep the route reachable.
+      GoRoute(
+        path: '/people',
+        pageBuilder: (context, state) =>
+            const MaterialPage(child: PeopleScreen()),
+      ),
+
       // ------------------------------------------------------ redirects
-      GoRoute(path: '/', redirect: (context, state) => '/explore'),
-      GoRoute(path: '/home', redirect: (context, state) => '/explore'),
+      GoRoute(path: '/', redirect: (context, state) => '/home'),
+      GoRoute(path: '/discover', redirect: (context, state) => '/explore'),
       GoRoute(path: '/itinerary', redirect: (context, state) => '/plan'),
-      GoRoute(path: '/ai-chat', redirect: (context, state) => '/companion'),
+      GoRoute(path: '/companion', redirect: (context, state) => '/travel-buddy'),
+      GoRoute(path: '/assistant', redirect: (context, state) => '/travel-buddy'),
+      GoRoute(path: '/ai-chat', redirect: (context, state) => '/travel-buddy'),
     ],
     errorBuilder: (context, state) => RouteErrorScreen(location: state.uri.toString()),
   );
@@ -310,8 +312,8 @@ class RouteErrorScreen extends StatelessWidget {
               ),
               const SizedBox(height: 18),
               FilledButton(
-                onPressed: () => context.go('/explore'),
-                child: const Text('Back to Explore'),
+                onPressed: () => context.go('/home'),
+                child: const Text('Back to Home'),
               ),
             ],
           ),

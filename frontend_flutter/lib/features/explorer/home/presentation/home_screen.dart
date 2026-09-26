@@ -74,7 +74,7 @@ class _ExplorerHomeScreenState extends ConsumerState<ExplorerHomeScreen> {
                   const SizedBox(height: 14),
                   _SearchField(
                     controller: _searchController,
-                    onTap: () => context.push('/discover'),
+                    onTap: () => context.push('/explore'),
                   ),
                   const SizedBox(height: 14),
                 ],
@@ -207,7 +207,7 @@ class _HomeFeed extends ConsumerWidget {
           subtitle: 'Based on your location and preferences',
           icon: Icons.auto_awesome_rounded,
           iconColor: AppColors.violet,
-          onSeeAll: () => context.push('/discover'),
+          onSeeAll: () => context.push('/explore'),
           child: SizedBox(
             height: 240,
             child: ListView.separated(
@@ -234,7 +234,7 @@ class _HomeFeed extends ConsumerWidget {
           subtitle: 'Clear skies · Low crowd · 29°C',
           icon: Icons.bolt_rounded,
           iconColor: const Color(0xFF0E7C5A),
-          onSeeAll: () => context.push('/discover?filter=right_now'),
+          onSeeAll: () => context.push('/explore?filter=right_now'),
           child: SizedBox(
             height: 240,
             child: ListView.separated(
@@ -262,7 +262,7 @@ class _HomeFeed extends ConsumerWidget {
           subtitle: 'Locals rate highly, visitors rarely find',
           icon: Icons.diamond_outlined,
           iconColor: AppColors.violet,
-          onSeeAll: () => context.push('/discover?filter=gems'),
+          onSeeAll: () => context.push('/explore?filter=gems'),
           child: SizedBox(
             height: 240,
             child: ListView.separated(

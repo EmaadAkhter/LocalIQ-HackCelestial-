@@ -32,11 +32,11 @@ class AppShell extends ConsumerWidget {
       ),
       bottomNavigationBar: null,
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/companion'),
+        onPressed: () => context.push('/travel-buddy'),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 2,
-        tooltip: 'Ask LocalIQ Companion',
+        tooltip: 'Ask Travel Buddy',
         child: const Icon(Icons.auto_awesome_rounded, size: 20),
       ),
     );

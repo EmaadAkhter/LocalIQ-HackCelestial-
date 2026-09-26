@@ -143,7 +143,7 @@ class _GuideOnboardingScreenState
         title: const Text('Become a guide'),
         leading: IconButton(
           icon: const Icon(Icons.close_rounded),
-          onPressed: () => context.canPop() ? context.pop() : context.go('/explore'),
+          onPressed: () => context.canPop() ? context.pop() : context.go('/home'),
         ),
       ),
       body: Center(

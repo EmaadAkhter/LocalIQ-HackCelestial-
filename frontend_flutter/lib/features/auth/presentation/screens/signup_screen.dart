@@ -44,7 +44,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       final session = await action();
       if (!mounted) return;
       context.go(
-        session.user.onboardingCompleted ? '/explore' : '/onboarding',
+        session.user.onboardingCompleted ? '/home' : '/onboarding',
       );
     } on AppException catch (e) {
       if (!mounted) return;

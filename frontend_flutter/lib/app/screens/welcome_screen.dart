@@ -53,7 +53,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
   void _continueAsGuest() async {
     ref.read(userRoleProvider.notifier).setRole(UserRole.explorer);
     await ref.read(authServiceProvider).continueAsGuest();
-    if (mounted) context.go('/explore');
+    if (mounted) context.go('/home');
   }
 
   @override

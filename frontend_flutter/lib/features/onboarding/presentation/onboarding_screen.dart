@@ -134,7 +134,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         title: const Text('A word before we begin'),
         leading: IconButton(
           icon: const Icon(Icons.close_rounded),
-          onPressed: () => context.canPop() ? context.pop() : context.go('/explore'),
+          onPressed: () => context.canPop() ? context.pop() : context.go('/home'),
         ),
       ),
       body: Center(
@@ -475,8 +475,8 @@ class _TasteSummary extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
-              onPressed: () => context.go('/explore'),
-              icon: const Icon(Icons.explore_rounded, size: 18),
+              onPressed: () => context.go('/home'),
+              icon: const Icon(Icons.home_rounded, size: 18),
               label: const Text('See what I recommend'),
               style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
             ),

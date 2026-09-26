@@ -35,7 +35,7 @@ class SavedScreen extends ConsumerWidget {
                 'feasibility verdict live, so you will see immediately if one '
                 'stops fitting your current window.',
             action: FilledButton.icon(
-              onPressed: () => context.go('/explore'),
+              onPressed: () => context.go('/home'),
               icon: const Icon(Icons.explore_rounded, size: 17),
               label: const Text('Browse experiences'),
             ),
@@ -86,7 +86,7 @@ class SavedScreen extends ConsumerWidget {
                       ),
                       const SizedBox(width: 12),
                       OutlinedButton.icon(
-                        onPressed: () => context.go('/explore'),
+                        onPressed: () => context.go('/home'),
                         icon: const Icon(Icons.add_rounded, size: 16),
                         label: const Text('Add more'),
                       ),

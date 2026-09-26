@@ -3,9 +3,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
 
-/// Explorer-role app shell with the 5-tab bottom navigation.
+/// Explorer-role app shell with the 6-tab bottom navigation.
 ///
-/// Tabs: Home | Explore | Plan | Map | Profile
+/// Tabs: Home | Explore | Travel Buddy | Guides | Plan | Profile
 class ExplorerShell extends StatelessWidget {
   const ExplorerShell({super.key, required this.navigationShell});
 
@@ -23,9 +23,14 @@ class ExplorerShell extends StatelessWidget {
       active: Icons.explore_rounded,
     ),
     (
-      label: 'People',
-      icon: Icons.people_outline_rounded,
-      active: Icons.people_rounded,
+      label: 'Buddy',
+      icon: Icons.auto_awesome_outlined,
+      active: Icons.auto_awesome_rounded,
+    ),
+    (
+      label: 'Guides',
+      icon: Icons.person_pin_circle_outlined,
+      active: Icons.person_pin_circle_rounded,
     ),
     (
       label: 'Plan',
@@ -50,14 +55,6 @@ class ExplorerShell extends StatelessWidget {
           index,
           initialLocation: index == navigationShell.currentIndex,
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/companion'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        elevation: 3,
-        tooltip: 'LocalIQ Companion',
-        child: const Icon(Icons.auto_awesome_rounded, size: 22),
       ),
     );
   }

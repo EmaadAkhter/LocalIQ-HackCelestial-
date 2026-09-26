@@ -98,7 +98,7 @@ class _Header extends ConsumerWidget {
         ),
         const SizedBox(width: 12),
         OutlinedButton.icon(
-          onPressed: () => context.go('/explore'),
+          onPressed: () => context.go('/home'),
           icon: const Icon(Icons.add_rounded, size: 16),
           label: const Text('Add stops'),
         ),
@@ -199,7 +199,7 @@ class _Timeline extends ConsumerWidget {
             'Add any achievable experience and the timeline, travel legs, cost '
             'and feasibility check are built automatically.',
         action: FilledButton.icon(
-          onPressed: () => context.go('/explore'),
+          onPressed: () => context.go('/home'),
           icon: const Icon(Icons.explore_rounded, size: 17),
           label: const Text('Browse experiences'),
         ),
@@ -567,7 +567,7 @@ class _StopCard extends ConsumerWidget {
                             label: const Text('Remove'),
                           ),
                           TextButton.icon(
-                            onPressed: () => context.go('/explore'),
+                            onPressed: () => context.go('/home'),
                             style: TextButton.styleFrom(
                               minimumSize: const Size(0, 34),
                               padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -696,7 +696,7 @@ class _SummaryRail extends ConsumerWidget {
               ),
               const SizedBox(height: 9),
               OutlinedButton.icon(
-                onPressed: () => context.go('/explore'),
+                onPressed: () => context.go('/home'),
                 icon: const Icon(Icons.tune_rounded, size: 17),
                 label: const Text('Modify'),
               ),

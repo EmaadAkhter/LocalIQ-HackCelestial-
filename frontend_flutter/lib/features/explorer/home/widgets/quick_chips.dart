@@ -52,7 +52,7 @@ class _QuickChipsState extends State<QuickChips> {
               });
               // Push to discover with the selected filter
               if (!selected) {
-                context.push('/discover?q=${chip.label}');
+                context.push('/explore?q=${chip.label}');
               }
             },
           );

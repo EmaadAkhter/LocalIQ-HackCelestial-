@@ -50,9 +50,9 @@ class _PlaceDetailsScreenState extends ConsumerState<PlaceDetailsScreen> {
             title: 'Place not found',
             subtitle: 'We could not find that place. It may have been removed.',
             action: FilledButton.icon(
-              onPressed: () => context.go('/explore'),
-              icon: const Icon(Icons.explore_rounded, size: 18),
-              label: const Text('Back to Explore'),
+              onPressed: () => context.go('/home'),
+              icon: const Icon(Icons.home_rounded, size: 18),
+              label: const Text('Back to Home'),
             ),
           );
         }
@@ -1144,9 +1144,9 @@ class _BookingRail extends ConsumerWidget {
               ),
               const SizedBox(height: 9),
               OutlinedButton.icon(
-                onPressed: () => context.go('/explore'),
-                icon: const Icon(Icons.explore_rounded, size: 17),
-                label: const Text('Back to Explore'),
+                onPressed: () => context.go('/home'),
+                icon: const Icon(Icons.home_rounded, size: 17),
+                label: const Text('Back to Home'),
               ),
             ],
           ),

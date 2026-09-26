@@ -212,7 +212,7 @@ class AssistantEntryCard extends ConsumerWidget {
                   ),
                   const SizedBox(height: 14),
                   FilledButton.icon(
-                    onPressed: () => context.push('/assistant'),
+                    onPressed: () => context.push('/travel-buddy'),
                     style: FilledButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: AppColors.primary,

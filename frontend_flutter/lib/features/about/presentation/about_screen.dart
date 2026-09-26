@@ -396,7 +396,7 @@ class _SideColumn extends ConsumerWidget {
               ),
               const SizedBox(height: 9),
               OutlinedButton.icon(
-                onPressed: () => context.push('/assistant'),
+                onPressed: () => context.push('/travel-buddy'),
                 icon: const Icon(Icons.auto_awesome_rounded, size: 17),
                 label: const Text('Ask the assistant'),
               ),

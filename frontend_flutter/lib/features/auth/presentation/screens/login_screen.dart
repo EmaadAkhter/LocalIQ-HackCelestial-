@@ -39,7 +39,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   /// Determines where to route after successful auth.
   String get _destination {
     final role = ref.read(userRoleProvider) ?? UserRole.explorer;
-    return role.isGuide ? '/guide/dashboard' : '/explore';
+    return role.isGuide ? '/guide/dashboard' : '/home';
   }
 
   Future<void> _run(Future<AuthSession> Function() action) async {

@@ -18,10 +18,12 @@ class LocalIqAppBar extends ConsumerWidget {
   final int currentIndex;
 
   static const navItems = <({String label, String path, IconData icon})>[
+    (label: 'Home', path: '/home', icon: Icons.home_rounded),
     (label: 'Explore', path: '/explore', icon: Icons.explore_rounded),
-    (label: 'My Plan', path: '/plan', icon: Icons.route_rounded),
-    (label: 'Saved', path: '/saved', icon: Icons.favorite_rounded),
-    (label: 'About', path: '/about', icon: Icons.info_rounded),
+    (label: 'Travel Buddy', path: '/travel-buddy', icon: Icons.auto_awesome_rounded),
+    (label: 'Guides', path: '/guides', icon: Icons.person_pin_circle_rounded),
+    (label: 'Plan', path: '/plan', icon: Icons.route_rounded),
+    (label: 'Profile', path: '/profile', icon: Icons.person_rounded),
   ];
 
   @override
@@ -98,7 +100,7 @@ class _WideBar extends ConsumerWidget {
         const Spacer(),
         if (showAssistant)
           TextButton.icon(
-            onPressed: () => context.push('/assistant'),
+            onPressed: () => context.push('/travel-buddy'),
             style: TextButton.styleFrom(foregroundColor: AppColors.primary),
             icon: const Icon(Icons.auto_awesome_rounded, size: 16),
             label: const Text('Ask LocalIQ'),

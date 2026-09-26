@@ -424,7 +424,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         title: const Text('Companion'),
                         subtitle: Text('$chat messages'),
                         trailing: const Icon(Icons.chevron_right_rounded),
-                        onTap: () => context.push('/companion'),
+                        onTap: () => context.push('/travel-buddy'),
                       ),
                       const Divider(height: 1),
                       ListTile(
@@ -453,7 +453,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         title: const Text('Companion'),
                         subtitle: Text('$chat messages'),
                         trailing: const Icon(Icons.chevron_right_rounded),
-                        onTap: () => context.push('/companion'),
+                        onTap: () => context.push('/travel-buddy'),
                       ),
                     ],
                   ),

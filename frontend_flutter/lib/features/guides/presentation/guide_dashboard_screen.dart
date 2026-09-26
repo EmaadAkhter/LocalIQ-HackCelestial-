@@ -28,7 +28,7 @@ class _GuideDashboardScreenState extends ConsumerState<GuideDashboardScreen> {
             label: const Text('Explorer Mode'),
             onPressed: () {
               ref.read(userRoleProvider.notifier).setRole(UserRole.explorer);
-              context.go('/explore');
+              context.go('/home');
             },
           ),
         ],
