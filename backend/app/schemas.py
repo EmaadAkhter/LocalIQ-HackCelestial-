@@ -8,12 +8,24 @@ Two layers live here:
 
 from __future__ import annotations
 
+import re
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 GroupType = Literal["solo", "couple", "family", "friends"]
 ParseSource = Literal["ollama", "heuristic", "llm", "canned"]
+
+
+class ErrorResponse(BaseModel):
+    """Canonical error payload returned by the API for every failure."""
+
+    error: str
+    message: str
+    request_id: str = "-"
+    path: str = ""
+    status_code: int
+    details: list = Field(default_factory=list)
 
 
 # --------------------------------------------------------------------------
@@ -135,9 +147,26 @@ class GuideRequestResponse(BaseModel):
 class RegisterRequest(BaseModel):
     name: str = Field(..., min_length=2, max_length=80, examples=["Aarav Sharma"])
     email: str = Field(..., min_length=5, max_length=200, examples=["aarav@example.com"])
-    password: str = Field(..., min_length=6, max_length=128, examples=["secret123"])
+    password: str = Field(..., min_length=8, max_length=128, examples=["Secret123"])
 
-    model_config = {"json_schema_extra": {"example": {"name": "Aarav Sharma", "email": "aarav@example.com", "password": "secret123"}}}
+    model_config = {"json_schema_extra": {"example": {"name": "Aarav Sharma", "email": "aarav@example.com", "password": "Secret123"}}}
+
+    @field_validator("password")
+    @classmethod
+    def _password_strength(cls, value: str) -> str:
+        """Require at least 8 chars with upper, lower and a digit."""
+        problems: list[str] = []
+        if len(value) < 8:
+            problems.append("at least 8 characters")
+        if not re.search(r"[A-Z]", value):
+            problems.append("an uppercase letter")
+        if not re.search(r"[a-z]", value):
+            problems.append("a lowercase letter")
+        if not re.search(r"\d", value):
+            problems.append("a digit")
+        if problems:
+            raise ValueError("Password must contain " + ", ".join(problems))
+        return value
 
 
 class LoginRequest(BaseModel):

@@ -14,8 +14,20 @@ class Settings(BaseSettings):
 
     # App
     app_env: str = "development"
-    cors_origins: str = "http://localhost:3000"
+    cors_origins: str = (
+        "http://localhost:8080,http://localhost:3000,https://localiq.tavesglobal.com"
+    )
     demo_mode: bool = False
+
+    # Observability
+    log_json: bool = True
+
+    # Rate limiting (per client IP)
+    rate_limit_enabled: bool = True
+
+    # Login lockout
+    login_max_attempts: int = 5
+    login_lockout_minutes: int = 15
 
     # Database
     database_url: str = "sqlite:///./data/localiq.db"
@@ -43,6 +55,11 @@ class Settings(BaseSettings):
     def open_meteo_base_url(self) -> str:
         """Alias kept for the weather service."""
         return self.open_meteo_url
+
+    @property
+    def rate_limiting_on(self) -> bool:
+        """Rate limiting is disabled in tests so the suite is never throttled."""
+        return self.rate_limit_enabled and self.app_env != "test"
 
 
 @lru_cache

@@ -3,11 +3,12 @@
 import logging
 import secrets
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlmodel import Session, select
 
 from app.database import get_session
 from app.models import Experience, Guide, GuideRequest, User
+from app.rate_limit import PUBLIC_LIMIT, limiter
 from app.schemas import GuideRequestPayload, GuideRequestResponse, GuideResponse
 from app.services.auth import get_current_user, get_current_user_optional, utcnow
 
@@ -16,13 +17,21 @@ router = APIRouter()
 
 
 @router.get("/guides", response_model=list[GuideResponse], summary="List guides")
-def list_guides(session: Session = Depends(get_session)):
+@limiter.limit(PUBLIC_LIMIT)
+def list_guides(
+    request: Request,
+    response: Response,
+    session: Session = Depends(get_session),
+):
     guides = session.exec(select(Guide).order_by(Guide.rating.desc())).all()
     return [GuideResponse.model_validate(g) for g in guides]
 
 
 @router.get("/guides/me/requests", response_model=list[GuideRequestResponse], summary="My guide requests")
+@limiter.limit(PUBLIC_LIMIT)
 def my_requests(
+    request: Request,
+    response: Response,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
@@ -51,7 +60,10 @@ def my_requests(
     response_model=GuideRequestResponse,
     summary="Request a guide (persisted locally)",
 )
+@limiter.limit(PUBLIC_LIMIT)
 def request_guide(
+    request: Request,
+    response: Response,
     guide_id: int,
     payload: GuideRequestPayload,
     session: Session = Depends(get_session),

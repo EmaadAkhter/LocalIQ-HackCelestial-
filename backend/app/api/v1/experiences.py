@@ -2,11 +2,12 @@
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from sqlmodel import Session, func, select
 
 from app.database import get_session
 from app.models import Experience, Guide
+from app.rate_limit import PUBLIC_LIMIT, limiter
 from app.schemas import ExperienceListResponse, ExperienceResponse, GuideResponse
 
 logger = logging.getLogger(__name__)
@@ -14,7 +15,10 @@ router = APIRouter()
 
 
 @router.get("/experiences", response_model=ExperienceListResponse, summary="List experiences")
+@limiter.limit(PUBLIC_LIMIT)
 def list_experiences(
+    request: Request,
+    response: Response,
     session: Session = Depends(get_session),
     category: str | None = Query(default=None, description="Filter by category: food, culture, shopping, art, nightlife, outdoor"),
     q: str | None = Query(default=None, description="Search name/description/tags"),
@@ -48,7 +52,13 @@ def list_experiences(
 
 
 @router.get("/experiences/{experience_id}", response_model=ExperienceResponse, summary="Get experience by ID")
-def get_experience(experience_id: int, session: Session = Depends(get_session)):
+@limiter.limit(PUBLIC_LIMIT)
+def get_experience(
+    request: Request,
+    response: Response,
+    experience_id: int,
+    session: Session = Depends(get_session),
+):
     """Get a single experience by ID."""
     exp = session.get(Experience, experience_id)
     if not exp:
@@ -61,7 +71,13 @@ def get_experience(experience_id: int, session: Session = Depends(get_session)):
     response_model=list[GuideResponse],
     summary="Guides for an experience",
 )
-def get_experience_guides(experience_id: int, session: Session = Depends(get_session)):
+@limiter.limit(PUBLIC_LIMIT)
+def get_experience_guides(
+    request: Request,
+    response: Response,
+    experience_id: int,
+    session: Session = Depends(get_session),
+):
     """List guides linked to an experience (falls back to area guides)."""
     exp = session.get(Experience, experience_id)
     if not exp:

@@ -4,19 +4,28 @@ import logging
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from slowapi.errors import RateLimitExceeded
+from sqlalchemy import text
+from sqlmodel import Session
 
 load_dotenv()
 
 from app.api.v1 import auth, chat, experiences, guides, parse, recommendations, weather  # noqa: E402
 from app.config import get_settings  # noqa: E402
-from app.database import init_db  # noqa: E402
+from app.database import get_session, init_db  # noqa: E402
+from app.errors import error_response, register_exception_handlers  # noqa: E402
+from app.logging_config import configure_logging  # noqa: E402
+from app.middleware.access_log import AccessLogMiddleware  # noqa: E402
+from app.middleware.request_id import RequestIDMiddleware  # noqa: E402
+from app.rate_limit import limiter  # noqa: E402
 from app.seed import seed_if_empty  # noqa: E402
-from app.services.llm import LLMError, generate  # noqa: E402
+from app.services.llm import LLMError, generate, get_client  # noqa: E402
 
 settings = get_settings()
-logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+configure_logging("INFO", json_output=settings.log_json and settings.app_env != "test")
 logger = logging.getLogger("localiq")
 
 
@@ -46,22 +55,42 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="LocalIQ API",
-    version="0.1.0",
+    version="0.2.0",
     description=(
-        "Local-first Mumbai experience recommender with local SQLite storage, "
+        "Local-first Mumbai experience recommender with local storage, "
         "optional Ollama + Open-Meteo enhancements, and graceful fallbacks."
     ),
     lifespan=lifespan,
 )
 
+
+def _rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return error_response(
+        request, 429, "RateLimitExceeded", f"Rate limit exceeded: {exc.detail}"
+    )
+
+
+# --- Middleware (last added = outermost) -----------------------------------
+# Limits are applied per route with @limiter.limit (see app/rate_limit.py).
+app.state.limiter = limiter
+app.add_middleware(AccessLogMiddleware)
+app.add_middleware(RequestIDMiddleware)
+
+_origins = settings.cors_origin_list
+_allow_all = "*" in _origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origin_list,
-    allow_credentials=True,
+    allow_origins=_origins,
+    allow_credentials=not _allow_all,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# --- Error handling --------------------------------------------------------
+register_exception_handlers(app)
+app.add_exception_handler(RateLimitExceeded, _rate_limit_handler)
+
+# --- Routes ----------------------------------------------------------------
 # All v1 routers share /api/v1 so routes match the API contract:
 # GET /api/v1/experiences, POST /api/v1/recommend, POST /api/v1/parse, ...
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
@@ -73,7 +102,34 @@ app.include_router(chat.router, prefix="/api/v1", tags=["chat"])
 app.include_router(weather.router, prefix="/api/v1", tags=["weather"])
 
 
-@app.get("/health", summary="Health check")
+@app.get("/health", summary="Liveness check")
+@app.get("/healthz", summary="Liveness check (alias)")
 async def health_check():
-    """Simple health endpoint for demos and monitoring."""
+    """Process is up. Does not touch dependencies."""
     return {"status": "ok"}
+
+
+@app.get("/readyz", summary="Readiness check")
+async def readyz(session: Session = Depends(get_session)):
+    """Ready to serve traffic: database must answer.
+
+    Ollama is reported but not required — the app degrades to heuristics.
+    """
+    checks = {"database": False, "ollama": False}
+    try:
+        session.execute(text("SELECT 1"))
+        checks["database"] = True
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning("Readiness: database check failed: %s", exc)
+
+    try:
+        health = await get_client().health()
+        checks["ollama"] = bool(health.get("available"))
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning("Readiness: ollama check failed: %s", exc)
+
+    ready = checks["database"]
+    return JSONResponse(
+        status_code=200 if ready else 503,
+        content={"status": "ready" if ready else "not_ready", "checks": checks},
+    )

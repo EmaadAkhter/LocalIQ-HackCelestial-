@@ -2,11 +2,12 @@
 
 import logging
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request, Response
 from sqlmodel import Session, select
 
 from app.database import get_session
 from app.models import Experience
+from app.rate_limit import RECOMMEND_LIMIT, limiter
 from app.schemas import ExperienceResponse, RecommendationItem, RecommendationRequest, RecommendationResponse
 from app.services import recommender
 from app.services.weather import fetch_weather
@@ -16,7 +17,13 @@ router = APIRouter()
 
 
 @router.post("/recommend", response_model=RecommendationResponse, summary="Ranked feasible recommendations")
-async def get_recommendations(payload: RecommendationRequest, session: Session = Depends(get_session)):
+@limiter.limit(RECOMMEND_LIMIT)
+async def get_recommendations(
+    request: Request,
+    response: Response,
+    payload: RecommendationRequest,
+    session: Session = Depends(get_session),
+):
     """Validate constraints -> feasibility filter -> weather-aware ranking."""
     logger.info(
         "Recommend request: location=%s time=%s budget=%s interests=%s",

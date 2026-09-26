@@ -51,6 +51,22 @@ the internet. Always route shared model access through Kong `key-auth` (the
 - The tunnel credentials JSON (`infra/cloudflared/*.json`) is git-ignored. Treat
   it as a secret.
 
+### API hardening
+
+- **Rate limits** are enforced per client IP: reads 60/min, recommendations
+  30/min, parse & chat 20/min, auth 10/min. Breaches return `429` in the standard
+  error shape.
+- **Login lockout:** 5 failed attempts lock an email for 15 minutes. Successful
+  login clears the counter.
+- **Passwords** require at least 8 characters with upper, lower and digit; only a
+  salted PBKDF2 hash is stored.
+- **Session tokens** are random and stored only as an HMAC-SHA256 hash.
+- **CORS** is an explicit allow-list (`CORS_ORIGINS`); never set it to `*`.
+- **Errors** never leak stack traces: unhandled exceptions return a generic
+  `500` with a `request_id` for correlation (`X-Request-ID`).
+- Rate-limit and lockout state is in-memory and per-process — move to Redis for a
+  multi-replica deployment.
+
 ### Data and privacy
 
 - The dataset is curated; do not scrape or store personal data.

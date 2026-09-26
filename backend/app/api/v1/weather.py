@@ -1,7 +1,8 @@
 """Weather API endpoints."""
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Request, Response
 
+from app.rate_limit import PUBLIC_LIMIT, limiter
 from app.schemas import WeatherResponse
 from app.services.weather import MUMBAI_LAT, MUMBAI_LON, fetch_weather
 
@@ -9,7 +10,10 @@ router = APIRouter()
 
 
 @router.get("/weather", response_model=WeatherResponse, summary="Current Mumbai weather")
+@limiter.limit(PUBLIC_LIMIT)
 async def get_weather(
+    request: Request,
+    response: Response,
     lat: float = Query(default=MUMBAI_LAT, ge=-90, le=90),
     lon: float = Query(default=MUMBAI_LON, ge=-180, le=180),
 ):

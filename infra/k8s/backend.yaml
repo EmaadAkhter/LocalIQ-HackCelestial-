@@ -5,7 +5,7 @@ metadata:
   namespace: localiq
 data:
   APP_ENV: production
-  CORS_ORIGINS: "*"
+  CORS_ORIGINS: "https://localiq.tavesglobal.com,http://localhost:8080"
   DATABASE_URL: postgresql+psycopg2://localiq:change-me@postgres:5432/localiq
   # Point this at a reachable Ollama: the in-cluster service (`http://ollama:11434`)
   # or a shared, tunnelled endpoint (`https://<host>/llm` + OLLAMA_API_KEY).
@@ -39,7 +39,7 @@ spec:
                 name: backend-config
           readinessProbe:
             httpGet:
-              path: /health
+              path: /readyz
               port: 8000
             initialDelaySeconds: 10
             periodSeconds: 10

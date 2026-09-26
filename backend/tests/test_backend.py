@@ -199,7 +199,7 @@ def _register(email: str | None = None) -> dict:
     email = email or f"user-{uuid.uuid4().hex[:10]}@localiq.test"
     r = client.post(
         "/api/v1/auth/register",
-        json={"name": "Demo User", "email": email, "password": "secret123"},
+        json={"name": "Demo User", "email": email, "password": "Secret123"},
     )
     assert r.status_code == 201, r.text
     return r.json()
@@ -231,7 +231,7 @@ def test_register_login_me_logout():
     # Duplicate email is rejected.
     dup = client.post(
         "/api/v1/auth/register",
-        json={"name": "Other", "email": email, "password": "secret123"},
+        json={"name": "Other", "email": email, "password": "Secret123"},
     )
     assert dup.status_code == 409
 
@@ -241,14 +241,14 @@ def test_register_login_me_logout():
 
     # Unknown email rejected with the same message.
     unknown = client.post(
-        "/api/v1/auth/login", json={"email": "nobody@localiq.test", "password": "secret123"}
+        "/api/v1/auth/login", json={"email": "nobody@localiq.test", "password": "Secret123"}
     )
     assert unknown.status_code == 401
-    assert unknown.json()["detail"] == bad.json()["detail"]
+    assert unknown.json()["message"] == bad.json()["message"]
 
     # Fresh login works, logout revokes the token.
     again = client.post(
-        "/api/v1/auth/login", json={"email": email, "password": "secret123"}
+        "/api/v1/auth/login", json={"email": email, "password": "Secret123"}
     )
     assert again.status_code == 200
     h2 = {"Authorization": f"Bearer {again.json()['access_token']}"}
@@ -300,7 +300,7 @@ def test_users_stored_in_sqlite_not_plaintext():
     with Session(engine) as s:
         user = s.exec(select(User).where(User.email == registered["user"]["email"])).first()
     assert user is not None
-    assert "secret123" not in user.password_hash
+    assert "Secret123" not in user.password_hash
     assert user.password_hash.startswith("pbkdf2_sha256$")
     # Session token must not be stored in the clear either.
     from app.models import UserSession
@@ -313,7 +313,7 @@ def test_users_stored_in_sqlite_not_plaintext():
 
 def test_auth_validation_errors():
     assert client.post("/api/v1/auth/register", json={"name": "A", "email": "x@y.z", "password": "123"}).status_code == 422
-    assert client.post("/api/v1/auth/register", json={"name": "A B", "email": "not-an-email", "password": "secret123"}).status_code == 400
+    assert client.post("/api/v1/auth/register", json={"name": "A B", "email": "not-an-email", "password": "Secret123"}).status_code == 400
 
 
 def test_auth_status_endpoint():

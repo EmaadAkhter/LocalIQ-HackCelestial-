@@ -4,12 +4,15 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import status as http_status
 from sqlmodel import Session, select
 
 from app.database import get_session
 from app.models import User
+from app.rate_limit import AUTH_LIMIT, limiter
 from app.schemas import LoginRequest, RegisterRequest, TokenResponse, UserResponse
+from app.services import lockout
 from app.services.auth import (
     create_session,
     utcnow,
@@ -28,8 +31,14 @@ def _normalize_email(email: str) -> str:
     return email.strip().lower()
 
 
-@router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED, summary="Register a local account")
-def register(payload: RegisterRequest, session: Session = Depends(get_session)):
+@router.post("/register", response_model=TokenResponse, status_code=http_status.HTTP_201_CREATED, summary="Register a local account")
+@limiter.limit(AUTH_LIMIT)
+def register(
+    request: Request,
+    response: Response,
+    payload: RegisterRequest,
+    session: Session = Depends(get_session),
+):
     """Create a local user and return a session token."""
     email = _normalize_email(payload.email)
     if "@" not in email or "." not in email.split("@")[-1]:
@@ -58,13 +67,31 @@ def register(payload: RegisterRequest, session: Session = Depends(get_session)):
 
 
 @router.post("/login", response_model=TokenResponse, summary="Login")
-def login(payload: LoginRequest, session: Session = Depends(get_session)):
+@limiter.limit(AUTH_LIMIT)
+def login(
+    request: Request,
+    response: Response,
+    payload: LoginRequest,
+    session: Session = Depends(get_session),
+):
     """Verify credentials and issue a session token."""
     email = _normalize_email(payload.email)
+
+    remaining = lockout.locked_for(email)
+    if remaining > 0:
+        minutes = max(1, remaining // 60)
+        raise HTTPException(
+            status_code=http_status.HTTP_403_FORBIDDEN,
+            detail=f"Account temporarily locked. Try again in {minutes} minute(s).",
+        )
+
     user = session.exec(select(User).where(User.email == email)).first()
     if not user or not verify_password(payload.password, user.password_hash):
         # Same message for both cases: do not leak which emails exist.
+        lockout.record_failure(email)
         raise HTTPException(status_code=401, detail="Incorrect email or password")
+
+    lockout.clear(email)
     token, expires_at, _ = create_session(user.id, session)  # type: ignore[arg-type]
     logger.info("Login user id=%s", user.id)
     return TokenResponse(
@@ -74,7 +101,7 @@ def login(payload: LoginRequest, session: Session = Depends(get_session)):
     )
 
 
-@router.post("/logout", status_code=status.HTTP_200_OK, summary="Logout (revoke session)")
+@router.post("/logout", status_code=http_status.HTTP_200_OK, summary="Logout (revoke session)")
 def logout(
     request: Request,
     session: Session = Depends(get_session),

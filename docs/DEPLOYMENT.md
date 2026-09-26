@@ -98,9 +98,30 @@ build on `main`.
 | `OLLAMA_MODEL` | backend | default `llama3.2:3b` |
 | `OLLAMA_API_KEY` | backend | set only for the shared, tunnelled model |
 | `DEMO_MODE` | backend | `true` forces canned LLM responses |
-| `CORS_ORIGINS` | backend | comma-separated allowed origins |
+| `CORS_ORIGINS` | backend | comma-separated allowed origins (no `*`) |
+| `LOG_JSON` | backend | `true` emits newline-delimited JSON logs |
+| `RATE_LIMIT_ENABLED` | backend | per-IP limits; auto-off when `APP_ENV=test` |
+| `LOGIN_MAX_ATTEMPTS` | backend | failed logins before lockout (default `5`) |
+| `LOGIN_LOCKOUT_MINUTES` | backend | lockout window (default `15`) |
+| `AUTH_SECRET_KEY` | backend | HMAC key for session-token hashing |
 | `HTTP_PORT` | infra | host port for the Caddy edge (default `8080`) |
 | `FLUTTER_WEB_DIR` | infra | path to the Flutter web build |
+
+## Observability & hardening
+
+| Concern | Where |
+|---|---|
+| Liveness | `GET /healthz` (edge) / `GET /health` (backend) |
+| Readiness | `GET /readyz` — checks Postgres (required) + Ollama (reported) |
+| API docs | `GET /docs`, `/redoc`, `/openapi.json` |
+| Request tracing | `X-Request-ID` echoed on every response; present in JSON logs |
+| Structured logs | one JSON line per request: method, path, status, duration_ms, request_id |
+| Error shape | every failure returns `{error, message, request_id, path, status_code}` |
+| Rate limits | reads 60/min · recommend 30/min · parse & chat 20/min · auth 10/min |
+| Login lockout | 5 failed attempts → 15-minute lock (per email) |
+
+> Rate-limit state and login lockout are in-memory: correct for the single
+> backend container this deployment runs. A multi-replica setup needs Redis.
 
 ## Rollback
 

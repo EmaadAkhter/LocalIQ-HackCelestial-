@@ -2,11 +2,12 @@
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlmodel import Session
 
 from app.database import get_session
 from app.models import Experience
+from app.rate_limit import LLM_LIMIT, limiter
 from app.schemas import ChatRequest, ChatResponse
 from app.services.llm import get_client
 
@@ -69,7 +70,13 @@ def fallback_reply(exp: Experience | None, message: str) -> str:
 
 
 @router.post("/chat", response_model=ChatResponse, summary="Chat with an experience guide")
-async def chat(payload: ChatRequest, session: Session = Depends(get_session)):
+@limiter.limit(LLM_LIMIT)
+async def chat(
+    request: Request,
+    response: Response,
+    payload: ChatRequest,
+    session: Session = Depends(get_session),
+):
     """Experience-grounded guide chat with graceful Ollama fallback."""
     exp = session.get(Experience, payload.experience_id) if payload.experience_id else None
     if payload.experience_id and not exp:

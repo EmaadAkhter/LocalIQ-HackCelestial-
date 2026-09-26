@@ -3,9 +3,10 @@
 import logging
 import re
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request, Response
 from pydantic import ValidationError
 
+from app.rate_limit import LLM_LIMIT, limiter
 from app.schemas import ParsedConstraints, ParseRequest, ParseResponse
 from app.services.llm import get_client
 from app.services.recommender import KNOWN_AREAS
@@ -142,7 +143,8 @@ def heuristic_parse(text: str) -> ParsedConstraints:
 
 
 @router.post("/parse", response_model=ParseResponse, summary="Parse natural-language constraints")
-async def parse_constraints(payload: ParseRequest):
+@limiter.limit(LLM_LIMIT)
+async def parse_constraints(request: Request, response: Response, payload: ParseRequest):
     """Try Ollama strict JSON first; fall back to deterministic heuristic."""
     # 1) Ollama attempt.
     try:

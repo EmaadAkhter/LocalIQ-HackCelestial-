@@ -23,6 +23,11 @@
 		respond "ok" 200
 	}
 
+	# Readiness needs the real backend (DB + Ollama), so proxy it.
+	route /readyz {
+		reverse_proxy backend:8000
+	}
+
 	# FastAPI docs. These live outside /api, so they bypass Kong and go
 	# straight to the backend (same network). Handy for demos and judging.
 	route /docs* {
