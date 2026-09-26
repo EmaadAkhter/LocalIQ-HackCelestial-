@@ -35,6 +35,7 @@ from app.api.v1 import (  # noqa: E402
     itineraries,
     media,
     meetup,
+    notifications,
     onboarding,
     parse,
     personalization,
@@ -198,6 +199,7 @@ app.include_router(chat.router, prefix="/api/v1", tags=["chat"])
 app.include_router(weather.router, prefix="/api/v1", tags=["weather"])
 app.include_router(itineraries.router, prefix="/api/v1", tags=["itineraries"])
 app.include_router(favorites.router, prefix="/api/v1", tags=["favorites"])
+app.include_router(notifications.router, prefix="/api/v1", tags=["notifications"])
 app.include_router(admin.router, prefix="/api/v1", tags=["admin"])
 
 

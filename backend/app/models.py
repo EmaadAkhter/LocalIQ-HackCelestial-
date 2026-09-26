@@ -216,6 +216,39 @@ class EmailVerificationToken(TimestampMixin, table=True):
     consumed_at: Optional[datetime] = Field(default=None, sa_type=DateTime)
 
 
+class NotificationKind(str, enum.Enum):
+    """Category, so the app can pick an icon and a destination."""
+
+    BOOKING = "booking"
+    GUIDE = "guide"
+    SYSTEM = "system"
+
+
+class Notification(TimestampMixin, table=True):
+    """In-app notification for a user.
+
+    Read with simple ``user_id``-filtered queries, so it carries no relationship
+    (see the module docstring). The payload that matters — which booking, which
+    guide — travels in ``data`` so the row stays meaningful even if those
+    entities change underneath it.
+    """
+
+    __tablename__ = "notifications"
+    __table_args__ = (
+        Index("ix_notifications_user_created", "user_id", "created_at"),
+        Index("ix_notifications_user_read", "user_id", "read_at"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="users.id", index=True)
+    kind: str = Field(default="system", max_length=20)
+    title: str = Field(max_length=160)
+    body: str = Field(max_length=1000)
+    #: Small JSON payload (booking_id, guide_id, status, ...).
+    data: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+    read_at: Optional[datetime] = Field(default=None, sa_type=DateTime)
+
+
 class GuideRequest(TimestampMixin, table=True):
     """Legacy persisted guide booking request (kept for backwards compatibility)."""
 

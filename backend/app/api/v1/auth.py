@@ -272,7 +272,8 @@ def _decode_jwt_payload(token: str) -> dict | None:
 async def _google_claims(id_token: str) -> dict | None:
     """Verify a Google ID token, or decode it unverified in non-production."""
     settings = get_settings()
-    if settings.google_oauth_client_id:
+    allowed = settings.google_oauth_client_ids
+    if allowed:
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
                 resp = await client.get(
@@ -281,7 +282,10 @@ async def _google_claims(id_token: str) -> dict | None:
                 )
                 resp.raise_for_status()
                 data = resp.json()
-            if data.get("aud") != settings.google_oauth_client_id:
+            # A token minted for a different client must not be accepted, even
+            # though Google signed it.
+            if data.get("aud") not in allowed:
+                logger.warning("Google token audience %r is not allowed", data.get("aud"))
                 return None
             return data
         except Exception as exc:

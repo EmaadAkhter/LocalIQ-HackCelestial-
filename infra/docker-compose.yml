@@ -9,6 +9,15 @@ name: localiq
 services:
   postgres:
     image: pgvector/pgvector:pg16
+    # The dataset is a few hundred rows, so the stock Postgres buffers are
+    # generous. Trimming them keeps the container well inside its memory limit
+    # on a laptop that is also running a browser, an IDE and the Flutter tools.
+    command: >
+      postgres
+      -c shared_buffers=64MB
+      -c work_mem=4MB
+      -c maintenance_work_mem=32MB
+      -c max_connections=50
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-localiq}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-localiq}
@@ -20,6 +29,12 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    # Hard cap so a runaway query cannot balloon the VM. Limits sit above the
+    # observed steady state, so they only bite on a genuine leak.
+    deploy:
+      resources:
+        limits:
+          memory: 256M
     networks: [localiq]
 
   backend:
@@ -55,6 +70,9 @@ services:
       GOOGLE_MAPS_API_KEY_IOS: ${GOOGLE_MAPS_API_KEY_IOS:-}
       GOOGLE_PLACES_API_KEY: ${GOOGLE_PLACES_API_KEY:-}
       GOOGLE_ROUTES_API_KEY: ${GOOGLE_ROUTES_API_KEY:-}
+      # Google Sign-In: comma-separated accepted audiences. Empty falls back to
+      # unverified dev-mode decoding (never in production).
+      GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}
       S3_ENABLED: ${S3_ENABLED:-true}
       S3_ENDPOINT: ${S3_ENDPOINT:-http://s3:9090}
       S3_ACCESS_KEY: ${S3_ACCESS_KEY:-minioadmin}
@@ -69,10 +87,15 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      searxng:
-        condition: service_started
       s3:
         condition: service_started
+      # searxng now lives behind the "discovery" profile, so it is intentionally
+      # not a hard dependency: without it the backend falls back to its
+      # heuristic extractor instead of failing to start.
+    deploy:
+      resources:
+        limits:
+          memory: 384M
     networks: [localiq]
 
   s3:
@@ -85,10 +108,19 @@ services:
       COM_ADOBE_TESTING_S3MOCK_STORE_ROOT: /tmp/s3root
     ports:
       - "${S3_PORT:-9000}:9090"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
     networks: [localiq]
 
   searxng:
     image: searxng/searxng:latest
+    # Off by default. SearXNG only backs the optional web-discovery pipeline, so
+    # it costs ~95 MB and extra startup time for nothing during a normal demo.
+    # Start it on demand with:  docker compose --profile discovery up -d searxng
+    # Without it the backend falls back to its heuristic extractor.
+    profiles: ["discovery"]
     environment:
       SEARXNG_SECRET: ${SEARXNG_SECRET:-localiq-dev-searxng-secret-change-me}
       SEARXNG_BASE_URL: ${SEARXNG_BASE_URL:-http://localhost:8888/}
@@ -99,6 +131,10 @@ services:
     ports:
       - "${SEARXNG_PORT:-8888}:8080"
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
     networks: [localiq]
 
   nginx-flutter:
@@ -108,12 +144,19 @@ services:
       - ${FLUTTER_WEB_DIR:-./placeholders/flutter-web}:/usr/share/nginx/html:ro
     depends_on:
       - backend
+    deploy:
+      resources:
+        limits:
+          memory: 64M
     networks: [localiq]
 
   kong:
     image: kong:3.9
     environment:
       KONG_DATABASE: "off"
+      # Keep the worker count low: this is a single-laptop demo gateway, and each
+      # worker carries its own Lua VM and shared-memory dictionaries.
+      KONG_NGINX_WORKER_PROCESSES: "1"
       KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
       KONG_PROXY_ACCESS_LOG: /dev/stdout
       KONG_ADMIN_ACCESS_LOG: /dev/stdout
@@ -127,6 +170,12 @@ services:
       - "host.docker.internal:host-gateway"
     depends_on:
       - backend
+    # Kong is the largest container here. The cap sits above its steady state so
+    # it only bites on a leak, not during normal traffic.
+    deploy:
+      resources:
+        limits:
+          memory: 640M
     networks: [localiq]
 
   caddy:
@@ -138,6 +187,10 @@ services:
     depends_on:
       - kong
       - nginx-flutter
+    deploy:
+      resources:
+        limits:
+          memory: 64M
     networks: [localiq]
 
 volumes:

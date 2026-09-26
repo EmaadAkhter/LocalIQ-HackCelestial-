@@ -92,7 +92,12 @@ class Settings(BaseSettings):
     # Refresh tokens outlive access tokens; the app exchanges one on cold start.
     auth_refresh_ttl_days: int = 30
     # Google Sign-In: when set, /auth/google verifies the ID token against
-    # Google's tokeninfo endpoint. Empty falls back to dev-mode claim decoding.
+    # Google's tokeninfo endpoint and checks the audience. Accepts a
+    # comma-separated list, because a token's ``aud`` depends on which client
+    # minted it: an Android sign-in that passes ``serverClientId`` yields the
+    # *web* client id, while a native-only Android flow yields the Android id.
+    # Listing every id lets one deployment serve web, Android and iOS.
+    # Empty falls back to unverified dev-mode claim decoding.
     google_oauth_client_id: str = ""
 
     # Local LLM (Ollama)
@@ -251,6 +256,11 @@ class Settings(BaseSettings):
     def email_enabled(self) -> bool:
         """True when a Resend API key is configured."""
         return bool(self.resend_api_key.strip())
+
+    @property
+    def google_oauth_client_ids(self) -> list[str]:
+        """Every accepted Google token audience (comma-separated in the env)."""
+        return [part.strip() for part in self.google_oauth_client_id.split(",") if part.strip()]
 
     @property
     def app_public_origin(self) -> str:

@@ -279,6 +279,20 @@ class GuideRequestResponse(BaseModel):
     created_at: datetime | None = None
 
 
+class NotificationResponse(BaseModel):
+    """One in-app notification."""
+
+    id: int
+    kind: str = "system"
+    title: str
+    body: str
+    data: dict[str, Any] = Field(default_factory=dict)
+    read_at: datetime | None = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 class GuidePackageStopBase(BaseModel):
     experience_id: int | None = None
     sequence: int = 0

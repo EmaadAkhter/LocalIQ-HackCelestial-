@@ -40,6 +40,7 @@ from app.schemas import (
     GuideVerifyRequest,
 )
 from app.services import guide_onboarding
+from app.services import notifications as notification_service
 from app.services.auth import get_current_user
 
 logger = logging.getLogger(__name__)
@@ -195,4 +196,19 @@ def verify_guide(
     user = session.get(User, profile.user_id) if profile and profile.user_id else None
     if user is None:
         raise HTTPException(status_code=404, detail="guide applicant not found")
+
+    # Tell the applicant the outcome. Best-effort: a notification failure must
+    # not turn a successful verification into an error response.
+    notification_service.create(
+        session,
+        user_id=user.id,
+        title="Guide application approved" if payload.approve else "Guide application declined",
+        body=(
+            "You're live — travellers can now find and book you."
+            if payload.approve
+            else "We couldn't approve this application. Open the app for the reviewer's notes."
+        ),
+        kind=notification_service.GUIDE,
+        data={"guide_id": guide_id, "approved": payload.approve},
+    )
     return GuideOnboardingStatus(**guide_onboarding.status(session, user))

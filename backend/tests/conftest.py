@@ -27,6 +27,11 @@ os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
 # Never contact a real mail provider from the suite, even if the developer has a
 # key in .env. Tests that assert on email monkeypatch the service directly.
 os.environ["RESEND_API_KEY"] = ""
+# Likewise for Google: a real client id in .env would send the suite down the
+# live tokeninfo path, which both hits the network and rejects the fabricated
+# tokens these tests build. Forcing it empty keeps /auth/google on the
+# deterministic dev fallback.
+os.environ["GOOGLE_OAUTH_CLIENT_ID"] = ""
 # Media: force the filesystem backend and a throwaway root so tests never need a
 # running object store and never leave files in the repo.
 os.environ.setdefault("S3_ENABLED", "false")
@@ -91,6 +96,7 @@ def _cleanup_test_rows():
     from app.models import (
         AITip,
         ConversationSession,
+        EmailVerificationToken,
         Experience,
         ExperienceLog,
         ExperienceSession,
@@ -100,6 +106,7 @@ def _cleanup_test_rows():
         GuideRequest,
         Itinerary,
         ItineraryStop,
+        Notification,
         OnboardingSession,
         PreferenceSignal,
         RecommendationFeedback,
@@ -236,6 +243,14 @@ def _cleanup_test_rows():
                     delete(ExperienceWallet).where(ExperienceWallet.user_id == user.id)
                 )
                 session.exec(delete(GuideRequest).where(GuideRequest.user_id == user.id))
+                session.exec(
+                    delete(Notification).where(Notification.user_id == user.id)
+                )
+                session.exec(
+                    delete(EmailVerificationToken).where(
+                        EmailVerificationToken.user_id == user.id
+                    )
+                )
                 session.exec(delete(ItineraryStop).where(ItineraryStop.itinerary_id.in_(
                     select(Itinerary.id).where(Itinerary.user_id == user.id)
                 )))

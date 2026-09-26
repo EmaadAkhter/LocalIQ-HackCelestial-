@@ -47,11 +47,43 @@ from app.schemas_prd import (
     GuideTrainingResponse,
 )
 from app.services import journey_rules as rules
+from app.services import notifications as notification_service
 from app.timeutil import utcnow
 from app.api.v1.journey_deps import enforce_trust, guide_profile
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+#: Traveller-facing copy for each booking transition. The guide is the one
+#: acting, so only the traveller is notified.
+_BOOKING_NOTIFICATIONS: dict[str, tuple[str, str]] = {
+    "accepted": ("Booking accepted", "Your guide accepted the booking."),
+    "confirmed": ("Booking confirmed", "Your booking is confirmed."),
+    "in_progress": ("Tour started", "Your guide has started the tour."),
+    "completed": ("Tour completed", "Your tour is complete. Leave a review?"),
+    "declined": ("Booking declined", "The guide could not take this booking."),
+    "cancelled": ("Booking cancelled", "This booking was cancelled."),
+}
+
+
+def _notify_booking_status(session: Session, booking: GuideBooking, status: str) -> None:
+    """Tell the traveller their booking moved.
+
+    Only the traveller is notified: the guide triggered the change, so sending
+    them a copy would be noise.
+    """
+    copy = _BOOKING_NOTIFICATIONS.get(status)
+    if copy is None:
+        return
+    title, body = copy
+    notification_service.create(
+        session,
+        user_id=booking.user_id,
+        title=title,
+        body=body,
+        kind=notification_service.BOOKING,
+        data={"booking_id": booking.id, "status": status},
+    )
 
 
 def _require_guide_owner(
@@ -678,6 +710,7 @@ def transition_booking(
     session.commit()
     session.refresh(booking)
     logger.info("Booking %s: %s -> %s by %s", booking_id, "moved", payload.status, actor)
+    _notify_booking_status(session, booking, payload.status)
     return _booking_payload(session, booking)
 
 
