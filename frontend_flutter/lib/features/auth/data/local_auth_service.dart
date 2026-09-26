@@ -69,10 +69,9 @@ class LocalAuthService implements AuthService {
     if (!_isEmail(email)) {
       throw const ConfigurationException('Enter a valid email address.');
     }
-    if (request.password.length < 6) {
-      throw const ConfigurationException(
-        'Use at least 6 characters for your password.',
-      );
+    final problem = passwordProblem(request.password);
+    if (problem != null) {
+      throw ConfigurationException(problem);
     }
     if (!request.termsAccepted) {
       throw const ConfigurationException(

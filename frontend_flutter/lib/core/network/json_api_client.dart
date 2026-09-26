@@ -160,19 +160,21 @@ class JsonApiClient {
           return decoded;
         case 401 || 403:
           throw UnauthorizedException(
-            decoded is Map && decoded['detail'] != null
-                ? '${decoded['detail']}'
-                : 'You are not authorised for this action.',
+            _serverMessage(decoded, 'You are not authorised for this action.'),
           );
         case 404:
           throw NotFoundException(
-            decoded is Map && decoded['detail'] != null
-                ? '${decoded['detail']}'
-                : 'The requested resource was not found.',
+            _serverMessage(decoded, 'The requested resource was not found.'),
+          );
+        case 422:
+          throw ServerException(
+            _serverMessage(decoded, 'The request was rejected. Check your input.'),
+            code: '422',
+            cause: decoded,
           );
         default:
           throw ServerException(
-            'Request failed (${response.statusCode}).',
+            _serverMessage(decoded, 'Request failed (${response.statusCode}).'),
             code: '$response.statusCode',
             cause: decoded,
           );
@@ -187,6 +189,42 @@ class JsonApiClient {
     } on FormatException catch (e) {
       throw ParseException('The server returned an unexpected response.', cause: e);
     }
+  }
+
+  /// Extracts the most useful message from the backend's unified error shape:
+  /// `{"error", "message", "details": [{"loc": [...], "msg": ...}]}`.
+  ///
+  /// Field-level validation messages win, then the top-level message/detail, so
+  /// a 422 reads "password: String should have at least 8 characters" instead of
+  /// a bare status code.
+  static String _serverMessage(dynamic decoded, String fallback) {
+    if (decoded is! Map) return fallback;
+    final details = decoded['details'];
+    if (details is List && details.isNotEmpty && details.first is Map) {
+      final first = (details.first as Map).cast<String, dynamic>();
+      final msg = first['msg'];
+      if (msg is String && msg.trim().isNotEmpty) {
+        final field = _fieldName(first['loc']);
+        return field == null ? msg.trim() : '$field: ${msg.trim()}';
+      }
+    }
+    for (final key in const ['message', 'detail']) {
+      final value = decoded[key];
+      if (value is String && value.trim().isNotEmpty) return value;
+    }
+    return fallback;
+  }
+
+  /// Last meaningful segment of a validation `loc` (skips `body` / `query`).
+  static String? _fieldName(dynamic loc) {
+    if (loc is! List) return null;
+    for (var i = loc.length - 1; i >= 0; i--) {
+      final segment = loc[i];
+      if (segment is String && segment != 'body' && segment != 'query') {
+        return segment;
+      }
+    }
+    return null;
   }
 
   /// Closes the underlying connection pool. Does nothing for an injected

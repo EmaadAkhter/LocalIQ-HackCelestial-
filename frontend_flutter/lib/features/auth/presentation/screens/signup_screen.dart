@@ -129,7 +129,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 textInputAction: TextInputAction.next,
                 decoration: InputDecoration(
                   labelText: 'Password',
-                  helperText: 'At least 6 characters',
+                  helperText: passwordRequirementHint,
                   prefixIcon: const Icon(Icons.lock_outline_rounded, size: 19),
                   suffixIcon: IconButton(
                     onPressed: () => setState(() => _obscure = !_obscure),
@@ -141,9 +141,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     ),
                   ),
                 ),
-                validator: (value) => (value ?? '').length < 6
-                    ? 'Use at least 6 characters'
-                    : null,
+                validator: (value) => passwordProblem(value),
               ),
               const SizedBox(height: 12),
               TextFormField(

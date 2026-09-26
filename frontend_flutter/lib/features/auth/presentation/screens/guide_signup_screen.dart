@@ -140,6 +140,7 @@ class _GuideSignupScreenState extends ConsumerState<GuideSignupScreen> {
                 textInputAction: TextInputAction.done,
                 decoration: InputDecoration(
                   labelText: 'Password',
+                  helperText: passwordRequirementHint,
                   prefixIcon: const Icon(Icons.lock_outline_rounded, size: 19),
                   suffixIcon: IconButton(
                     onPressed: () => setState(() => _obscure = !_obscure),
@@ -151,9 +152,7 @@ class _GuideSignupScreenState extends ConsumerState<GuideSignupScreen> {
                     ),
                   ),
                 ),
-                validator: (v) => (v ?? '').length < 6
-                    ? 'Use at least 6 characters'
-                    : null,
+                validator: (v) => passwordProblem(v),
               ),
               const SizedBox(height: 16),
 

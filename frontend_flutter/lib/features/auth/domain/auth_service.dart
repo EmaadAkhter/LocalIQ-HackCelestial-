@@ -24,6 +24,26 @@ class SignUpRequest {
   final bool termsAccepted;
 }
 
+/// Mirrors the backend password policy (`RegisterRequest` in
+/// `app/schemas.py`) so the client never sends a password the server will
+/// reject with a 422. Returns null when acceptable, otherwise a short message.
+String? passwordProblem(String? value) {
+  final password = value ?? '';
+  if (password.length < 8) return 'Password must be at least 8 characters';
+  if (!RegExp(r'[A-Z]').hasMatch(password)) {
+    return 'Password must include an uppercase letter';
+  }
+  if (!RegExp(r'[a-z]').hasMatch(password)) {
+    return 'Password must include a lowercase letter';
+  }
+  if (!RegExp(r'\d').hasMatch(password)) return 'Password must include a number';
+  return null;
+}
+
+/// Shown under the password field, matching [passwordProblem].
+const String passwordRequirementHint =
+    'At least 8 characters, with a number and a capital letter';
+
 class AuthSession {
   const AuthSession({
     required this.user,

@@ -19,17 +19,39 @@ class RemotePlaceRepository implements PlaceRepository {
 
   final JsonApiClient _client;
 
+  /// Server-side caps (app/api/v1/place_discovery.py). Requests above these are
+  /// rejected with a 422, so callers may ask for more and we clamp + page.
+  static const double _maxRadiusKm = 50;
+  static const int _maxPageSize = 100;
+
   @override
   Future<List<Place>> search(PlaceQuery query) async {
-    final data = await _client.get(
-      '/places',
-      query: _toQuery(query),
-    );
-    if (data is! List) throw const ParseException('Unexpected /places payload.');
-    return data
-        .whereType<Map>()
-        .map((e) => Place.fromJson(e.cast<String, dynamic>()))
-        .toList();
+    // The catalogue can exceed one page, so walk offset pages until the
+    // caller's limit is met or the server runs out of rows.
+    final target = query.limit < 1 ? _maxPageSize : query.limit;
+    final places = <Place>[];
+    var offset = 0;
+    while (places.length < target) {
+      final pageSize = (target - places.length).clamp(1, _maxPageSize);
+      final data = await _client.get(
+        '/places',
+        query: {..._toQuery(query), 'limit': pageSize, 'offset': offset},
+      );
+      if (data is! List) {
+        if (offset == 0) {
+          throw const ParseException('Unexpected /places payload.');
+        }
+        break;
+      }
+      final page = data
+          .whereType<Map>()
+          .map((e) => Place.fromJson(e.cast<String, dynamic>()))
+          .toList();
+      places.addAll(page);
+      if (page.length < pageSize) break; // last page reached
+      offset += page.length;
+    }
+    return places;
   }
 
   @override
@@ -126,8 +148,8 @@ class RemotePlaceRepository implements PlaceRepository {
           'text': query.text,
         if (query.near != null) 'lat': query.near!.latitude,
         if (query.near != null) 'lng': query.near!.longitude,
-        'radius_km': query.radiusKm,
-        'limit': query.limit,
+        'radius_km': query.radiusKm.clamp(0.1, _maxRadiusKm),
+        'limit': query.limit.clamp(1, _maxPageSize),
         if (query.categories.isNotEmpty)
           'categories': query.categories.map((c) => c.name).toList(),
         if (query.openAt != null)
