@@ -15,11 +15,14 @@ TIMEOUT_S = 8.0
 
 # Weather changes slowly; one upstream call per coordinate per TTL is plenty.
 _weather_cache = TTLCache(maxsize=64, ttl_seconds=settings.weather_cache_ttl_seconds)
+# Sunrise/sunset change once a day; cache for six hours.
+_sun_cache = TTLCache(maxsize=32, ttl_seconds=6 * 3600)
 
 
 def clear_weather_cache() -> None:
     """Drop cached weather (used by tests)."""
     _weather_cache.clear()
+    _sun_cache.clear()
 
 
 def weather_cache_stats() -> dict[str, int]:
@@ -122,3 +125,50 @@ async def fetch_weather(lat: float = MUMBAI_LAT, lon: float = MUMBAI_LON) -> dic
     if data.get("available"):
         _weather_cache.set(key, data)
     return data
+
+
+def _hhmm_from_iso(value: str | None) -> str | None:
+    """'2026-09-26T06:28' -> '06:28'."""
+    if not value or "T" not in value:
+        return None
+    return value.split("T", 1)[1][:5]
+
+
+async def fetch_sun_times(lat: float = MUMBAI_LAT, lon: float = MUMBAI_LON) -> dict:
+    """Today's sunrise/sunset for a coordinate (cached, never raises).
+
+    Used by the Right Now Engine for golden-hour / sunset-window ranking.
+    """
+    key = f"{lat:.4f},{lon:.4f}"
+    cached = _sun_cache.get(key)
+    if cached is not None:
+        return cached
+
+    url = settings.open_meteo_base_url
+    params = {
+        "latitude": lat,
+        "longitude": lon,
+        "daily": "sunrise,sunset",
+        "timezone": "Asia/Kolkata",
+        "forecast_days": 1,
+    }
+    try:
+        async with httpx.AsyncClient(timeout=TIMEOUT_S) as client:
+            resp = await client.get(url, params=params)
+            resp.raise_for_status()
+            data = resp.json()
+        daily = data.get("daily") or {}
+        sunrise = _hhmm_from_iso((daily.get("sunrise") or [None])[0])
+        sunset = _hhmm_from_iso((daily.get("sunset") or [None])[0])
+        result = {
+            "available": bool(sunrise and sunset),
+            "sunrise": sunrise,
+            "sunset": sunset,
+        }
+    except Exception as exc:
+        logger.warning("Sun time fetch failed: %s", exc)
+        result = {"available": False, "sunrise": None, "sunset": None}
+
+    if result["available"]:
+        _sun_cache.set(key, result)
+    return result

@@ -75,7 +75,7 @@ def _proximity(distance_km: float) -> float:
     return math.exp(-max(0.0, distance_km) / PROXIMITY_SCALE_KM)
 
 
-def _weather_score(exp: Experience, weather: dict[str, Any]) -> tuple[float, str | None]:
+def weather_score(exp: Experience, weather: dict[str, Any]) -> tuple[float, str | None]:
     """1.0 = perfect for the conditions, 0.0 = bad fit."""
     if not weather or not weather.get("available"):
         return 0.6, None  # neutral: unknown weather should not swing the ranking
@@ -95,7 +95,7 @@ def outdoorish(exp: Experience) -> bool:
     return bool(tags & {"outdoor", "beach", "nature", "sunset", "sunrise", "views", "walking"})
 
 
-def _time_of_day_score(exp: Experience, start_time: str | None) -> tuple[float, str | None]:
+def time_of_day_score(exp: Experience, start_time: str | None) -> tuple[float, str | None]:
     if not start_time:
         return 0.6, None
     minutes = recommender.parse_hhmm(start_time)
@@ -130,14 +130,14 @@ def score_experience(exp: Experience, ctx: RerankContext) -> Reranked:
         # Map [-1, 1] similarity onto [0, 1]; negatives are penalised.
         taste_score = (taste.experience_taste_score(exp, ctx.taste_vector) + 1.0) / 2.0
     proximity = _proximity(distance_km) if ctx.lat is not None else 0.5
-    weather_score, weather_note = _weather_score(exp, ctx.weather)
-    tod_score, tod_note = _time_of_day_score(exp, ctx.start_time)
+    weather_component, weather_note = weather_score(exp, ctx.weather)
+    tod_score, tod_note = time_of_day_score(exp, ctx.start_time)
 
     parts = {
         "base": round(base * W_BASE, 4),
         "taste": round(taste_score * W_TASTE, 4),
         "proximity": round(proximity * W_PROXIMITY, 4),
-        "weather": round(weather_score * W_WEATHER, 4),
+        "weather": round(weather_component * W_WEATHER, 4),
         "time_of_day": round(tod_score * W_TIME_OF_DAY, 4),
     }
     score = sum(parts.values())

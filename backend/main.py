@@ -37,6 +37,7 @@ from app.api.v1 import (  # noqa: E402
     places,
     quests,
     recommendations,
+    right_now,
     solo,
     tags,
     trust,
@@ -172,6 +173,7 @@ app.include_router(trust.router, prefix="/api/v1", tags=["journey-trust"])
 
 app.include_router(experiences.router, prefix="/api/v1", tags=["experiences"])
 app.include_router(recommendations.router, prefix="/api/v1", tags=["recommendations"])
+app.include_router(right_now.router, prefix="/api/v1", tags=["right-now"])
 app.include_router(personalization.router, prefix="/api/v1", tags=["personalization"])
 app.include_router(media.router, tags=["media"])
 app.include_router(agent.router, prefix="/api/v1", tags=["agent"])

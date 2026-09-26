@@ -110,6 +110,13 @@ class ExperienceResponse(BaseModel):
     best_visit_time: str | None = None
     time_to_spend: str | None = None
 
+    # Live "Right Now" context (PRD 4.8). The raw cached JSON is excluded from
+    # the response; label/context are unpacked into friendlier fields.
+    right_now_score: float = 50.0
+    right_now_context_json: dict[str, Any] = Field(default_factory=dict, exclude=True)
+    right_now_label: str = "Okay right now"
+    right_now_context: list[str] = Field(default_factory=list)
+
     model_config = {"from_attributes": True}
 
     @model_validator(mode="after")
@@ -130,10 +137,59 @@ class ExperienceResponse(BaseModel):
                 self.image_url = template.format(seed=f"localiq-{slug}")
         return self
 
+    @model_validator(mode="after")
+    def _unpack_right_now(self) -> "ExperienceResponse":
+        """Expose the Right Now label/context without leaking the raw cache."""
+        raw = self.right_now_context_json or {}
+        from app.services.right_now import label_for_score
+
+        self.right_now_label = str(raw.get("label") or label_for_score(self.right_now_score))
+        context = raw.get("context")
+        self.right_now_context = [str(c) for c in context] if isinstance(context, list) else []
+        return self
+
 
 class ExperienceListResponse(BaseModel):
     total: int
     items: list[ExperienceResponse]
+
+
+# --------------------------------------------------------------------------
+# Right Now Engine (PRD 4.8)
+# --------------------------------------------------------------------------
+
+
+class RightNowRequest(BaseModel):
+    location: str | None = Field(default=None, max_length=100)
+    origin_lat: float | None = None
+    origin_lng: float | None = None
+    time_hours: float | None = Field(default=None, ge=0.5, le=24)
+    budget_inr: int | None = Field(default=None, ge=0)
+    start_time: str | None = Field(default=None, max_length=20)
+    limit: int = Field(default=10, ge=1, le=30)
+
+
+class RightNowItem(BaseModel):
+    experience: ExperienceResponse
+    right_now_score: float
+    right_now_label: str
+    context: list[str] = Field(default_factory=list)
+    components: dict[str, float] = Field(default_factory=dict)
+    rerank_score: float
+    final_score: float
+    distance_km: float
+    travel_time_min: int
+    why: list[str] = Field(default_factory=list)
+
+
+class RightNowDetail(BaseModel):
+    experience_id: int
+    name: str
+    right_now_score: float
+    right_now_label: str
+    components: dict[str, float] = Field(default_factory=dict)
+    context: list[str] = Field(default_factory=list)
+    computed_at: str | None = None
 
 
 

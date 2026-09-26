@@ -94,6 +94,13 @@ class Experience(TimestampMixin, table=True):
     best_visit_time: Optional[str] = Field(default=None, max_length=200)
     time_to_spend: Optional[str] = Field(default=None, max_length=100)
 
+    # Live context (PRD 4.8 "Right Now" Engine). ``right_now_score`` is a 0-100
+    # badge kept warm by the refresh job; ``right_now_context_json`` caches the
+    # human-readable reasons behind the current score.
+    right_now_score: float = Field(default=50.0, ge=0.0, le=100.0)
+    right_now_context_json: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+    right_now_updated_at: Optional[datetime] = Field(default=None)
+
     guides: list["Guide"] = Relationship(back_populates="experience")
 
 
