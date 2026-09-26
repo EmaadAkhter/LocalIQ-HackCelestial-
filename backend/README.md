@@ -29,7 +29,25 @@ cp .env.example .env   # then edit if needed
 | `OLLAMA_MODEL` | _(empty)_ | e.g. `llama3.2:3b`. Empty = heuristic/fallback mode |
 | `OPEN_METEO_URL` | `https://api.open-meteo.com/v1/forecast` | Weather |
 | `CORS_ORIGINS` | `http://localhost:3000` | Comma-separated frontend origins |
-| `GOOGLE_MAPS_API_KEY` | _(empty)_ | Reserved for future routing; not required |
+| `GOOGLE_MAPS_API_KEY_WEB` | _(empty)_ | Maps JavaScript key, served to browsers by `GET /api/v1/config` |
+| `GOOGLE_MAPS_API_KEY_ANDROID` | _(empty)_ | Android key, injected into the manifest by the release script |
+| `GOOGLE_MAPS_API_KEY_IOS` | _(empty)_ | iOS key, injected into `Info.plist` by the release script |
+| `GOOGLE_PLACES_API_KEY` | _(empty)_ | Server-side Places API (search/nearby/photo proxy). Never sent to clients |
+| `GOOGLE_ROUTES_API_KEY` | _(empty)_ | Server-side Routes API (travel time/distance/polyline). Never sent to clients |
+
+One key per platform: Google restricts keys per application (HTTP referrer for
+web, package + SHA-1 for Android, bundle id for iOS). The backend is the single
+source of truth — the Flutter app holds no key and fetches the web one from
+`GET /api/v1/config` at startup, falling back to the offline map canvas when the
+backend is unreachable. `scripts/set-maps-keys.sh` (or `.ps1`) copies the native
+keys from `backend/.env` into the Android/iOS projects.
+
+> **Security note:** the browser key is public by definition, so do **not** reuse
+> it as `GOOGLE_PLACES_API_KEY` / `GOOGLE_ROUTES_API_KEY` in production — a
+> referrer restriction is the only thing shielding it. Create one extra key
+> restricted by IP with just the Places/Routes APIs enabled. The local dev env
+> reuses the web key because it is the only credential available, and
+> `tests/smoke_live.py` prints a warning when it detects that.
 
 Never commit `.env`.
 
@@ -112,8 +130,10 @@ uvicorn main:app --reload --port 8000
 | GET | `/health` | Health check |
 | POST | `/api/v1/auth/register` · `/login` · `/logout` | Local auth (see above) |
 | GET | `/api/v1/auth/me` · `/status` | Current user · service status |
+| GET | `/api/v1/config` | Public client config (Maps JS key, feature flags) |
 | GET | `/api/v1/experiences?category=&q=&min_rating=&limit=&offset=` | List/filter experiences |
-| GET | `/api/v1/experiences/{id}` | Experience detail |
+| GET | `/api/v1/experiences/{id}` | Experience row |
+| GET | `/api/v1/experiences/{id}/detail?lat=&lng=` | Enriched detail: distance, travel time, opening hours, weather, route |
 | GET | `/api/v1/experiences/{id}/guides` | Guides for experience (falls back to top guides) |
 | POST | `/api/v1/recommend` | Feasibility + weather-aware ranking |
 | GET | `/api/v1/weather?lat=&lon=` | Normalized Open-Meteo (neutral fallback) |
@@ -160,9 +180,33 @@ Response includes `total_candidates`, `feasible_count`, ranked `recommendations`
 ## Tests
 
 ```bash
-cd backend
-pytest tests/ -v
+make test-backend           # pytest suite, from the repo root
+make test-live              # every endpoint against the live Google APIs
+cd backend && pytest tests/ -v
 ```
 
 Covers health, DB init, seed repeatability, retrieval, budget/time/opening-hours feasibility, ranking, weather boost, recommend endpoint, parser fallback, weather fallback, Ollama failure handling, and the full auth suite (hashing, register/login/logout, 401s, persistence, no plaintext secrets).
+
+Run `make test-live` (or `python backend/tests/smoke_live.py`) for an end-to-end
+check that boots the real app and calls **every** endpoint against the live
+Google Places/Routes APIs and Open-Meteo: 40 checks covering health, config,
+experiences (list/filter/search/detail/404/guides), recommend (WALK + DRIVE,
+with and without origin, accessibility, validation), places search/nearby/photo
+proxy, integrations status, weather, parse, chat, guide requests, the full auth
+lifecycle, and a key-leak scan proving no server-side Google key ever reaches a
+client.
+
+## Google integration notes
+
+Both server-side modules are optional and fail safe. Two API quirks are already
+handled in code — keep them in mind before editing:
+
+- **Routes API** rejects `routingPreference` for anything other than `DRIVE`
+  ("Routing preference cannot be set for WALK or BICYCLE routing mode"), so the
+  field is only sent for `DRIVE`. Adding it back silently disables all route
+  enrichment and everything falls back to Haversine estimates.
+- **Places API (New)** has no `places.shortDescription` field. Requesting it in
+  `X-Goog-FieldMask` makes Google reject the whole request with HTTP 400, which
+  disables every Places call. Descriptions are empty for Google results for that
+  reason.
 

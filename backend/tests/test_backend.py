@@ -56,8 +56,15 @@ def test_get_experience_and_404():
     r = client.get("/api/v1/experiences/1")
     assert r.status_code == 200
     assert r.json()["id"] == 1
+    # The enriched view is a separate, additive endpoint.
+    d = client.get("/api/v1/experiences/1/detail")
+    assert d.status_code == 200
+    assert d.json()["experience"]["id"] == 1
+    assert d.json()["experience"]["name"]
+    assert set(d.json()) >= {"experience", "opening_hours", "weather", "route"}
     r2 = client.get("/api/v1/experiences/999999")
     assert r2.status_code == 404
+    assert client.get("/api/v1/experiences/999999/detail").status_code == 404
 
 
 def _sample_exp(**overrides):
@@ -121,7 +128,12 @@ def test_recommend_endpoint():
     assert data["feasible_count"] >= 1
     first = data["recommendations"][0]
     assert "why_this_fits" in first and first["why_this_fits"]
-    assert first["estimated_cost"] <= 1500
+    assert first["cost"] <= 1500
+    assert first["distance_km"] >= 0
+    assert first["travel_time_min"] >= 0
+    assert first["route"]["source"] in {"local", "google_routes"}
+    # Nested experience kept for backwards compatibility.
+    assert first["experience"]["name"] == first["name"]
 
 
 def test_recommend_invalid_input():

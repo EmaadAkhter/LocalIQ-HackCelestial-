@@ -62,7 +62,37 @@ class Settings(BaseSettings):
 
     # External services (optional)
     open_meteo_url: str = "https://api.open-meteo.com/v1/forecast"
-    google_maps_api_key: str = ""
+
+    # Google Maps keys, one per platform. Keys are restricted per application in
+    # the Google Cloud console, so each target needs its own key:
+    #   GOOGLE_MAPS_API_KEY_WEB     -> Maps JavaScript API (Flutter web, Next.js)
+    #   GOOGLE_MAPS_API_KEY_ANDROID -> Android app (package + SHA-1 restricted)
+    #   GOOGLE_MAPS_API_KEY_IOS     -> iOS app (bundle id restricted)
+    # The web key is served to browsers by GET /api/v1/config; the native keys are
+    # injected into the native builds at compile time. None of them are committed.
+    google_maps_api_key_web: str = ""
+    google_maps_api_key_android: str = ""
+    google_maps_api_key_ios: str = ""
+
+    # --- Server-side Google APIs (never sent to any client) -----------------
+    # These are *different* keys from the client map keys above: restrict them
+    # by IP (and keep the Places/Routes APIs enabled) so they are useless if
+    # leaked. They are only ever used inside this process.
+    #   GOOGLE_PLACES_API_KEY -> Places API (New): search, nearby, photos
+    #   GOOGLE_ROUTES_API_KEY  -> Routes API: travel time, distance, polyline
+    # Leave empty to run fully offline on the SQLite dataset.
+    google_places_api_key: str = ""
+    google_routes_api_key: str = ""
+
+    @property
+    def google_maps_api_key(self) -> str:
+        """Alias kept for callers that just want one Maps key."""
+        return self.google_maps_api_key_web
+
+    @property
+    def google_server_keys_configured(self) -> bool:
+        """True when at least one server-side Google key is present."""
+        return bool(self.google_places_api_key.strip() or self.google_routes_api_key.strip())
 
     # Caching (in-memory, per process)
     weather_cache_ttl_seconds: int = 600

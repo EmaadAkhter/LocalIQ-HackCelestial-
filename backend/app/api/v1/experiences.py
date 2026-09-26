@@ -10,13 +10,24 @@ from app.database import get_session
 from app.models import Experience, Guide
 from app.rate_limit import PUBLIC_LIMIT, limiter
 from app.schemas import (
+    ExperienceDetailResponse,
     ExperienceListResponse,
     ExperienceResponse,
     GuideResponse,
     NearbyExperience,
     NearbyListResponse,
+    OpeningHoursInfo,
+    RouteInfo,
+    WeatherContext,
 )
-from app.services.recommender import haversine_km
+from app.services import recommender
+from app.services.google_routes import compute_route
+from app.services.recommender import (
+    estimate_travel_time_min,
+    haversine_km,
+    is_open_at,
+)
+from app.services.weather import fetch_weather
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -114,6 +125,85 @@ def get_experience(
     if not exp:
         raise HTTPException(status_code=404, detail="Experience not found")
     return ExperienceResponse.model_validate(exp)
+
+
+@router.get(
+    "/experiences/{experience_id}/detail",
+    response_model=ExperienceDetailResponse,
+    summary="Get experience by ID with distance, hours, weather and route",
+)
+@limiter.limit(PUBLIC_LIMIT)
+async def get_experience_detail(
+    request: Request,
+    response: Response,
+    experience_id: int,
+    session: Session = Depends(get_session),
+    lat: float | None = Query(default=None, ge=-90, le=90),
+    lng: float | None = Query(default=None, ge=-180, le=180),
+    include_route: bool = Query(default=True),
+):
+    """Everything a client needs to render a detail page, in one call.
+
+    ``GET /experiences/{id}`` stays the plain row; this is the enriched view.
+    Distance and travel time come from the Google Routes API when ``lat``/``lng``
+    are supplied and a server key is configured, otherwise from the offline
+    Haversine heuristic (``route.source == "local"``).
+    """
+    exp = session.get(Experience, experience_id)
+    if not exp:
+        raise HTTPException(status_code=404, detail="Experience not found")
+
+    weather = await fetch_weather()
+    weather_block = WeatherContext(
+        available=bool(weather.get("available", False)),
+        temp_c=weather.get("temp_c"),
+        condition=str(weather.get("condition", "unknown")),
+        is_rainy=bool(weather.get("is_rainy", False)),
+        suitable_outdoor=bool(weather.get("suitable_outdoor", True)),
+        description=str(weather.get("description", "")),
+    )
+
+    distance_km = 0.0
+    travel_minutes = 0
+    route = RouteInfo(source="local")
+    if lat is not None and lng is not None:
+        distance_km = round(haversine_km(lat, lng, exp.lat, exp.lng), 2)
+        travel_minutes = estimate_travel_time_min(distance_km)
+        route = RouteInfo(
+            distance_m=int(distance_km * 1000),
+            duration_s=travel_minutes * 60,
+            duration_min=travel_minutes,
+            source="local",
+        )
+        if include_route:
+            google_route = await compute_route(lat, lng, exp.lat, exp.lng)
+            if google_route is not None:
+                distance_km = round(google_route.distance_m / 1000, 2)
+                travel_minutes = google_route.duration_min or travel_minutes
+                route = RouteInfo(
+                    distance_m=google_route.distance_m,
+                    duration_s=google_route.duration_s,
+                    duration_min=travel_minutes,
+                    polyline=google_route.polyline,
+                    travel_mode=google_route.travel_mode,
+                    source=google_route.source,
+                )
+
+    is_open = is_open_at(exp, None, exp.duration_min + recommender.BUFFER_MIN)
+    return ExperienceDetailResponse(
+        experience=ExperienceResponse.model_validate(exp),
+        distance_km=distance_km,
+        travel_time_min=travel_minutes,
+        total_time_min=exp.duration_min + travel_minutes * 2 + recommender.BUFFER_MIN,
+        opening_hours=OpeningHoursInfo(
+            open_time=exp.open_time,
+            close_time=exp.close_time,
+            is_open=is_open,
+            label="Open" if is_open else "Closed",
+        ),
+        weather=weather_block,
+        route=route,
+    )
 
 
 @router.get(

@@ -73,7 +73,7 @@
 1. **Project bootstrap:**
    - `main.py` with FastAPI app, CORS, lifespan startup.
    - `requirements.txt` pinned.
-   - `.env.example` for `DATABASE_URL`, `OLLAMA_URL`, `OLLAMA_MODEL`, `GOOGLE_MAPS_API_KEY` (optional, for map loads only).
+   - `.env.example` for `DATABASE_URL`, `OLLAMA_URL`, `OLLAMA_MODEL`, and the per-platform `GOOGLE_MAPS_API_KEY_WEB` / `_ANDROID` / `_IOS` (served to clients via `GET /api/v1/config`).
 2. **Database schema (SQLite):**
    - `Experience` table: id, name, category, lat, lng, avg_cost, duration_min, open_time, close_time, rating, description, image_url, tags, accessibility_flags, indoor_outdoor, local_gem_score.
    - `Guide` table: id, experience_id, name, photo, languages, specialty, rate_per_hour, rating (mocked profiles).

@@ -120,6 +120,7 @@ class ExperienceListResponse(BaseModel):
     items: list[ExperienceResponse]
 
 
+
 # --------------------------------------------------------------------------
 # Guides
 # --------------------------------------------------------------------------
@@ -299,6 +300,21 @@ class RecommendationRequest(BaseModel):
     accessibility: str | list[str] | None = Field(default=None, examples=[None])
     start_time: str | None = Field(default=None, examples=["10:00"])
     limit: int = Field(default=10, ge=1, le=30)
+    origin_lat: float | None = Field(
+        default=None,
+        ge=-90,
+        le=90,
+        description="Explicit origin. Falls back to the area anchor for `location`.",
+    )
+    origin_lng: float | None = Field(default=None, ge=-180, le=180)
+    travel_mode: str = Field(
+        default="WALK",
+        description="Travel mode for the Routes API: WALK, DRIVE, BICYCLE or TRANSIT.",
+    )
+    include_route: bool = Field(
+        default=True,
+        description="Enrich each result with Google route metrics when a server key exists.",
+    )
 
     model_config = {
         "json_schema_extra": {
@@ -315,15 +331,114 @@ class RecommendationRequest(BaseModel):
     }
 
 
-class RecommendationItem(BaseModel):
+
+# ---------------------------------------------------------------------------
+# Route / weather / opening-hours blocks (used by recommendation + detail)
+# --------------------------------------------------------------------------
+
+# Route data (Google Routes API, normalized)
+# --------------------------------------------------------------------------
+
+
+class RouteInfo(BaseModel):
+    """Travel metrics for one recommendation."""
+
+    distance_m: int = 0
+    duration_s: int = 0
+    duration_min: int = 0
+    polyline: str | None = None
+    travel_mode: str = "WALK"
+    source: str = Field(
+        default="local", description="'google_routes' or 'local' (Haversine estimate)."
+    )
+
+
+class WeatherContext(BaseModel):
+    """Compact weather block embedded in recommendation responses."""
+
+    available: bool = False
+    temp_c: float | None = None
+    condition: str = "unknown"
+    is_rainy: bool = False
+    suitable_outdoor: bool = True
+    description: str = ""
+
+
+class OpeningHoursInfo(BaseModel):
+    """Frontend-ready opening hours (already evaluated against the visit window)."""
+
+    open_time: str | None = None
+    close_time: str | None = None
+    is_open: bool = True
+    label: str = "Open"
+
+
+class ExperienceDetailResponse(BaseModel):
+    """Detail payload: the experience plus distance, hours, weather and route."""
+
     experience: ExperienceResponse
-    score: float
+    distance_km: float = 0.0
+    travel_time_min: int = 0
+    total_time_min: int = 0
+    opening_hours: OpeningHoursInfo = Field(default_factory=OpeningHoursInfo)
+    weather: WeatherContext = Field(default_factory=WeatherContext)
+    route: RouteInfo = Field(default_factory=RouteInfo)
+
+
+class RecommendationItem(BaseModel):
+    """One ranked place with everything a client needs to render a card.
+
+    All recommendation logic lives in the backend; the client only renders.
+    """
+
+    # Identity + basics
+    id: int
+    name: str
+    category: str
+    image: str | None = Field(
+        default=None,
+        description="Photo URL (LocalIQ proxy or dataset). Null lets the client draw a placeholder.",
+    )
+    description: str = ""
+
+    # Location
+    lat: float
+    lng: float
+    area: str = ""
+
+    # Money + reputation
+    cost: int = Field(default=0, description="Estimated spend per person, INR.")
+    estimated_cost: int = Field(
+        default=0,
+        description="Alias of `cost`, kept for older clients that read `estimated_cost`.",
+    )
+    rating: float = 0.0
+    review_count: int = 0
+
+    # Timing
+    opening_hours: OpeningHoursInfo = Field(default_factory=OpeningHoursInfo)
+    duration_min: int = 0
+    distance_km: float = 0.0
+    travel_time_min: int = 0
+    total_time_min: int = 0
+
+    # Context
+    weather: WeatherContext = Field(default_factory=WeatherContext)
+    route: RouteInfo = Field(default_factory=RouteInfo)
+
+    # Why + ranking
+    why_this_fits: str = ""
+    reasons: list[str] = Field(default_factory=list)
+    score: float = 0.0
     score_parts: dict[str, float] = Field(default_factory=dict)
-    distance_km: float
-    travel_time_min: int
-    total_time_min: int
-    estimated_cost: int
-    why_this_fits: str
+    tags: list[str] = Field(default_factory=list)
+    accessibility_flags: list[str] = Field(default_factory=list)
+    indoor_outdoor: str = "indoor"
+    local_gem_score: float = 0.5
+    source: str = Field(default="sqlite", description="'sqlite' curated dataset.")
+
+    # Backwards-compatible nested view of the raw experience row.
+    experience: ExperienceResponse
 
 
 class RecommendationResponse(BaseModel):
@@ -331,6 +446,10 @@ class RecommendationResponse(BaseModel):
     feasible_count: int
     weather_used: bool = False
     weather_summary: str | None = None
+    weather: WeatherContext = Field(default_factory=WeatherContext)
+    route_source: str = Field(
+        default="local", description="'google_routes' when route metrics came from Google."
+    )
     recommendations: list[RecommendationItem]
 
 
@@ -506,3 +625,44 @@ class ExperienceUpdate(BaseModel):
     accessibility_flags: list[str] | None = None
     indoor_outdoor: str | None = Field(default=None, max_length=20)
     local_gem_score: float | None = Field(default=None, ge=0.0, le=1.0)
+# Places (Google Places API normalized into LocalIQ models)
+# --------------------------------------------------------------------------
+
+
+class PlaceSearchResult(BaseModel):
+    """Client-facing place shape. Identical whether it came from Google or SQLite."""
+
+    id: str
+    name: str
+    category: str
+    address: str = ""
+    description: str = ""
+    lat: float
+    lng: float
+    rating: float = 0.0
+    review_count: int = 0
+    avg_cost: int = 0
+    image_url: str | None = Field(
+        default=None,
+        description="LocalIQ proxy URL for Google photos. Never contains a Google key.",
+    )
+    open_time: str | None = None
+    close_time: str | None = None
+    open_now: bool | None = None
+    distance_km: float | None = None
+    travel_minutes: int | None = None
+    maps_url: str | None = None
+    source: str = Field(default="sqlite", description="'google_places' or 'sqlite'.")
+
+
+class PlaceSearchResponse(BaseModel):
+    query: str
+    source: str = Field(default="sqlite", description="Which backend served the data.")
+    count: int = 0
+    items: list[PlaceSearchResult] = Field(default_factory=list)
+    fallback: bool = Field(
+        default=True,
+        description="True when Google was unavailable and SQLite answered instead.",
+    )
+
+

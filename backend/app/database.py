@@ -11,31 +11,41 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
+# Everything relative in the config is resolved against the backend package root
+# so behaviour does not depend on the current working directory.
+BACKEND_ROOT = Path(__file__).resolve().parent.parent
 
-def _resolve_sqlite_path(database_url: str) -> None:
-    """Ensure parent directory exists for file-based SQLite DBs."""
-    if database_url.startswith("sqlite:///"):
-        # Strip scheme; handle ./ relative paths.
-        raw_path = database_url.replace("sqlite:///", "", 1)
-        # sqlite:///./data/localiq.db -> ./data/localiq.db
-        # sqlite:////abs/path -> //abs/path
-        db_path = Path(raw_path)
-        if not db_path.is_absolute():
-            # Resolve relative to backend/ (this file is backend/app/database.py)
-            backend_root = Path(__file__).resolve().parent.parent
-            db_path = backend_root / raw_path
-        try:
-            db_path.parent.mkdir(parents=True, exist_ok=True)
-        except OSError as exc:
-            logger.warning("Could not create SQLite parent dir %s: %s", db_path.parent, exc)
+
+def _absolute_sqlite_url(database_url: str) -> str:
+    """Resolve a file-based SQLite URL to an absolute path.
+
+    ``sqlite:///./data/localiq.db`` is relative to the *current working
+    directory*, which differs between ``uvicorn`` (run from ``backend/``),
+    Docker (WORKDIR ``/app``) and pytest. Resolving it once against the backend
+    root keeps the directory that gets created and the file that gets opened in
+    the same place, whatever the cwd is.
+    """
+    if not database_url.startswith("sqlite"):
+        return database_url
+    # In-memory SQLite is used by tests; leave it untouched.
+    raw_path = database_url.split("sqlite:///", 1)[-1]
+    if not raw_path or ":memory:" in raw_path or raw_path.startswith(":memory:"):
+        return database_url
+    db_path = Path(raw_path)
+    if not db_path.is_absolute():
+        db_path = (BACKEND_ROOT / raw_path).resolve()
+    try:
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        logger.warning("Could not create SQLite parent dir %s: %s", db_path.parent, exc)
+    return f"sqlite:///{db_path.as_posix()}"
 
 
 def get_engine():
     """Create database engine with SQLite-safe configuration."""
-    database_url = settings.database_url
+    database_url = _absolute_sqlite_url(settings.database_url)
     try:
         if database_url.startswith("sqlite"):
-            _resolve_sqlite_path(database_url)
             engine = create_engine(
                 database_url,
                 connect_args={"check_same_thread": False},

@@ -1,0 +1,4 @@
+// Google Maps key for iOS builds. Git-ignored - never commit.
+// Generate from the backend env, e.g. scripts/set-maps-keys.sh writes:
+//   GOOGLE_MAPS_API_KEY = <value of GOOGLE_MAPS_API_KEY_IOS>
+GOOGLE_MAPS_API_KEY =

@@ -40,6 +40,11 @@ services:
       OLLAMA_URL: ${OLLAMA_URL:?set OLLAMA_URL to the shared tunnel, e.g. https://host/llm}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:3b}
       OLLAMA_API_KEY: ${OLLAMA_API_KEY:?set OLLAMA_API_KEY to the shared key}
+      GOOGLE_MAPS_API_KEY_WEB: ${GOOGLE_MAPS_API_KEY_WEB:-}
+      GOOGLE_MAPS_API_KEY_ANDROID: ${GOOGLE_MAPS_API_KEY_ANDROID:-}
+      GOOGLE_MAPS_API_KEY_IOS: ${GOOGLE_MAPS_API_KEY_IOS:-}
+      GOOGLE_PLACES_API_KEY: ${GOOGLE_PLACES_API_KEY:-}
+      GOOGLE_ROUTES_API_KEY: ${GOOGLE_ROUTES_API_KEY:-}
     depends_on:
       postgres:
         condition: service_healthy

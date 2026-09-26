@@ -17,11 +17,13 @@ from app.api.v1 import (  # noqa: E402
     admin,
     auth,
     chat,
+    config,
     experiences,
     favorites,
     guides,
     itineraries,
     parse,
+    places,
     recommendations,
     weather,
 )
@@ -119,6 +121,8 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_handler)
 # All v1 routers share /api/v1 so routes match the API contract:
 # GET /api/v1/experiences, POST /api/v1/recommend, POST /api/v1/parse, ...
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
+app.include_router(config.router, prefix="/api/v1", tags=["config"])
+app.include_router(places.router, prefix="/api/v1", tags=["places"])
 app.include_router(experiences.router, prefix="/api/v1", tags=["experiences"])
 app.include_router(recommendations.router, prefix="/api/v1", tags=["recommendations"])
 app.include_router(guides.router, prefix="/api/v1", tags=["guides"])
