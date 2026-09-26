@@ -47,6 +47,18 @@ class Settings(BaseSettings):
     # API key for a shared/tunnelled Ollama behind Kong key-auth.
     ollama_api_key: str = ""
 
+    # LLM robustness
+    llm_parse_timeout_seconds: float = 20.0
+    llm_chat_timeout_seconds: float = 30.0
+    llm_warm_timeout_seconds: float = 5.0
+    llm_max_retries: int = 2
+    llm_retry_backoff_seconds: float = 0.5
+    llm_cache_enabled: bool = True
+    llm_cache_ttl_seconds: int = 300
+    llm_cache_maxsize: int = 256
+    llm_http_max_connections: int = 20
+    llm_http_max_keepalive: int = 10
+
     # External services (optional)
     open_meteo_url: str = "https://api.open-meteo.com/v1/forecast"
     google_maps_api_key: str = ""

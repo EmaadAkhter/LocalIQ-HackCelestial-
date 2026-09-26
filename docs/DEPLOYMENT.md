@@ -107,6 +107,13 @@ build on `main`.
 | `DB_POOL_SIZE` | backend | Postgres pool size (default `5`) |
 | `DB_MAX_OVERFLOW` | backend | Postgres overflow connections (default `10`) |
 | `DB_POOL_RECYCLE_SECONDS` | backend | recycle idle connections (default `1800`) |
+| `LLM_PARSE_TIMEOUT_SECONDS` | backend | `/parse` LLM timeout (default `20`) |
+| `LLM_CHAT_TIMEOUT_SECONDS` | backend | `/chat` LLM timeout (default `30`) |
+| `LLM_WARM_TIMEOUT_SECONDS` | backend | startup warm-up timeout (default `5`) |
+| `LLM_MAX_RETRIES` | backend | retries on transient LLM failures (default `2`) |
+| `LLM_RETRY_BACKOFF_SECONDS` | backend | exponential-backoff base (default `0.5`) |
+| `LLM_CACHE_ENABLED` | backend | memoise identical prompts (default `true`) |
+| `LLM_CACHE_TTL_SECONDS` | backend | response cache TTL (default `300`) |
 | `HTTP_PORT` | infra | host port for the Caddy edge (default `8080`) |
 | `FLUTTER_WEB_DIR` | infra | path to the Flutter web build |
 
@@ -144,6 +151,15 @@ the common query shapes (`experiences(category, rating)`, `experiences(lat, lng)
 
 > Rate-limit state and login lockout are in-memory: correct for the single
 > backend container this deployment runs. A multi-replica setup needs Redis.
+
+### LLM reliability
+
+The Ollama client uses one shared connection-pooled HTTP client (created lazily,
+closed on shutdown), retries transient failures (`429`/`5xx`, connect/read
+timeouts) with exponential backoff, memoises identical prompts in a TTL cache,
+and applies per-endpoint timeouts. Every call degrades to the heuristic parser
+or canned chat reply instead of failing the request. The cache is in-memory and
+per-process.
 
 ## Rollback
 

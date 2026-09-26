@@ -12,7 +12,7 @@ import re
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 GroupType = Literal["solo", "couple", "family", "friends"]
 ParseSource = Literal["ollama", "heuristic", "llm", "canned"]
@@ -197,6 +197,10 @@ class TokenResponse(BaseModel):
 # --------------------------------------------------------------------------
 
 
+_NULLISH = {"null", "none", "nil", "n/a", "na", ""}
+_KNOWN_GROUPS = {"solo", "couple", "family", "friends"}
+
+
 class ParsedConstraints(BaseModel):
     location: str | None = None
     time_hours: float | None = None
@@ -205,6 +209,69 @@ class ParsedConstraints(BaseModel):
     interests: list[str] = Field(default_factory=list)
     accessibility: str | None = None
     start_time: str | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _normalize_llm_output(cls, data: object) -> object:
+        """Coerce the loose shapes small models emit.
+
+        Handles string ``"null"``/``"None"``, numeric strings, ``"₹1,500"``,
+        comma-separated interests, list accessibility, and group synonyms.
+        """
+        if not isinstance(data, dict):
+            return data
+
+        out: dict = {}
+        for key, value in data.items():
+            if isinstance(value, str):
+                stripped = value.strip()
+                value = None if stripped.lower() in _NULLISH else stripped
+            out[key] = value
+
+        # Numbers.
+        hours = out.get("time_hours")
+        if isinstance(hours, str):
+            try:
+                out["time_hours"] = float(hours)
+            except ValueError:
+                out["time_hours"] = None
+        budget = out.get("budget_inr")
+        if isinstance(budget, str):
+            digits = re.sub(r"[^\d.]", "", budget)
+            try:
+                out["budget_inr"] = int(float(digits)) if digits else None
+            except ValueError:
+                out["budget_inr"] = None
+
+        # Interests: accept "food, art" or a list.
+        interests = out.get("interests")
+        if interests is None:
+            out["interests"] = []
+        elif isinstance(interests, str):
+            parts = [p.strip().lower() for p in re.split(r"[,/;]", interests) if p.strip()]
+            out["interests"] = [p for p in parts if p not in _NULLISH]
+        elif isinstance(interests, list):
+            cleaned = [str(i).strip().lower() for i in interests if str(i).strip()]
+            out["interests"] = [i for i in cleaned if i not in _NULLISH]
+
+        # Group type: only keep a known value.
+        group = out.get("group_type")
+        if isinstance(group, str):
+            group = group.strip().lower()
+            out["group_type"] = group if group in _KNOWN_GROUPS else None
+
+        # Accessibility: list -> comma string.
+        accessibility = out.get("accessibility")
+        if isinstance(accessibility, list):
+            out["accessibility"] = ", ".join(str(a) for a in accessibility if a) or None
+
+        # Start time: keep only HH:MM.
+        start = out.get("start_time")
+        if isinstance(start, str):
+            match = re.match(r"^(\d{1,2}):(\d{2})$", start.strip())
+            out["start_time"] = f"{int(match.group(1)):02d}:{match.group(2)}" if match else None
+
+        return out
 
 
 class RecommendationRequest(BaseModel):

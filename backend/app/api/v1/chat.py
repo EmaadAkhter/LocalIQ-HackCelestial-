@@ -5,6 +5,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlmodel import Session
 
+from app.config import get_settings
 from app.database import get_session
 from app.models import Experience
 from app.rate_limit import LLM_LIMIT, limiter
@@ -92,7 +93,11 @@ async def chat(
                 f"Visitor: {payload.message}\nGuide:"
             )
             client = get_client()
-            text = await client.generate(prompt, system=GUIDE_SYSTEM)
+            text = await client.generate(
+                prompt,
+                system=GUIDE_SYSTEM,
+                timeout=get_settings().llm_chat_timeout_seconds,
+            )
             if text:
                 return ChatResponse(
                     reply=text.strip(), fallback=False, experience_id=exp.id, source="ollama"

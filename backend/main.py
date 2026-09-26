@@ -23,7 +23,7 @@ from app.migrations import upgrade_to_head  # noqa: E402
 from app.middleware.request_id import RequestIDMiddleware  # noqa: E402
 from app.rate_limit import limiter  # noqa: E402
 from app.seed import seed_if_empty  # noqa: E402
-from app.services.llm import LLMError, generate, get_client  # noqa: E402
+from app.services.llm import LLMError, close_http_client, generate, get_client  # noqa: E402
 
 settings = get_settings()
 configure_logging("INFO", json_output=settings.log_json and settings.app_env != "test")
@@ -53,13 +53,14 @@ async def lifespan(app: FastAPI):
     # Warm the local model so the first real request is fast. Failure is fine.
     if settings.app_env != "test":
         try:
-            await generate("ping", max_tokens=1, timeout=5)
+            await generate("ping", max_tokens=1, timeout=settings.llm_warm_timeout_seconds)
             logger.info("Warmed Ollama model: %s", settings.ollama_model)
         except LLMError as exc:
             logger.info("Ollama warm-up skipped (fallbacks active): %s", exc)
 
     yield
     logger.info("Shutting down LocalIQ backend...")
+    await close_http_client()
 
 
 app = FastAPI(

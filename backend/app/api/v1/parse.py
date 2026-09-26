@@ -6,6 +6,7 @@ import re
 from fastapi import APIRouter, Request, Response
 from pydantic import ValidationError
 
+from app.config import get_settings
 from app.rate_limit import LLM_LIMIT, limiter
 from app.schemas import ParsedConstraints, ParseRequest, ParseResponse
 from app.services.llm import get_client
@@ -38,7 +39,20 @@ PARSE_SYSTEM = (
     "location is a Mumbai area like Bandra, Colaba, Juhu. "
     "time_hours is available hours as a number. budget_inr is budget in INR as integer. "
     "interests use only: food, culture, shopping, art, nightlife, outdoor. "
-    "start_time is HH:MM 24h or null. No extra text."
+    "group_type is one of solo, couple, family, friends. "
+    "start_time is HH:MM 24h. "
+    'Use real JSON null (never the string "null") and an empty array when unknown. '
+    "No extra text.\n"
+    "Examples:\n"
+    'Input: "4 hours in Bandra with 1500 rupees for food and art"\n'
+    'Output: {"location":"Bandra","time_hours":4,"budget_inr":1500,"group_type":null,'
+    '"interests":["food","art"],"accessibility":null,"start_time":null}\n'
+    'Input: "wheelchair friendly museum near Colaba tomorrow morning"\n'
+    'Output: {"location":"Colaba","time_hours":null,"budget_inr":null,"group_type":null,'
+    '"interests":["culture"],"accessibility":"wheelchair-accessible","start_time":"09:00"}\n'
+    'Input: "cheap late night street food for 2 hours"\n'
+    'Output: {"location":null,"time_hours":2,"budget_inr":null,"group_type":null,'
+    '"interests":["food","nightlife"],"accessibility":null,"start_time":null}'
 )
 
 
@@ -152,6 +166,7 @@ async def parse_constraints(request: Request, response: Response, payload: Parse
         data = await client.generate_json(
             f"User message: {payload.text!r}\nExtract constraints as JSON.",
             system=PARSE_SYSTEM,
+            timeout=get_settings().llm_parse_timeout_seconds,
         )
         if data:
             try:
