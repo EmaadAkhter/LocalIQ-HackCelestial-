@@ -1,0 +1,5 @@
+# Development/test dependencies. Installed on top of requirements.txt.
+-r requirements.txt
+
+pytest>=7.4.0
+pytest-cov>=7.0.0

@@ -18,6 +18,9 @@ htmlcov/
 *.sqlite
 *.sqlite3
 
+# ---- Database backups ----
+backups/
+
 # ---- Node / Frontend ----
 node_modules/
 .next/

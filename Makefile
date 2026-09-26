@@ -1,7 +1,7 @@
 .PHONY: help install install-backend install-frontend dev backend frontend-legacy \
 	tunnel tunnel-setup lint lint-backend lint-frontend typecheck typecheck-backend typecheck-frontend \
 	test test-cov test-backend test-live loadtest infra-up infra-down infra-tunnel infra-logs \
-	db-migrate db-revision db-downgrade \
+	db-migrate db-revision db-downgrade db-backup db-restore \
 	jenkins-up jenkins-down jenkins-logs k8s-apply k8s-delete
 
 help: ## Show available targets
@@ -91,6 +91,12 @@ db-revision: ## Autogenerate a migration (make db-revision m="message")
 
 db-downgrade: ## Roll back one migration
 	cd backend && alembic downgrade -1
+
+db-backup: ## Dump Postgres to backups/ (scripts/db-backup.sh)
+	./scripts/db-backup.sh
+
+db-restore: ## Restore Postgres (make db-restore f=backups/<file>.sql)
+	./scripts/db-restore.sh "$(f)"
 
 # ---- Jenkins ----
 

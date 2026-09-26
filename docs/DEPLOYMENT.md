@@ -202,6 +202,42 @@ and applies per-endpoint timeouts. Every call degrades to the heuristic parser
 or canned chat reply instead of failing the request. The cache is in-memory and
 per-process.
 
+## Operations
+
+### Images
+
+The backend image is a **multi-stage** build on **Python 3.12 (LTS)**:
+
+- `builder` installs runtime deps into `/opt/venv`,
+- `test` adds dev deps (`--target test`) and is what CI runs `pytest` in,
+- `runtime` (default) ships only the venv + app, runs as non-root `appuser`,
+  and excludes `pip`/`curl` (healthcheck uses the stdlib).
+
+```bash
+docker build -t localiq-backend:local backend/                    # runtime
+docker build -t localiq-backend-test:local --target test backend/ # CI
+```
+
+### Secrets from files
+
+Any of `DATABASE_URL`, `AUTH_SECRET_KEY`, `OLLAMA_API_KEY`, `ADMIN_API_KEY`
+can be supplied as a file via `<KEY>_FILE` (Docker/K8s secrets). An explicit
+environment value always wins.
+
+```yaml
+environment:
+  DATABASE_URL_FILE: /run/secrets/database_url
+```
+
+### Backups
+
+```bash
+make db-backup                       # -> backups/localiq-<timestamp>.sql
+make db-restore f=backups/<file>.sql # overwrites the target DB
+```
+
+Dumps land in `backups/` (git-ignored).
+
 ## Rollback
 
 - Docker: `docker compose -p localiq down` then redeploy the previous image tag.

@@ -75,8 +75,8 @@ back correctly — it is set in `infra/jenkins/.env`.
 | Stage | What it does |
 |---|---|
 | Checkout | clone the repo |
-| Backend: build image | `docker build backend/` — validates the Python app |
-| Backend: tests | runs `pytest` inside the built image |
+| Backend: build images | `docker build backend/` (runtime) + `--target test` (dev deps) |
+| Backend: tests | runs `pytest` in the test image, coverage gate at 80% |
 | Backend: API smoke | starts the server in the image and checks health + parsing |
 | Frontend: build image | builds `frontend_flutter/` if a Dockerfile exists |
 

@@ -14,9 +14,11 @@ pipeline {
             }
         }
 
-        stage('Backend: build image') {
+        stage('Backend: build images') {
             steps {
+                // Runtime image (default target, lean) + test image (dev deps).
                 sh 'docker build -t localiq-backend:${BUILD_NUMBER} backend/'
+                sh 'docker build -t localiq-backend-test:${BUILD_NUMBER} --target test backend/'
             }
         }
 
@@ -25,7 +27,7 @@ pipeline {
                 // Run inside the image: the workspace path is not visible to the
                 // host Docker daemon, so bind mounts would resolve to nothing.
                 // Coverage gate: fail the build under 80%.
-                sh 'docker run --rm -e APP_ENV=test localiq-backend:${BUILD_NUMBER} python -m pytest -q --cov=app --cov=main --cov-fail-under=80'
+                sh 'docker run --rm -e APP_ENV=test localiq-backend-test:${BUILD_NUMBER} python -m pytest -q --cov=app --cov=main --cov-fail-under=80'
             }
         }
 

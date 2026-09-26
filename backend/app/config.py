@@ -2,9 +2,34 @@
 
 from __future__ import annotations
 
+import logging
+import os
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+logger = logging.getLogger(__name__)
+
+# Secrets that may be provided as files (Docker/K8s secrets):
+#   DATABASE_URL_FILE=/run/secrets/database_url  -> DATABASE_URL
+_SECRET_KEYS = ("DATABASE_URL", "AUTH_SECRET_KEY", "OLLAMA_API_KEY", "ADMIN_API_KEY")
+
+
+def _load_secret_files() -> None:
+    """Populate ``<KEY>`` from ``<KEY>_FILE`` when present.
+
+    An explicit environment value always wins, so file-based secrets are opt-in.
+    """
+    for key in _SECRET_KEYS:
+        path = os.environ.get(f"{key}_FILE")
+        if not path or os.environ.get(key):
+            continue
+        try:
+            os.environ[key] = Path(path).read_text(encoding="utf-8").strip()
+            logger.info("Loaded %s from %s", key, path)
+        except OSError as exc:
+            logger.warning("Could not read %s_FILE (%s): %s", key, path, exc)
 
 
 class Settings(BaseSettings):
@@ -127,6 +152,7 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     """Return cached application settings."""
+    _load_secret_files()
     return Settings()
 
 
