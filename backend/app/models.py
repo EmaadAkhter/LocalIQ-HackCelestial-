@@ -144,6 +144,14 @@ class User(TimestampMixin, table=True):
     id_verified_at: Optional[datetime] = Field(default=None)
     kyc_provider_ref: Optional[str] = Field(default=None, max_length=200)
 
+    # Taste profile (PRD 4.6). ``taste_profile_text`` is the LLM summary the user
+    # can read and edit; ``taste_profile_vector`` is a tag -> weight map learned
+    # from explicit + implicit signals and used to re-rank recommendations.
+    taste_profile_text: Optional[str] = Field(default=None, max_length=2000)
+    taste_profile_vector: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+    personalization_enabled: bool = Field(default=True)
+    preferred_language: str = Field(default="en", max_length=8)
+
     sessions: list["UserSession"] = Relationship(back_populates="user")
 
 
@@ -495,4 +503,70 @@ class UserInterest(TimestampMixin, table=True):
     profile_id: int = Field(foreign_key="user_profiles.id", index=True)
     tag_name: str = Field(max_length=80)
     weight: float = Field(default=1.0, ge=0.0, le=5.0)
+
+
+# -----------------------------------------------------------------------------
+# Personalization: taste signals, interactions and companion sessions
+# -----------------------------------------------------------------------------
+
+#: Interaction weights used to nudge the taste vector. ``complete`` is the
+#: strongest positive; ``skip``/``dismiss`` are explicit negatives.
+INTERACTION_WEIGHTS: dict[str, float] = {
+    "view": 0.1,
+    "click": 0.2,
+    "save": 0.4,
+    "share": 0.5,
+    "start": 0.6,
+    "visit": 0.8,
+    "complete": 1.0,
+    "skip": -0.2,
+    "dismiss": -0.5,
+}
+
+
+class PreferenceSignal(TimestampMixin, table=True):
+    """Explicit or implicit taste signal (PRD 4.6)."""
+
+    __tablename__ = "preference_signals"
+    __table_args__ = (Index("ix_preference_signals_user_created", "user_id", "created_at"),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="users.id", index=True)
+    #: onboarding | explicit | implicit | chat | visit
+    signal_type: str = Field(default="implicit", max_length=20)
+    experience_id: Optional[int] = Field(default=None, foreign_key="experiences.id", index=True)
+    #: Free-text statement, e.g. onboarding or a chat sentence.
+    text: Optional[str] = Field(default=None, max_length=1000)
+    weight: float = Field(default=1.0)
+    metadata_json: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+
+
+class UserActivityInteraction(TimestampMixin, table=True):
+    """Append-only record of what a user did with an experience (PRD 4.6)."""
+
+    __tablename__ = "user_activity_interactions"
+    __table_args__ = (Index("ix_user_activity_interactions_user_created", "user_id", "created_at"),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="users.id", index=True)
+    experience_id: int = Field(foreign_key="experiences.id", index=True)
+    #: view | click | save | share | start | visit | complete | skip | dismiss
+    action: str = Field(default="view", max_length=20)
+    weight: float = Field(default=0.0)
+    metadata_json: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+
+
+class ConversationSession(TimestampMixin, table=True):
+    """Per-session state for the LocalIQ Companion / guide agent (PRD 4.7)."""
+
+    __tablename__ = "conversation_sessions"
+    __table_args__ = (Index("ix_conversation_sessions_user_active", "user_id", "last_active_at"),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: Optional[int] = Field(default=None, foreign_key="users.id", index=True)
+    language: str = Field(default="en", max_length=8)
+    messages_json: list[dict[str, Any]] = Field(default_factory=list, sa_column=Column(JSON))
+    #: JSON-encoded constraints extracted so far (time, budget, interests...).
+    state_json: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+    last_active_at: Optional[datetime] = Field(default=None)
 
