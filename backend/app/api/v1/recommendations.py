@@ -23,7 +23,7 @@ from app.schemas import (
     RouteInfo,
     WeatherContext,
 )
-from app.services import google_routes, recommender
+from app.services import google_routes, recommender, taste
 from app.services.auth import get_current_user_optional
 from app.services.semantic_search import semantic_search, _apply_tag_filters
 from app.services.cache import TTLCache
@@ -390,6 +390,14 @@ def submit_feedback(
         )
     )
     session.commit()
+    # Thumbs up/down is a direct taste signal for signed-in users.
+    if current_user is not None:
+        taste.record_interaction(
+            session,
+            current_user,
+            experience,
+            "like" if payload.helpful else "dismiss",
+        )
     clear_recommend_cache()
     logger.info("Feedback recorded: experience=%s helpful=%s", experience_id, payload.helpful)
     return FeedbackResponse(experience_id=experience_id, helpful=payload.helpful)

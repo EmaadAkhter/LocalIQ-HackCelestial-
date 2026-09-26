@@ -199,6 +199,8 @@ class Itinerary(TimestampMixin, table=True):
     name: str = Field(default="My Mumbai Day")
     total_duration_min: int = Field(default=0)
     total_cost: int = Field(default=0)
+    #: Opaque token for a read-only public share link (created on demand).
+    share_token: Optional[str] = Field(default=None, max_length=64, index=True)
 
     stops: list["ItineraryStop"] = Relationship(
         back_populates="itinerary",
@@ -511,11 +513,20 @@ class UserInterest(TimestampMixin, table=True):
 
 #: Interaction weights used to nudge the taste vector. ``complete`` is the
 #: strongest positive; ``skip``/``dismiss`` are explicit negatives.
+#:
+#: Every meaningful action feeds the profile: a *like* (favourite), an
+#: *add_to_itinerary* (intent to actually go), a *click*, a *visit* and a
+#: *complete* all pull the taste vector toward that experience's tags, while
+#: *unlike*/*remove_from_itinerary*/*skip*/*dismiss* pull it away.
 INTERACTION_WEIGHTS: dict[str, float] = {
     "view": 0.1,
     "click": 0.2,
+    "unlike": -0.3,
+    "remove_from_itinerary": -0.3,
     "save": 0.4,
+    "like": 0.5,
     "share": 0.5,
+    "add_to_itinerary": 0.6,
     "start": 0.6,
     "visit": 0.8,
     "complete": 1.0,
@@ -550,8 +561,9 @@ class UserActivityInteraction(TimestampMixin, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="users.id", index=True)
     experience_id: int = Field(foreign_key="experiences.id", index=True)
-    #: view | click | save | share | start | visit | complete | skip | dismiss
-    action: str = Field(default="view", max_length=20)
+    #: view | click | save | like | share | add_to_itinerary | start | visit |
+    #: complete | skip | dismiss | unlike | remove_from_itinerary
+    action: str = Field(default="view", max_length=30)
     weight: float = Field(default=0.0)
     metadata_json: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
 

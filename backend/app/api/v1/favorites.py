@@ -12,6 +12,7 @@ from app.database import get_session
 from app.models import Experience, Favorite, User
 from app.rate_limit import PUBLIC_LIMIT, limiter
 from app.schemas import ExperienceResponse
+from app.services import taste
 from app.services.auth import get_current_user
 
 logger = logging.getLogger(__name__)
@@ -66,6 +67,8 @@ def add_favorite(
     if existing is None:
         session.add(Favorite(user_id=current_user.id, experience_id=experience_id))
         session.commit()
+        # A favourite is the strongest explicit "like": learn from its tags.
+        taste.record_interaction(session, current_user, experience, "like")
     return ExperienceResponse.model_validate(experience)
 
 
@@ -91,4 +94,8 @@ def remove_favorite(
     if row is not None:
         session.delete(row)
         session.commit()
+        # Un-liking is a (weak) negative signal.
+        experience = session.get(Experience, experience_id)
+        if experience is not None:
+            taste.record_interaction(session, current_user, experience, "unlike")
     return Response(status_code=http_status.HTTP_204_NO_CONTENT)

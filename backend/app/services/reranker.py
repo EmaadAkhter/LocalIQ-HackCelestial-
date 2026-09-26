@@ -98,7 +98,10 @@ def outdoorish(exp: Experience) -> bool:
 def _time_of_day_score(exp: Experience, start_time: str | None) -> tuple[float, str | None]:
     if not start_time:
         return 0.6, None
-    hour = recommender.parse_hhmm(start_time).hour
+    minutes = recommender.parse_hhmm(start_time)
+    if minutes is None:
+        return 0.6, None
+    hour = (minutes // 60) % 24
     tags = {taste.normalize_tag(t) for t in (exp.tags or [])}
     best = 0.6
     note: str | None = None

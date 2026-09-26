@@ -695,6 +695,48 @@ class ItineraryResponse(BaseModel):
     stops: list[ItineraryStopResponse] = Field(default_factory=list)
 
 
+class ItineraryGenerateRequest(BaseModel):
+    """Inputs for the A-to-Z day planner."""
+
+    name: str = Field(default="My Mumbai Day", max_length=120)
+    start_location: str | None = Field(default=None, max_length=100)
+    start_time: str = Field(default="10:00", max_length=20)
+    duration_hours: float = Field(default=8.0, ge=1.0, le=16.0)
+    budget_inr: int | None = Field(default=None, ge=0)
+    travel_mode: str = Field(default="WALK", max_length=20)
+    interests: list[str] = Field(default_factory=list, max_length=20)
+    include_food: bool = True
+    max_stops: int = Field(default=5, ge=1, le=10)
+    semantic_query: str | None = Field(default=None, max_length=300)
+
+
+class ItineraryImportStop(BaseModel):
+    """One imported row: link by id, or by name (fuzzy matched)."""
+
+    experience_id: int | None = None
+    name: str | None = Field(default=None, max_length=200)
+    start_time: str | None = Field(default=None, max_length=20)
+
+
+class ItineraryImportRequest(BaseModel):
+    name: str = Field(default="Imported plan", max_length=120)
+    format: Literal["json", "text"] = "json"
+    stops: list[ItineraryImportStop] = Field(default_factory=list, max_length=30)
+    text: str | None = Field(default=None, max_length=5000)
+    optimize: bool = True
+
+
+class ItineraryImportResponse(BaseModel):
+    itinerary: ItineraryResponse
+    unresolved: list[str] = Field(default_factory=list)
+
+
+class ItineraryShareResponse(BaseModel):
+    share_token: str
+    url: str
+    itinerary: ItineraryResponse
+
+
 # --------------------------------------------------------------------------
 # Geospatial
 # --------------------------------------------------------------------------

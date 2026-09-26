@@ -202,17 +202,18 @@ async def refresh_taste_text(session: Session, user: User) -> str:
 # ---------------------------------------------------------------------------
 
 
-def record_interaction(
+def _apply_signal(
     session: Session,
     user: User,
     experience: Experience,
     action: str,
-    *,
     metadata: dict[str, Any] | None = None,
-) -> dict[str, Any]:
-    """Log an interaction and nudge the taste vector. Idempotent-ish and sync.
+    *,
+    signal_type: str = "implicit",
+) -> str:
+    """Append the interaction rows and nudge the taste vector. Does NOT commit.
 
-    Returns the updated taste snapshot so the caller can echo it back.
+    Returns the normalised action so bulk callers can aggregate.
     """
     action = normalize_tag(action or "view")
     weight = INTERACTION_WEIGHTS.get(action, 0.0)
@@ -227,14 +228,14 @@ def record_interaction(
             metadata_json=metadata or {},
         )
     )
-    # Every interaction is also an implicit taste signal (PRD 4.6).
+    # Every interaction is also a taste signal (PRD 4.6).
     user.taste_profile_vector = apply_tag_weight(
         dict(user.taste_profile_vector or {}), tags, weight
     )
     session.add(
         PreferenceSignal(
             user_id=user.id or 0,
-            signal_type="implicit",
+            signal_type=signal_type,
             experience_id=experience.id,
             text=None,
             weight=weight,
@@ -244,6 +245,41 @@ def record_interaction(
     if not user.taste_profile_text:
         user.taste_profile_text = summarize_vector(dict(user.taste_profile_vector))
     session.add(user)
+    return action
+
+
+def record_interaction(
+    session: Session,
+    user: User,
+    experience: Experience,
+    action: str,
+    *,
+    metadata: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Log an interaction and nudge the taste vector. Idempotent-ish and sync.
+
+    Returns the updated taste snapshot so the caller can echo it back.
+    """
+    _apply_signal(session, user, experience, action, metadata)
+    session.commit()
+    session.refresh(user)
+    return snapshot(user)
+
+
+def record_signals(
+    session: Session,
+    user: User,
+    signals: list[tuple[Experience, str]],
+    *,
+    metadata: dict[str, Any] | None = None,
+    signal_type: str = "implicit",
+) -> dict[str, Any]:
+    """Record several interactions (e.g. every stop of a new itinerary) in a
+    single commit. ``signals`` is a list of ``(experience, action)`` pairs."""
+    if not signals:
+        return snapshot(user)
+    for experience, action in signals:
+        _apply_signal(session, user, experience, action, metadata, signal_type=signal_type)
     session.commit()
     session.refresh(user)
     return snapshot(user)
