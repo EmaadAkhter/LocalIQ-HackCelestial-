@@ -69,3 +69,16 @@ class ChatResponse(BaseModel):
 
     reply: str
     source: Literal["llm", "canned"]
+
+
+class ScoreFactors(BaseModel):
+    """Per-experience evaluation inputs used to generate 'why this fits' text."""
+
+    interest_matches: list[str] = Field(default_factory=list)
+    time_fit: float = Field(default=1.0, ge=0, le=1)
+    budget_fit: float = Field(default=1.0, ge=0, le=1)
+    distance_km: float | None = None
+    travel_minutes: int | None = None
+    rating: float | None = None
+    open_now: bool | None = None
+    setting: Literal["indoor", "outdoor", "either"] | None = None
