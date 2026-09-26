@@ -1,35 +1,62 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Expose the LocalIQ stack through a Cloudflare quick tunnel.
+# Publish LocalIQ on tavesglobal.com through the named Cloudflare Tunnel.
 #
 # Usage:
-#   scripts/tunnel.sh                       # tunnels the Caddy edge on :8080
-#   scripts/tunnel.sh http://localhost:8000 # tunnel a specific target
+#   scripts/tunnel.sh
 #
-# A single tunnel serves all three surfaces:
-#   /            -> Flutter web (via Caddy -> nginx)
-#   /api/v1/*    -> FastAPI (via Caddy -> Kong)
-#   /llm/*       -> shared local Ollama (via Caddy -> Kong, key-auth)
+# Requires a one-time setup first (see scripts/tunnel-setup.sh):
+#   cloudflared tunnel create localiq
+#   cloudflared tunnel route dns localiq localiq.tavesglobal.com
+#   cloudflared tunnel route dns localiq jenkins.tavesglobal.com
 #
-# Share the printed URL with teammates so they can use your model.
+# A single tunnel serves all surfaces:
+#   https://localiq.tavesglobal.com/         -> Flutter web (Caddy -> nginx)
+#   https://localiq.tavesglobal.com/api/v1/* -> FastAPI (Caddy -> Kong)
+#   https://localiq.tavesglobal.com/llm/*    -> shared Ollama (Kong key-auth)
+#   https://jenkins.tavesglobal.com/         -> self-hosted Jenkins CI
 
-TARGET="${1:-http://localhost:8080}"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+CF="${CLOUDFLARED:-$HOME/.local/bin/cloudflared}"
+CFG="$ROOT/infra/cloudflared/config.yml"
 
-if ! command -v cloudflared >/dev/null 2>&1; then
+if ! command -v "$CF" >/dev/null 2>&1; then
+  echo "cloudflared not found at $CF." >&2
+  echo "Install it first:  brew install cloudflared" >&2
+  exit 1
+fi
+
+if ! command -v "$CF" >/dev/null 2>&1; then
   echo "cloudflared not found. Install it first:" >&2
   echo "  brew install cloudflared" >&2
   exit 1
 fi
 
-echo "Starting Cloudflare quick tunnel -> ${TARGET}"
-echo
-echo "Once it prints an https://<something>.trycloudflare.com URL, share these:"
-echo "  App:  https://<host>/"
-echo "  API:  https://<host>/api/v1/..."
+if [ ! -f "$CFG" ]; then
+  echo "Missing tunnel config: $CFG" >&2
+  echo "Run scripts/tunnel-setup.sh first." >&2
+  exit 1
+fi
+
+CREDS="$("$CF" tunnel --config "$CFG" ingress validate >/dev/null 2>&1 && grep -E '^credentials-file:' "$CFG" | awk '{print $2}')"
+if [ -n "${CREDS:-}" ] && [ ! -f "$CREDS" ]; then
+  echo "Credentials file missing: $CREDS" >&2
+  echo "Run scripts/tunnel-setup.sh to recreate it." >&2
+  exit 1
+fi
+
+if ! "$CF" tunnel info localiq >/dev/null 2>&1; then
+  echo "Tunnel 'localiq' does not exist. Run scripts/tunnel-setup.sh first." >&2
+  exit 1
+fi
+
+echo "Starting Cloudflare Tunnel -> https://localiq.tavesglobal.com"
+echo "  App/API : https://localiq.tavesglobal.com"
+echo "  Jenkins : https://jenkins.tavesglobal.com"
 echo "  Shared model for teammates:"
-echo "        export OLLAMA_URL=https://<host>/llm"
+echo "        export OLLAMA_URL=https://localiq.tavesglobal.com/llm"
 echo "        export OLLAMA_API_KEY=localiq-shared-key"
 echo
 
-exec cloudflared tunnel --no-autoupdate --url "${TARGET}"
+exec "$CF" tunnel --no-autoupdate --config "$CFG" run

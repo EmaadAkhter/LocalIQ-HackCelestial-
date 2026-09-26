@@ -36,6 +36,11 @@ yarn-error.log*
 .env.*
 !.env.example
 
+# ---- Cloudflare Tunnel ----
+# Credentials grant control of the tunnel. Never commit them.
+infra/cloudflared/*.json
+!infra/cloudflared/*.example.json
+
 # ---- OS / Editor ----
 .DS_Store
 Thumbs.db

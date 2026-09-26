@@ -4,7 +4,7 @@ import json
 import logging
 from pathlib import Path
 
-from sqlmodel import Session, delete, select
+from sqlmodel import Session, delete, func, select
 
 from app.database import engine, init_db
 from app.models import Experience, Guide
@@ -112,7 +112,37 @@ def seed_database() -> dict[str, int]:
     return {"experiences": exp_count, "guides": guide_count}
 
 
+def count_experiences() -> int:
+    """Return the number of experience rows currently stored."""
+    init_db()
+    with Session(engine) as session:
+        return int(session.exec(select(func.count()).select_from(Experience)).one())
+
+
+def seed_if_empty() -> dict[str, int] | None:
+    """Seed only when the experiences table is empty.
+
+    Safe to call on every startup: it never duplicates or overwrites data.
+    Returns the seed counts, or None when seeding was skipped.
+    """
+    if count_experiences() > 0:
+        logger.info("Seed skipped: experiences table already populated")
+        return None
+    logger.info("Experiences table empty: seeding dataset")
+    return seed_database()
+
+
 if __name__ == "__main__":
+    import sys
+
     logging.basicConfig(level=logging.INFO)
-    result = seed_database()
-    print(f"Seeded: {result['experiences']} experiences, {result['guides']} guides")
+
+    if "--force" in sys.argv:
+        result = seed_database()
+    else:
+        result = seed_if_empty()
+
+    if result is None:
+        print("Seed skipped: table not empty (use --force to reseed)")
+    else:
+        print(f"Seeded: {result['experiences']} experiences, {result['guides']} guides")

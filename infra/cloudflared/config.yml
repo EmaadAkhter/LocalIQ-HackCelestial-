@@ -1,0 +1,55 @@
+# Cloudflare Tunnel ingress for LocalIQ on tavesglobal.com.
+#
+# cloudflared dials OUT to Cloudflare's edge, so this works from behind
+# carrier-grade NAT: no port forwarding, no public IP, no certificates to
+# manage. TLS terminates at the edge and traffic arrives over plain HTTP on
+# the loopback.
+#
+# Subdomains, not the apex: tavesglobal.com is a live Vercel site that keeps
+# its own A record. Sibling stacks use their own subdomains:
+#   exposense.tavesglobal.com -> ExpoSense (tunnel: exposense)
+#   relytics.tavesglobal.com  -> Recommender (tunnel: relytics)
+#   localiq.tavesglobal.com   -> this stack (tunnel: localiq)
+#   jenkins.tavesglobal.com   -> CI for this stack (same tunnel)
+#
+# Run it with:  ./scripts/tunnel.sh
+#
+# The credentials file is git-ignored (see .gitignore). Recreate with:
+#   cloudflared tunnel create localiq
+#   cloudflared tunnel route dns localiq localiq.tavesglobal.com
+#   cloudflared tunnel route dns localiq jenkins.tavesglobal.com
+
+tunnel: 7c7f324a-5585-4cb0-8c52-555c129e4007
+credentials-file: /Users/emaad/Developer/HackCelestial/localIQ/infra/cloudflared/7c7f324a-5585-4cb0-8c52-555c129e4007.json
+
+# Keep to IPv4: the IPv6 edge path is intermittent on this connection and
+# produces "sendmsg: no route to host" flaps. The value must be a STRING.
+edge-ip-version: "4"
+
+# QUIC/UDP does not survive this connection; http2 carries the tunnel over
+# TCP/443, which also works through hotspots and captive portals.
+protocol: http2
+
+retries: 10
+grace-period: 30s
+
+ingress:
+  # App + API + shared LLM, all served by the Caddy edge on the host.
+  #   /            -> Flutter web (nginx)
+  #   /api/v1/*    -> FastAPI (via Kong)
+  #   /llm/*       -> shared local Ollama (via Kong key-auth)
+  - hostname: localiq.tavesglobal.com
+    service: http://localhost:8080
+    originRequest:
+      httpHostHeader: localiq.tavesglobal.com
+      connectTimeout: 30s
+
+  # Self-hosted Jenkins (UI + GitHub webhook receiver). Public on purpose so
+  # GitHub can deliver push events; Jenkins' own login is the gate.
+  - hostname: jenkins.tavesglobal.com
+    service: http://localhost:8081
+    originRequest:
+      httpHostHeader: jenkins.tavesglobal.com
+      connectTimeout: 30s
+
+  - service: http_status:404

@@ -17,6 +17,10 @@ unclassified:
 jobs:
   - script: |
       pipelineJob('localiq-ci') {
+        triggers {
+          // GitHub pushes to this repo hit /github-webhook/ and start a build.
+          githubPush()
+        }
         definition {
           cpsScm {
             scm {

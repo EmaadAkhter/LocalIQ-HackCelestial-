@@ -2,7 +2,9 @@ name: localiq
 
 # Local-LLM profile: runs everything here and talks to Ollama on your machine.
 #   docker compose --env-file .env up --build
-#   docker compose --env-file .env --profile tunnel up --build   # + public URL
+#
+# Public URL: run the named Cloudflare tunnel on the host (see scripts/tunnel.sh)
+# against the Caddy edge on http://localhost:8080.
 
 services:
   postgres:
@@ -74,15 +76,6 @@ services:
     depends_on:
       - kong
       - nginx-flutter
-    networks: [localiq]
-
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    command: tunnel --no-autoupdate --url http://caddy:80
-    depends_on:
-      - caddy
-    restart: unless-stopped
-    profiles: ["tunnel"]
     networks: [localiq]
 
 volumes:

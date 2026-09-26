@@ -12,6 +12,7 @@ load_dotenv()
 from app.api.v1 import auth, chat, experiences, guides, parse, recommendations, weather  # noqa: E402
 from app.config import get_settings  # noqa: E402
 from app.database import init_db  # noqa: E402
+from app.seed import seed_if_empty  # noqa: E402
 from app.services.llm import LLMError, generate  # noqa: E402
 
 settings = get_settings()
@@ -24,6 +25,9 @@ async def lifespan(app: FastAPI):
     logger.info("Starting LocalIQ backend...")
     try:
         init_db()
+        seeded = seed_if_empty()
+        if seeded is not None:
+            logger.info("Seeded %d experiences, %d guides", seeded["experiences"], seeded["guides"])
         logger.info("Database ready")
     except Exception as exc:
         logger.exception("Startup DB init failed: %s", exc)

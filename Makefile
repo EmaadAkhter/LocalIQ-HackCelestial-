@@ -1,5 +1,5 @@
 .PHONY: help install install-backend install-frontend dev backend frontend-legacy \
-	tunnel lint lint-backend lint-frontend typecheck typecheck-backend typecheck-frontend \
+	tunnel tunnel-setup lint lint-backend lint-frontend typecheck typecheck-backend typecheck-frontend \
 	test infra-up infra-down infra-tunnel infra-logs \
 	jenkins-up jenkins-down jenkins-logs k8s-apply k8s-delete
 
@@ -56,14 +56,17 @@ infra-up: ## Start the Docker stack (local LLM)
 infra-down: ## Stop the Docker stack
 	cd infra && docker compose --env-file .env down
 
-infra-tunnel: ## Start the stack with a public Cloudflare tunnel
-	cd infra && docker compose --env-file .env --profile tunnel up -d
+infra-tunnel: ## Publish the running stack via the named Cloudflare tunnel
+	./scripts/tunnel.sh
 
 infra-logs: ## Tail Docker stack logs
 	cd infra && docker compose --env-file .env logs -f
 
-tunnel: ## Expose the app via a Cloudflare quick tunnel
+tunnel: ## Alias for infra-tunnel
 	./scripts/tunnel.sh
+
+tunnel-setup: ## One-time Cloudflare tunnel create + DNS routes
+	./scripts/tunnel-setup.sh
 
 # ---- Jenkins ----
 

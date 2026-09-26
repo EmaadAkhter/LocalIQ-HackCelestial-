@@ -14,7 +14,7 @@ services:
     environment:
       JENKINS_ADMIN_ID: ${JENKINS_ADMIN_ID:-admin}
       JENKINS_ADMIN_PASSWORD: ${JENKINS_ADMIN_PASSWORD:-changeme}
-      JENKINS_URL: ${JENKINS_URL:-http://localhost:8081/}
+      JENKINS_URL: ${JENKINS_URL:-https://jenkins.tavesglobal.com/}
       GITHUB_REPO_URL: ${GITHUB_REPO_URL:-https://github.com/EmaadAkhter/LocalIQ-HackCelestial-.git}
       CASC_JENKINS_CONFIG: /usr/share/jenkins/ref/casc
       JAVA_OPTS: "-Djenkins.install.runSetupWizard=false"
