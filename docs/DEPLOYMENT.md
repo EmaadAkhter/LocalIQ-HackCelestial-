@@ -154,6 +154,14 @@ the common query shapes (`experiences(category, rating)`, `experiences(lat, lng)
 | Error shape | every failure returns `{error, message, request_id, path, status_code}` |
 | Rate limits | reads 60/min · recommend 30/min · parse & chat 20/min · auth 10/min |
 | Login lockout | 5 failed attempts → 15-minute lock (per email) |
+| Metrics | `GET /metrics` — Prometheus; **backend-only** (the edge does not route it) |
+| Coverage | `make test-cov`; CI fails under 80% |
+| Load check | `make loadtest` → `backend/tests/load/loadtest.py` |
+
+Prometheus metric families: `localiq_http_requests_total`,
+`localiq_http_request_duration_seconds` (labelled by method/route/status),
+`localiq_llm_cache_*`, `localiq_weather_cache_entries`,
+`localiq_recommend_cache_*`, `localiq_db_pool_checked_out`.
 
 > Rate-limit state and login lockout are in-memory: correct for the single
 > backend container this deployment runs. A multi-replica setup needs Redis.

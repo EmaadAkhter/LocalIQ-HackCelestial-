@@ -1,6 +1,6 @@
 .PHONY: help install install-backend install-frontend dev backend frontend-legacy \
 	tunnel tunnel-setup lint lint-backend lint-frontend typecheck typecheck-backend typecheck-frontend \
-	test infra-up infra-down infra-tunnel infra-logs \
+	test test-cov loadtest infra-up infra-down infra-tunnel infra-logs \
 	db-migrate db-revision db-downgrade \
 	jenkins-up jenkins-down jenkins-logs k8s-apply k8s-delete
 
@@ -48,6 +48,12 @@ typecheck-frontend: ## Typecheck the legacy frontend
 
 test: ## Run the end-to-end smoke test
 	bash tests/smoke/smoke.sh
+
+test-cov: ## Run backend tests with coverage (gate: 80%)
+	cd backend && APP_ENV=test python -m pytest -q --cov=app --cov=main --cov-fail-under=80
+
+loadtest: ## Concurrency/latency check against the local edge
+	cd backend && python tests/load/loadtest.py --base http://localhost:8080
 
 # ---- Docker infrastructure ----
 

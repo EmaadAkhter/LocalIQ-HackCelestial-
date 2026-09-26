@@ -4,7 +4,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
@@ -29,6 +29,7 @@ from app.config import get_settings  # noqa: E402
 from app.database import get_session, init_db  # noqa: E402
 from app.errors import error_response, register_exception_handlers  # noqa: E402
 from app.logging_config import configure_logging  # noqa: E402
+from app.metrics import init_metrics, metrics_payload  # noqa: E402
 from app.middleware.access_log import AccessLogMiddleware  # noqa: E402
 from app.migrations import upgrade_to_head  # noqa: E402
 from app.middleware.request_id import RequestIDMiddleware  # noqa: E402
@@ -39,6 +40,9 @@ from app.services.llm import LLMError, close_http_client, generate, get_client  
 settings = get_settings()
 configure_logging("INFO", json_output=settings.log_json and settings.app_env != "test")
 logger = logging.getLogger("localiq")
+
+if settings.metrics_enabled:
+    init_metrics()
 
 
 @asynccontextmanager
@@ -124,6 +128,14 @@ app.include_router(weather.router, prefix="/api/v1", tags=["weather"])
 app.include_router(itineraries.router, prefix="/api/v1", tags=["itineraries"])
 app.include_router(favorites.router, prefix="/api/v1", tags=["favorites"])
 app.include_router(admin.router, prefix="/api/v1", tags=["admin"])
+
+
+if settings.metrics_enabled:
+
+    @app.get("/metrics", include_in_schema=False)
+    async def metrics_endpoint():
+        body, content_type = metrics_payload()
+        return Response(content=body, media_type=content_type)
 
 
 @app.get("/health", summary="Liveness check")

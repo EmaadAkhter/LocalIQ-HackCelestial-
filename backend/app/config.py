@@ -21,6 +21,7 @@ class Settings(BaseSettings):
 
     # Observability
     log_json: bool = True
+    metrics_enabled: bool = True
 
     # Rate limiting (per client IP)
     rate_limit_enabled: bool = True

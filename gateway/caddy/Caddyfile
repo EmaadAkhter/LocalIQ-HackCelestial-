@@ -42,6 +42,9 @@
 		reverse_proxy backend:8000
 	}
 
+	# NOTE: /metrics is intentionally NOT routed here. Prometheus scrapes the
+	# backend from inside the network so metrics aren't exposed on the tunnel.
+
 	route {
 		reverse_proxy nginx-flutter:80
 	}
