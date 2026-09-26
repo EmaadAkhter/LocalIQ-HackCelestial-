@@ -41,9 +41,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       _error = null;
     });
     try {
-      await action();
+      final session = await action();
       if (!mounted) return;
-      context.go('/explore');
+      context.go(
+        session.user.onboardingCompleted ? '/explore' : '/onboarding',
+      );
     } on AppException catch (e) {
       if (!mounted) return;
       setState(() {
@@ -214,11 +216,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           label: 'Sign up with Google',
           onPressed: _busy
               ? () {}
-              : () => _run(
-                    () => ref
+              : () => _run(() async {
+                    final idToken =
+                        await ref.read(googleSignInServiceProvider).idToken();
+                    return ref
                         .read(authServiceProvider)
-                        .signInWithGoogle(),
-                  ),
+                        .signInWithGoogle(idToken: idToken);
+                  }),
         ),
         const SizedBox(height: 10),
         SizedBox(

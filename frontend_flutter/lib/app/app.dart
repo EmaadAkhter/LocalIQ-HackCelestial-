@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -23,8 +21,12 @@ class _LocalIqAppState extends ConsumerState<LocalIqApp> {
     super.initState();
     // Cold start: try to restore a persisted session via /auth/refresh. A no-op
     // for the offline service and when there is nothing to restore.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(ref.read(authServiceProvider).restore());
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final session = await ref.read(authServiceProvider).restore();
+      if (!mounted) return;
+      if (session != null && !session.user.onboardingCompleted) {
+        _router.go('/onboarding');
+      }
     });
   }
 

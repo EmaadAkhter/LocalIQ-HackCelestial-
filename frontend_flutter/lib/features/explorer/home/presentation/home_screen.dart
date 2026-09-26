@@ -247,7 +247,7 @@ class _HomeFeed extends ConsumerWidget {
                 return ExperienceCard(
                   place: list[i],
                   rightNowLabel: 'Great right now',
-                  onTap: () => context.push('/place/${list[i].id}'),
+                  onTap: () => context.push('/place/${list[i].id}?place=${list[i].id}'),
                 );
               },
             ),
@@ -273,7 +273,7 @@ class _HomeFeed extends ConsumerWidget {
               itemBuilder: (context, i) => ExperienceCard(
                 place: gems[i],
                 isLocalGem: true,
-                onTap: () => context.push('/place/${gems[i].id}'),
+                onTap: () => context.push('/place/${gems[i].id}?place=${gems[i].id}'),
               ),
             ),
           ),

@@ -113,7 +113,7 @@ class _SearchMapViewState extends State<SearchMapView> {
             child: _MapPlaceCard(
               place: _selected!,
               onClose: () => setState(() => _selected = null),
-              onDetails: () => context.push('/place/${_selected!.id}'),
+              onDetails: () => context.push('/place/${_selected!.id}?place=${_selected!.id}'),
             ),
           ),
       ],

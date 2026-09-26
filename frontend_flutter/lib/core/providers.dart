@@ -1,11 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../features/auth/data/google_sign_in_service.dart';
 import '../features/auth/data/local_auth_service.dart';
 import '../features/auth/data/remote_auth_service.dart';
 import '../features/auth/domain/auth_service.dart';
 import '../features/context/data/local_context_repository.dart';
 import '../features/context/data/remote_context_repository.dart';
-import '../features/context/domain/context_models.dart';
 import '../features/itinerary/data/local_itinerary_repository.dart';
 import '../features/itinerary/domain/itinerary_repository.dart';
 import '../features/places/data/local_place_repository.dart';
@@ -64,15 +64,14 @@ final placeRepositoryProvider = Provider<PlaceRepository>((ref) {
 
 /// The full catalogue, hydrated once. Small enough to hold in memory and the
 /// basis for local search and the recommendation engine.
+///
+/// This is a catalogue load, not a proximity search: `near` is deliberately
+/// omitted (the server then returns every place, unranked by distance) and
+/// `limit: 0` asks for the lot. Distances are computed client-side from each
+/// place's centre, so no user radius is involved — and none is invented here.
 final allPlacesProvider = FutureProvider<List<Place>>((ref) async {
   final repo = ref.watch(placeRepositoryProvider);
-  return repo.search(
-    PlaceQuery(
-      near: const GeoPoint(latitude: 18.9322, longitude: 72.8316),
-      radiusKm: 60,
-      limit: 200,
-    ),
-  );
+  return repo.search(const PlaceQuery(limit: 0));
 }, name: 'localiq.allPlaces');
 
 final allExperiencesProvider = FutureProvider<List<Experience>>((ref) async {
@@ -92,6 +91,13 @@ final placeByIdProvider = Provider.family<Place?, String>((ref, id) {
   }
   return null;
 }, name: 'localiq.placeById');
+
+/// Fetches a single place by id from the repository. Use this for the detail
+/// screen when the place may not already be in the in-memory catalogue.
+final placeDetailProvider = FutureProvider.family<Place?, String>((ref, id) async {
+  final repo = ref.watch(placeRepositoryProvider);
+  return repo.placeById(id);
+}, name: 'localiq.placeDetail');
 
 final experienceByIdProvider =
     Provider.family<Experience?, String>((ref, id) {
@@ -120,6 +126,13 @@ final authServiceProvider = Provider<AuthService>((ref) {
     tokenHolder: ref.watch(authTokenHolderProvider),
   );
 }, name: 'localiq.authService');
+
+/// Google Sign-In: obtains the idToken that `signInWithGoogle` requires.
+/// Kept separate from the auth service so a build with no client id still works
+/// (the button reports a clear message instead of failing at construction).
+final googleSignInServiceProvider = Provider<GoogleSignInService>((ref) {
+  return GoogleSignInService();
+}, name: 'localiq.googleSignIn');
 
 /// Current session, seeded from the auth service and updated on every change.
 final authSessionProvider = StreamProvider<AuthSession?>((ref) {

@@ -18,6 +18,8 @@ class LocalIqUser {
     required this.homeCity,
     required this.createdAt,
     this.isAnonymous = false,
+    this.emailVerified = false,
+    this.onboardingCompleted = false,
   });
 
   final String id;
@@ -29,6 +31,8 @@ class LocalIqUser {
   final String homeCity;
   final DateTime createdAt;
   final bool isAnonymous;
+  final bool emailVerified;
+  final bool onboardingCompleted;
 
   bool get isGuest => isAnonymous || tier == UserTier.guest;
 
@@ -55,6 +59,8 @@ class LocalIqUser {
       createdAt:
           DateTime.tryParse(json.stringOrNull('createdAt') ?? '') ?? DateTime.now(),
       isAnonymous: json.boolValue('isAnonymous'),
+      emailVerified: json.boolValue('emailVerified'),
+      onboardingCompleted: json.boolValue('onboardingCompleted'),
     );
   }
 
@@ -68,6 +74,8 @@ class LocalIqUser {
         'home_city': homeCity,
         'created_at': createdAt.toIso8601String(),
         'is_anonymous': isAnonymous,
+        'email_verified': emailVerified,
+        'onboarding_completed': onboardingCompleted,
       };
 }
 

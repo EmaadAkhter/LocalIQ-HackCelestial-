@@ -48,9 +48,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _error = null;
     });
     try {
-      await action();
+      final session = await action();
       if (!mounted) return;
-      context.go(_destination);
+      if (!session.user.onboardingCompleted) {
+        context.go('/onboarding');
+      } else {
+        context.go(_destination);
+      }
     } on AppException catch (e) {
       if (!mounted) return;
       setState(() {
@@ -267,11 +271,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         GoogleSignInButton(
           onPressed: _busy
               ? () {}
-              : () => _run(
-                    () => ref
+              : () => _run(() async {
+                    // The plugin yields the idToken; the auth service posts it.
+                    final idToken =
+                        await ref.read(googleSignInServiceProvider).idToken();
+                    return ref
                         .read(authServiceProvider)
-                        .signInWithGoogle(),
-                  ),
+                        .signInWithGoogle(idToken: idToken);
+                  }),
         ),
         const SizedBox(height: 10),
         SizedBox(

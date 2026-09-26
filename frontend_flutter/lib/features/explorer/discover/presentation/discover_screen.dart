@@ -375,7 +375,7 @@ class _DiscoverResults extends StatelessWidget {
               return Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
                 child: GestureDetector(
-                  onTap: () => context.push('/place/${place.id}'),
+                  onTap: () => context.push('/place/${place.id}?place=${place.id}'),
                   child: Container(
                     decoration: BoxDecoration(
                       color: AppColors.surface,

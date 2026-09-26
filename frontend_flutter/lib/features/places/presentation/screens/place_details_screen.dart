@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/error/app_exception.dart';
 import '../../../../core/providers.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/app_image.dart';
@@ -35,19 +36,54 @@ class _PlaceDetailsScreenState extends ConsumerState<PlaceDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final place = widget.placeId != null
-        ? ref.watch(placeByIdProvider(widget.placeId!))
-        : null;
-    final resolvedPlace =
-        place ?? ref.watch(placeForExperienceProvider(widget.experienceId));
+    final placeAsync = widget.placeId != null
+        ? ref.watch(placeDetailProvider(widget.placeId!))
+        : AsyncValue.data(
+            ref.watch(placeForExperienceProvider(widget.experienceId)),
+          );
 
-    if (resolvedPlace == null) {
-      return Scaffold(
+    return placeAsync.when(
+      data: (resolvedPlace) {
+        if (resolvedPlace == null) {
+          return _Placeholder(
+            icon: Icons.explore_off_rounded,
+            title: 'Place not found',
+            subtitle: 'We could not find that place. It may have been removed.',
+            action: FilledButton.icon(
+              onPressed: () => context.go('/explore'),
+              icon: const Icon(Icons.explore_rounded, size: 18),
+              label: const Text('Back to Explore'),
+            ),
+          );
+        }
+        return _buildDetail(resolvedPlace);
+      },
+      loading: () => Scaffold(
         appBar: AppBar(leading: const BackButton()),
         body: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-      );
-    }
+      ),
+      error: (error, stack) {
+        final message =
+            error is AppException ? error.message : 'Something went wrong';
+        return _Placeholder(
+          icon: Icons.error_outline_rounded,
+          title: message,
+          subtitle: 'Pull down to retry or go back to Explore.',
+          action: FilledButton.icon(
+            onPressed: () {
+              if (widget.placeId != null) {
+                ref.invalidate(placeDetailProvider(widget.placeId!));
+              }
+            },
+            icon: const Icon(Icons.refresh_rounded, size: 18),
+            label: const Text('Try again'),
+          ),
+        );
+      },
+    );
+  }
 
+  Widget _buildDetail(Place resolvedPlace) {
     final rec = ref.watch(recommendationByIdProvider(widget.experienceId));
     final width = MediaQuery.sizeOf(context).width;
     final desktop = Breakpoints.isDesktop(width);
@@ -131,6 +167,56 @@ class _PlaceDetailsScreenState extends ConsumerState<PlaceDetailsScreen> {
           if (rec != null)
             _ActionBar(place: resolvedPlace, recommendation: rec),
         ],
+      ),
+    );
+  }
+}
+
+class _Placeholder extends StatelessWidget {
+  const _Placeholder({
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    this.action,
+  });
+
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final Widget? action;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(leading: const BackButton()),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 42, color: AppColors.primary),
+              const SizedBox(height: 14),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 19),
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 6),
+                Text(
+                  subtitle!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: AppColors.textSecondary),
+                ),
+              ],
+              if (action != null) ...[
+                const SizedBox(height: 18),
+                action!,
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }
