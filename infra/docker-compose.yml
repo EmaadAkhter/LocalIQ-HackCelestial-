@@ -59,8 +59,12 @@ services:
       ADMIN_API_KEY: ${ADMIN_API_KEY:-}
       FEEDBACK_WEIGHT: ${FEEDBACK_WEIGHT:-4.0}
       DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-localiq}:${POSTGRES_PASSWORD:-localiq}@postgres:5432/${POSTGRES_DB:-localiq}
+      # LLM provider for the agentic travel buddy
+      LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-llama-3.3-70b-versatile}
       OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:3b}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:7b}
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-nomic-embed-text}
       OLLAMA_API_KEY: ${OLLAMA_API_KEY:-}
       SEARXNG_URL: ${SEARXNG_URL:-http://searxng:8080}

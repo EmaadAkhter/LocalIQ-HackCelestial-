@@ -100,9 +100,15 @@ class Settings(BaseSettings):
     # Empty falls back to unverified dev-mode claim decoding.
     google_oauth_client_id: str = ""
 
+    # LLM provider selection. "ollama" uses the self-hosted model below;
+    # "groq" uses the hosted Groq API. Switching is one env change.
+    llm_provider: str = "ollama"
+    groq_api_key: str = ""
+    groq_model: str = "llama-3.3-70b-versatile"
+
     # Local LLM (Ollama)
     ollama_url: str = "http://localhost:11434"
-    ollama_model: str = "llama3.2:3b"
+    ollama_model: str = "qwen2.5:7b"
     ollama_timeout_seconds: float = 30.0
     # API key for a shared/tunnelled Ollama behind Kong key-auth.
     ollama_api_key: str = ""

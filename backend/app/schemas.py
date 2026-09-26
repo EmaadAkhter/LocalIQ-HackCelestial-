@@ -466,6 +466,8 @@ class UserResponse(BaseModel):
     #: True once the address is confirmed (Resend verification link, or a
     #: provider that vouches for it).
     email_verified: bool = False
+    #: True once the user has completed the taste-onboarding conversation.
+    onboarding_completed: bool = False
 
     model_config = {"from_attributes": True}
 

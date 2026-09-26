@@ -28,7 +28,7 @@ from app.schemas import (
     VerifyEmailRequest,
 )
 from app.services import email as email_service
-from app.services import lockout, verification
+from app.services import lockout, onboarding, verification
 from app.services.account import purge_user_rows
 from app.services.auth import (
     create_session_pair,
@@ -71,14 +71,22 @@ def _queue_verification(
 
 
 def _token_response(
-    user: User, access_token: str, refresh_token: str, expires_at
+    session: Session,
+    user: User,
+    access_token: str,
+    refresh_token: str,
+    expires_at,
 ) -> TokenResponse:
     """Build the flat token payload the Flutter client expects."""
+    user_data = UserResponse.model_validate(user).model_dump()
+    user_data["onboarding_completed"] = onboarding.user_onboarding_completed(
+        session, user.id
+    )
     return TokenResponse(
         access_token=access_token,
         refresh_token=refresh_token,
         expires_in=max(0, int((expires_at - utcnow()).total_seconds())),
-        user=UserResponse.model_validate(user),
+        user=UserResponse(**user_data),
     )
 
 
@@ -111,7 +119,7 @@ def register(
     _queue_verification(background, session, user)
     token, refresh, expires_at, _ = create_session_pair(user.id, session)  # type: ignore[arg-type]
     logger.info("Registered user id=%s", user.id)
-    return _token_response(user, token, refresh, expires_at)
+    return _token_response(session, user, token, refresh, expires_at)
 
 
 @router.post("/login", response_model=TokenResponse, summary="Login")
@@ -142,7 +150,7 @@ def login(
     lockout.clear(email)
     token, refresh, expires_at, _ = create_session_pair(user.id, session)  # type: ignore[arg-type]
     logger.info("Login user id=%s", user.id)
-    return _token_response(user, token, refresh, expires_at)
+    return _token_response(session, user, token, refresh, expires_at)
 
 
 @router.post("/logout", status_code=http_status.HTTP_200_OK, summary="Logout (revoke session)")
@@ -224,7 +232,7 @@ def refresh(
     user = session.get(User, user_id)
     if user is None:
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
-    return _token_response(user, token, refresh_token, expires_at)
+    return _token_response(session, user, token, refresh_token, expires_at)
 
 
 # ---------------------------------------------------------------------------
@@ -254,7 +262,7 @@ def guest(
     session.refresh(user)
     token, refresh_token, expires_at, _ = create_session_pair(user.id, session)  # type: ignore[arg-type]
     logger.info("Guest user id=%s", user.id)
-    return _token_response(user, token, refresh_token, expires_at)
+    return _token_response(session, user, token, refresh_token, expires_at)
 
 
 def _decode_jwt_payload(token: str) -> dict | None:
@@ -334,7 +342,7 @@ async def google_sign_in(
 
     token, refresh_token, expires_at, _ = create_session_pair(user.id, session)  # type: ignore[arg-type]
     logger.info("Google sign-in user id=%s", user.id)
-    return _token_response(user, token, refresh_token, expires_at)
+    return _token_response(session, user, token, refresh_token, expires_at)
 
 
 @router.post("/forgot-password", summary="Request a password reset")
