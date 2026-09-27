@@ -1,12 +1,24 @@
-# LocalIQ
+<div align="center">
+  <table>
+    <tr>
+      <td align="center" valign="middle">
+        <img src="./assets/localiq-logo.png" width="145" alt="LocalIQ Logo">
+      </td>
+      <td align="left" valign="middle">
+        <h1>LocalIQ</h1>
+        <p><strong>Discover Local. Smarter.</strong><br>
+        Not “what’s nearby” — what you can actually experience right now.</p>
+      </td>
+    </tr>
+  </table>
 
-> Not “what’s nearby” — **what you can actually experience right now.**
+  <p><strong>Flutter · FastAPI · PostgreSQL · Ollama · Google Maps · Kong · Caddy · Docker · Kubernetes · Jenkins</strong></p>
+  <p>Team Nexify · HackCelestial 3.0 · PS-6: Intelligent Local Discovery &amp; Experience Platform</p>
+</div>
 
 LocalIQ takes a traveller’s real constraints (time, budget, group, accessibility,
 location, existing plans) and turns them into a ranked, explainable, re-rankable
 shortlist of *doable* local experiences — not another generic list of places.
-
-**Team Nexify · HackCelestial 3.0 · PS-6: Intelligent Local Discovery & Experience Platform**
 
 ---
 
