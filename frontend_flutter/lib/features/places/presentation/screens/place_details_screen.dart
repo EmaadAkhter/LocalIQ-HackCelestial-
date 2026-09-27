@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/error/app_exception.dart';
 import '../../../../core/providers.dart';
@@ -10,6 +11,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/app_image.dart';
 import '../../../../shared/widgets/ui_kit.dart';
 import '../../../context/application/discovery_context_controller.dart';
+import '../../../context/domain/context_models.dart';
 import '../../../recommendations/application/recommendation_controller.dart';
 import '../../../recommendations/domain/recommendation.dart';
 import '../../../recommendations/presentation/widgets/recommendation_card.dart';
@@ -1135,7 +1137,7 @@ class _BookingRail extends ConsumerWidget {
                 ),
               ],
               const SizedBox(height: 12),
-              if (rec != null) PlanToggleButton(recommendation: rec),
+              PlanToggleButton(recommendation: _deriveRecommendation(ref, place, rec)),
               const SizedBox(height: 9),
               OutlinedButton.icon(
                 onPressed: () => showDirectionsSheet(context, place),
@@ -1222,6 +1224,57 @@ final experiencesAtPlaceProvider =
   return all.where((e) => e.placeId == placeId).toList();
 });
 
+Recommendation _deriveRecommendation(
+  WidgetRef ref,
+  Place place, [
+  Recommendation? existing,
+]) {
+  if (existing != null) return existing;
+  final all = ref.read(allExperiencesProvider).value ?? const [];
+  final exp = all.where((e) => e.placeId == place.id).firstOrNull ??
+      (all.isNotEmpty
+          ? all.first
+          : Experience(
+              id: 'exp-${place.id}',
+              placeId: place.id,
+              title: place.name,
+              tagline: place.summary ?? 'Curated spot',
+              description: place.summary ?? 'Curated spot',
+              category: place.category,
+              secondaryCategory: place.category.name,
+              imageUrl: place.heroImageUrl,
+              activityMinutes: 45,
+              typicalSpend: place.typicalSpend,
+              weatherSuitability: WeatherSuitability.allWeather,
+              bookingNote: 'No booking needed',
+              localScore: 85,
+              touristScore: 80,
+              highlights: const [],
+              practicalTip: 'Best visited during day',
+            ));
+  const travel = TravelEstimate(
+    minutes: 10,
+    distanceKm: 1.0,
+    mode: TravelMode.walk,
+    baselineMinutes: 10,
+    trafficLevel: TrafficLevel.moderate,
+  );
+  return Recommendation(
+    experience: exp,
+    place: place,
+    tier: FeasibilityTier.feasible,
+    constraints: const [],
+    outboundTravel: travel,
+    returnTravel: travel,
+    score: 85,
+    rank: 1,
+    whyFits: const ['Fits schedule'],
+    whyRanked: 'Curated stop',
+    matchReasons: const ['Open now'],
+    completableMinutes: 55,
+  );
+}
+
 class _ActionBar extends ConsumerWidget {
   const _ActionBar({required this.place, required this.recommendation});
 
@@ -1230,8 +1283,7 @@ class _ActionBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final rec = recommendation;
-    if (rec == null) return const SizedBox.shrink();
+    final effectiveRec = _deriveRecommendation(ref, place, recommendation);
 
     return Container(
       decoration: const BoxDecoration(
@@ -1248,7 +1300,10 @@ class _ActionBar extends ConsumerWidget {
               constraints: const BoxConstraints(maxWidth: 720),
               child: Row(
                 children: [
-                  Expanded(flex: 3, child: PlanToggleButton(recommendation: rec)),
+                  Expanded(
+                    flex: 3,
+                    child: PlanToggleButton(recommendation: effectiveRec),
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     flex: 2,
@@ -1302,13 +1357,30 @@ void showDirectionsSheet(BuildContext context, Place place) {
                 DirectionsLegs(placeId: place.id),
                 const SizedBox(height: 12),
                 FilledButton.icon(
-                  onPressed: () {
+                  onPressed: () async {
                     Navigator.of(context).pop();
                     showAppToast(
                       host,
-                      'Opening turn-by-turn navigation',
+                      'Opening navigation in Maps…',
                       icon: Icons.navigation_rounded,
                     );
+                    final lat = place.centre.latitude;
+                    final lng = place.centre.longitude;
+                    final gmapsUri = Uri.parse(
+                      'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving',
+                    );
+                    final geoUri = Uri.parse(
+                      'geo:$lat,$lng?q=$lat,$lng(${Uri.encodeComponent(place.name)})',
+                    );
+                    try {
+                      if (await canLaunchUrl(gmapsUri)) {
+                        await launchUrl(gmapsUri, mode: LaunchMode.externalApplication);
+                      } else if (await canLaunchUrl(geoUri)) {
+                        await launchUrl(geoUri, mode: LaunchMode.externalApplication);
+                      }
+                    } catch (_) {
+                      // Handled best-effort
+                    }
                   },
                   icon: const Icon(Icons.navigation_rounded, size: 17),
                   label: const Text('Start navigation'),

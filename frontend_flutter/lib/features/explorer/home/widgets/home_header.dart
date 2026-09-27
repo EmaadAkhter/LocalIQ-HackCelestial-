@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../features/auth/domain/auth_service.dart';
+import '../../../chat/data/chat_repository.dart';
 import '../../../social/application/notification_controller.dart';
 
 /// Home screen header: location, weather strip, notifications, avatar.
@@ -16,6 +17,8 @@ class HomeHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final initials = user?.initials ?? 'G';
     final unreadCount = ref.watch(unreadNotificationCountProvider);
+    final threads = ref.watch(chatThreadsProvider);
+    final unreadChatCount = threads.value?.fold(0, (s, t) => s + t.unreadCount) ?? 0;
 
     return Container(
       color: AppColors.canvas,
@@ -74,6 +77,14 @@ class HomeHeader extends ConsumerWidget {
           ),
 
           const SizedBox(width: 12),
+
+          // Inbox
+          _IconBtn(
+            icon: Icons.chat_bubble_outline_rounded,
+            badge: unreadChatCount > 0,
+            onTap: () => context.push('/inbox'),
+          ),
+          const SizedBox(width: 8),
 
           // Notifications
           _IconBtn(

@@ -322,6 +322,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   child: Column(
                     children: [
                       ListTile(
+                        leading: const Icon(Icons.bolt_rounded, color: AppColors.primary),
+                        title: const Text('Random Meetup', style: TextStyle(fontWeight: FontWeight.w700)),
+                        subtitle: const Text('Meet verified locals & travellers on your vibe'),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => context.push('/people'),
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
                         leading: const Icon(Icons.wallet_rounded),
                         title: const Text('Experience Wallet & Passport'),
                         subtitle: const Text('Offline passes, stamps & quest badges'),

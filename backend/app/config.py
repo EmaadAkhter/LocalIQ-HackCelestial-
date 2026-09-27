@@ -113,6 +113,15 @@ class Settings(BaseSettings):
     # API key for a shared/tunnelled Ollama behind Kong key-auth.
     ollama_api_key: str = ""
 
+    # Nugen domain-aligned model. When enabled and a model id is set, the
+    # constraint parser and the explanation writer call Nugen instead of the
+    # generic LLM. Falls back automatically on any failure.
+    nugen_enabled: bool = False
+    nugen_api_key: str = ""
+    nugen_base_url: str = "https://api.nugen.in"
+    nugen_model_id: str = ""
+    nugen_timeout_seconds: float = 45.0
+
     # LLM robustness
     llm_parse_timeout_seconds: float = 20.0
     llm_chat_timeout_seconds: float = 30.0

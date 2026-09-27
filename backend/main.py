@@ -48,6 +48,7 @@ from app.api.v1 import (  # noqa: E402
     solo,
     tags,
     trust,
+    twin,
     wallet,
     weather,
 )
@@ -182,6 +183,7 @@ app.include_router(trust.router, prefix="/api/v1", tags=["journey-trust"])
 app.include_router(experiences.router, prefix="/api/v1", tags=["experiences"])
 app.include_router(recommendations.router, prefix="/api/v1", tags=["recommendations"])
 app.include_router(right_now.router, prefix="/api/v1", tags=["right-now"])
+app.include_router(twin.router, prefix="/api/v1", tags=["twin"])
 app.include_router(personalization.router, prefix="/api/v1", tags=["personalization"])
 app.include_router(place_discovery.router, prefix="/api/v1", tags=["place-discovery"])
 app.include_router(media.router, tags=["media"])

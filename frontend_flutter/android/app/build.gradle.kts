@@ -1,5 +1,6 @@
 plugins {
     id("com.android.application")
+    id("com.google.gms.google-services")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
@@ -27,6 +28,11 @@ android {
         // flag during build.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        val mapsKey = (project.findProperty("MAPS_API_KEY") as? String)
+            ?: System.getenv("LOCALIQ_GOOGLE_MAPS_API_KEY")
+            ?: "AIzaSyAHABXGb5ulJB6syE0tV916dciI4AForoA"
+        manifestPlaceholders["MAPS_API_KEY"] = mapsKey
     }
 
     buildTypes {

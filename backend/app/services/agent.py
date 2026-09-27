@@ -22,9 +22,14 @@ from app.services import agent_tools, llm
 logger = logging.getLogger(__name__)
 
 _SYSTEM_PROMPT = (
-    "You are LocalIQ Travel Buddy. Help users discover Mumbai places, guides, meetups, "
-    "and itineraries. Use the available tools and the user's location. Only mention places "
-    "or guides returned by a tool. Ask before booking or spending."
+    "You are LocalIQ Travel Buddy, a knowledgeable and enthusiastic local guide for Mumbai. "
+    "Help users discover places, food, culture, guides, and itineraries. "
+    "ALWAYS use real places returned by tools or the provided LocalIQ data — never invent names. "
+    "Format your replies using Markdown: use **bold** for place names, bullet points for lists, "
+    "and short headers (###) for sections. Keep replies concise but rich. "
+    "When suggesting places, include the name, category, cost estimate, and a one-line why-visit. "
+    "If the user asks about something near them, use the provided lat/lng context. "
+    "Ask before booking or spending money."
 )
 
 _STOP_WORDS = {
@@ -43,15 +48,19 @@ _STOP_WORDS = {
 
 
 def _extract_search_terms(message: str) -> str:
-    """Strip filler words so the DB text search has a real signal."""
+    """Strip filler words so the DB text search has a real signal.
+
+    Returns up to 5 content words — keeping more than 4 lets the search
+    find broader matches on multi-topic queries like 'cheap rooftop bar Bandra'.
+    """
     words = [
         w.strip(".,!?;:'\"()[]{}").lower()
         for w in message.split()
         if w.strip(".,!?;:'\"()[]{}")
     ]
     kept = [w for w in words if w not in _STOP_WORDS and len(w) > 2]
-    # Prefer the last content words (they are usually the location/topic).
-    return " ".join(kept[-4:]) if kept else ""
+    # Return up to 5 kept words to preserve more signal
+    return " ".join(kept[-5:]) if kept else ""
 
 
 def _looks_like_place_query(message: str) -> bool:
@@ -75,15 +84,24 @@ def _pre_search(
     """Look up real LocalIQ data before the LLM replies to place/food/guide queries."""
     result: dict[str, Any] = {}
     query = _extract_search_terms(message)
-    if not query:
-        return result
+
+    # If extraction stripped everything, fall back to broader search.
+    search_query = query if query else message[:50]
+
     try:
         places = agent_tools.search_places(
-            session, query=query, lat=lat, lng=lng, limit=8
+            session, query=search_query, lat=lat, lng=lng, limit=12
         )
+        # If location-filtered results are too few, supplement with a global search.
+        if len(places) < 4:
+            more = agent_tools.search_places(
+                session, query=search_query, lat=None, lng=None, limit=8
+            )
+            seen_ids = {p["id"] for p in places}
+            places += [p for p in more if p["id"] not in seen_ids]
         result["places"] = [
-            {**p, "description": (p.get("description") or "")[:180]}
-            for p in places
+            {**p, "description": (p.get("description") or "")[:200]}
+            for p in places[:12]
         ]
     except Exception as exc:  # noqa: BLE001
         logger.warning("Pre-search places failed: %s", exc)
@@ -92,11 +110,11 @@ def _pre_search(
     if "guide" in message.lower() or "expert" in message.lower():
         try:
             area = next(
-                (w for w in query.split() if w in {"bandra", "colaba", "dadar", "juhu", "andheri", "powai"}),
+                (w for w in (query or message).split() if w in {"bandra", "colaba", "dadar", "juhu", "andheri", "powai", "fort", "versova", "kurla", "parel"}),
                 "",
             )
             result["guides"] = agent_tools.search_guides(
-                session, area=area, limit=4
+                session, area=area, limit=6
             )
         except Exception as exc:  # noqa: BLE001
             logger.warning("Pre-search guides failed: %s", exc)
@@ -120,35 +138,48 @@ def _build_messages(
 def _fallback_reply(
     session: Session, message: str, lat: float | None, lng: float | None
 ) -> str:
-    """A deterministic reply that still searches real data.
-
-    ponytail: keyword matching, not intent classification. The LLM path is the
-    real agent; this exists so a bad key or a stopped Ollama never breaks chat.
-    """
+    """A deterministic, markdown-formatted reply that still searches real data."""
     words = [w.strip(".,!?").lower() for w in message.split() if len(w) > 3]
-    stop = {"what", "where", "there", "about", "mumbai", "should", "could", "would", "have", "want", "good", "best"}
+    stop = {"what", "where", "there", "about", "mumbai", "should", "could", "would",
+            "have", "want", "good", "best", "show", "tell", "find", "some", "near"}
     keywords = [w for w in words if w not in stop]
     rows: list[dict] = []
     try:
+        # Try each keyword and accumulate up to 6 unique results
+        seen_ids: set = set()
         for word in keywords:
-            rows = agent_tools.search_places(
-                session, query=word, lat=lat, lng=lng, limit=3
+            hits = agent_tools.search_places(
+                session, query=word, lat=lat, lng=lng, limit=4
             )
-            if rows:
+            for h in hits:
+                if h["id"] not in seen_ids:
+                    seen_ids.add(h["id"])
+                    rows.append(h)
+                if len(rows) >= 6:
+                    break
+            if len(rows) >= 6:
                 break
+        # If still nothing, do a broader search with no keyword filter
+        if not rows:
+            rows = agent_tools.search_places(
+                session, query="", lat=lat, lng=lng, limit=6
+            )
     except Exception:  # noqa: BLE001
         rows = []
     if not rows:
         return (
             "I'm having trouble reaching my planning brain right now. "
             "Try naming a Mumbai area and an interest — for example "
-            "'Bandra, food' or 'Colaba, history' — and I'll pull options."
+            "**Bandra, coffee** or **Colaba, heritage** — and I'll pull options."
         )
-    lines = [f"- {r['name']} ({r['category']}, rated {r['rating']}/5, ~₹{r['avg_cost']})" for r in rows]
+    lines = [
+        f"- **{r['name']}** ({r['category']}, ⭐ {r['rating']}/5, ~₹{r['avg_cost']})"
+        for r in rows
+    ]
     return (
-        "My live model is offline, but here are real LocalIQ picks I found for you:\n"
+        "My live model is offline, but here are real LocalIQ picks I found:\n\n"
         + "\n".join(lines)
-        + "\nAsk me to turn any of these into a plan."
+        + "\n\nAsk me to turn any of these into a plan!"
     )
 
 
@@ -192,9 +223,9 @@ def _summarize_results(results: list[dict[str, Any]]) -> str:
                 if item.get("avg_cost") is not None:
                     bits.append(f"~₹{item['avg_cost']}")
                 suffix = f" ({', '.join(bits)})" if bits else ""
-                lines.append(f"• {name}{suffix}")
+                lines.append(f"- **{name}**{suffix}")
             if lines:
-                return "Here is what I found:\n" + "\n".join(lines)
+                return "### Here's what I found\n\n" + "\n".join(lines)
         if isinstance(payload, dict):
             if payload.get("name"):
                 return f"{payload['name']} — {(payload.get('description') or '')[:160]}".strip()

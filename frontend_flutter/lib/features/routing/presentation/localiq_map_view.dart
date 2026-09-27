@@ -1,7 +1,10 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import '../../../core/config/providers.dart';
 import '../../../core/theme/app_theme.dart';
 
 /// What a pin represents. Drives its icon and colour.
@@ -34,15 +37,10 @@ class PlacePin {
 
 /// The map surface.
 ///
-/// A self-hosted vector map: real coordinates, real Mumbai geography, no API
-/// key and no network — so the same widget powers discovery, the trip map and
-/// the offline demo. A `google_maps_flutter` / tile implementation slots in
-/// behind the same [PlacePin] contract when a key is provisioned.
-///
-/// The camera fits every pin and route point on first build, then pans and
-/// zooms freely; [MapCameraController] lets a parent recentre it (e.g. to keep
-/// the driver in view).
-class LocalIqMapView extends StatefulWidget {
+/// When Google Maps is available, renders a real interactive GoogleMap with
+/// markers, route polyline, and camera controls. When no key is configured or
+/// offline, seamlessly falls back to the self-hosted vector map canvas.
+class LocalIqMapView extends ConsumerStatefulWidget {
   const LocalIqMapView({
     super.key,
     this.pins = const [],
@@ -69,7 +67,7 @@ class LocalIqMapView extends StatefulWidget {
   final double padding;
 
   @override
-  State<LocalIqMapView> createState() => _LocalIqMapViewState();
+  ConsumerState<LocalIqMapView> createState() => _LocalIqMapViewState();
 }
 
 /// Lets a parent move the camera (recentre, zoom) without rebuilding the map.
@@ -158,12 +156,13 @@ class _Projection {
       );
 }
 
-class _LocalIqMapViewState extends State<LocalIqMapView>
+class _LocalIqMapViewState extends ConsumerState<LocalIqMapView>
     with SingleTickerProviderStateMixin {
   late final AnimationController _pulse;
   _MapCamera? _camera;
   double _gestureStartZoom = 1;
   int _fitSignature = 0;
+  GoogleMapController? _googleMapController;
 
   @override
   void initState() {
@@ -187,12 +186,24 @@ class _LocalIqMapViewState extends State<LocalIqMapView>
       _fitSignature = next;
       _camera = null;
     }
+    if (old.pins != widget.pins || old.route != widget.route) {
+      if (_googleMapController != null && _points().isNotEmpty) {
+        final fit = _fit(_points());
+        _googleMapController!.animateCamera(
+          CameraUpdate.newLatLngZoom(
+            LatLng(fit.lat, fit.lng),
+            _calculateGoogleZoom(fit),
+          ),
+        );
+      }
+    }
   }
 
   @override
   void dispose() {
     widget.controller?.removeListener(_onController);
     _pulse.dispose();
+    _googleMapController?.dispose();
     super.dispose();
   }
 
@@ -200,6 +211,14 @@ class _LocalIqMapViewState extends State<LocalIqMapView>
     final request = widget.controller?._pending;
     if (request == null) return;
     widget.controller?._consume();
+    if (_googleMapController != null) {
+      _googleMapController!.animateCamera(
+        CameraUpdate.newLatLngZoom(
+          LatLng(request.lat, request.lng),
+          request.zoom ?? 14.5,
+        ),
+      );
+    }
     final fit = _fit(_points());
     final camera =
         _camera ?? _MapCamera(lat: fit.lat, lng: fit.lng, zoom: 1);
@@ -244,8 +263,107 @@ class _LocalIqMapViewState extends State<LocalIqMapView>
     );
   }
 
+  double _calculateGoogleZoom(_Fit fit) {
+    final span = math.max(fit.latSpan, fit.lngSpan);
+    if (span <= 0.005) return 16.0;
+    if (span <= 0.015) return 14.5;
+    if (span <= 0.04) return 13.5;
+    if (span <= 0.08) return 12.5;
+    if (span <= 0.15) return 11.5;
+    if (span <= 0.3) return 10.5;
+    return 9.5;
+  }
+
+  Set<Marker> _buildGoogleMarkers() {
+    final markers = <Marker>{};
+    for (final pin in widget.pins) {
+      final hue = switch (pin.tone) {
+        'feasible' || 'pickup' => BitmapDescriptor.hueGreen,
+        'partial' => BitmapDescriptor.hueOrange,
+        'blocked' || 'drop' => BitmapDescriptor.hueRed,
+        'user' => BitmapDescriptor.hueAzure,
+        'driver' => BitmapDescriptor.hueCyan,
+        'gem' => BitmapDescriptor.hueViolet,
+        _ => BitmapDescriptor.hueRose,
+      };
+      markers.add(
+        Marker(
+          markerId: MarkerId(pin.id),
+          position: LatLng(pin.position.lat, pin.position.lng),
+          infoWindow: InfoWindow(
+            title: pin.label,
+            snippet: pin.kind == PinKind.stop && pin.number != null
+                ? 'Stop #${pin.number}'
+                : null,
+          ),
+          icon: BitmapDescriptor.defaultMarkerWithHue(hue),
+          onTap: pin.onTap,
+        ),
+      );
+    }
+    if (widget.userLocation != null) {
+      markers.add(
+        Marker(
+          markerId: const MarkerId('__user_loc__'),
+          position: LatLng(widget.userLocation!.lat, widget.userLocation!.lng),
+          infoWindow: const InfoWindow(title: 'Your Location'),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+        ),
+      );
+    }
+    return markers;
+  }
+
+  Set<Polyline> _buildGooglePolylines() {
+    if (widget.route.isEmpty) return const {};
+    return {
+      Polyline(
+        polylineId: const PolylineId('route_polyline'),
+        points: [
+          for (final p in widget.route) LatLng(p.lat, p.lng),
+        ],
+        color: AppColors.primary,
+        width: 5,
+        jointType: JointType.round,
+        startCap: Cap.roundCap,
+        endCap: Cap.roundCap,
+      ),
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
+    final env = ref.watch(environmentProvider);
+    if (env.hasGoogleMaps) {
+      final fit = _fit(_points());
+      return SizedBox(
+        height: widget.height,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: GoogleMap(
+            initialCameraPosition: CameraPosition(
+              target: LatLng(fit.lat, fit.lng),
+              zoom: _calculateGoogleZoom(fit),
+            ),
+            onMapCreated: (ctrl) {
+              _googleMapController = ctrl;
+            },
+            markers: _buildGoogleMarkers(),
+            polylines: _buildGooglePolylines(),
+            myLocationEnabled: widget.userLocation != null,
+            myLocationButtonEnabled: false,
+            zoomControlsEnabled: widget.showControls,
+            mapToolbarEnabled: false,
+            compassEnabled: true,
+            rotateGesturesEnabled: widget.interactive,
+            scrollGesturesEnabled: widget.interactive,
+            tiltGesturesEnabled: widget.interactive,
+            zoomGesturesEnabled: widget.interactive,
+          ),
+        ),
+      );
+    }
+
     return SizedBox(
       height: widget.height,
       child: LayoutBuilder(

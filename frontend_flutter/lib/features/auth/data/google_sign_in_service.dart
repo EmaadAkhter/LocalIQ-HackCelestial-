@@ -29,24 +29,27 @@ class GoogleSignInService {
   /// Throws [ConfigurationException] when the build has no client id, when the
   /// user dismisses the sheet, or when Google returns no idToken.
   Future<String> idToken() async {
-    final clientId = Environment.fromEnvironment.googleServerClientId?.trim();
-    if (clientId == null || clientId.isEmpty) {
-      throw const ConfigurationException(
-        'Google sign-in is not configured for this build. Rebuild with '
-        '--dart-define=LOCALIQ_GOOGLE_SERVER_CLIENT_ID=<web client id>.',
-      );
-    }
+    final clientId = Environment.fromEnvironment.googleServerClientId?.trim() ??
+        '582115132932-3gdhql9buvp3oebehq0s8ks4d5i4o8q7.apps.googleusercontent.com';
 
     if (!_ready) {
-      await _plugin.initialize(serverClientId: clientId);
+      await _plugin.initialize(
+        serverClientId: clientId,
+        clientId: clientId,
+      );
       _ready = true;
     }
 
-    final GoogleSignInAccount account = await _plugin.authenticate();
-    final token = account.authentication.idToken;
-    if (token == null || token.isEmpty) {
-      throw const ConfigurationException('Google did not return an ID token.');
+    try {
+      final GoogleSignInAccount account = await _plugin.authenticate();
+      final token = account.authentication.idToken;
+      if (token == null || token.isEmpty) {
+        throw const ConfigurationException('Google did not return an ID token.');
+      }
+      return token;
+    } catch (e) {
+      if (e is ConfigurationException) rethrow;
+      throw ConfigurationException('Google sign-in failed: $e');
     }
-    return token;
   }
 }

@@ -7,6 +7,8 @@ import '../../../shared/widgets/ui_kit.dart';
 import '../../context/application/discovery_context_controller.dart';
 import '../../places/presentation/widgets/constraint_panel.dart';
 import '../../routing/presentation/localiq_map_view.dart';
+import '../../twin/application/twin_providers.dart';
+import '../../twin/presentation/weather_twin_panel.dart';
 import '../application/recommendation_controller.dart';
 import '../domain/recommendation.dart';
 
@@ -97,6 +99,7 @@ class WhatIfLab extends ConsumerWidget {
           ),
         ),
         const ConstraintPanel(),
+        const WeatherTwinPanel(),
         const BiasSlider(),
         AppPanel(
           child: Column(
@@ -104,14 +107,28 @@ class WhatIfLab extends ConsumerWidget {
             children: [
               const SectionHeading(
                 title: 'Map preview',
-                subtitle: 'Pins re-colour as the ranking changes',
+                subtitle: 'Pins re-colour with weather impact and ranking',
                 icon: Icons.map_outlined,
               ),
               const SizedBox(height: 12),
-              Builder(
-                builder: (context) {
+              Consumer(
+                builder: (context, ref, _) {
+                  final twin = ref.watch(twinStateProvider).value;
                   final pins = <PlacePin>[];
-                  if (result != null) {
+                  if (twin != null && twin.experiences.isNotEmpty) {
+                    // Weather-driven layer: green = good right now,
+                    // amber = usable, red = washed out.
+                    for (final exp in twin.experiences.take(10)) {
+                      pins.add(
+                        PlacePin(
+                          id: 'twin-${exp.id}',
+                          label: exp.name,
+                          position: (lat: exp.lat, lng: exp.lng),
+                          tone: exp.impactTone,
+                        ),
+                      );
+                    }
+                  } else if (result != null) {
                     for (final rec in result.byTier.take(8)) {
                       pins.add(
                         PlacePin(

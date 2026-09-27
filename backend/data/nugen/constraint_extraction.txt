@@ -1,0 +1,1824 @@
+You are LocalIQ's constraint extractor for Mumbai local discovery.
+Given a traveller's free-text request (English, Hindi, or code-mixed Hinglish),
+return ONLY a JSON object with these keys:
+  location (string or omitted), time_minutes (integer or omitted),
+  budget_inr (integer or omitted), interests (array of strings),
+  preferences (array of strings).
+Omit any field the user did not state. Never invent a location or budget.
+Use these interest values: food, culture, history, art, nature, heritage,
+nightlife, shopping, wellness, adventure, local life.
+
+### Input
+240 minutes in Bandra, budget ₹200, we two — food, nightlife, nature chahiye, local, indoor.
+### Output
+{"location": "Bandra", "time_minutes": 240, "budget_inr": 200, "interests": ["food", "nightlife", "nature"], "preferences": ["local", "indoor"]}
+
+### Input
+150 minutes in Wadala, budget ₹2000, 4 log — heritage, culture chahiye, sunset, local.
+### Output
+{"location": "Wadala", "time_minutes": 150, "budget_inr": 2000, "interests": ["heritage", "culture"], "preferences": ["sunset", "local"]}
+
+### Input
+Mere paas ek ghanta hain Crawford Market mein, budget ₹3000, hum family ke saath ko food, adventure chahiye jo waterfront ho. matlab
+### Output
+{"location": "Crawford Market", "time_minutes": 60, "budget_inr": 3000, "interests": ["food", "adventure"], "preferences": ["waterfront"]}
+
+### Input
+Mere paas aadha ghanta hain Wadala mein, budget ₹1500, hum dost ko wellness, history chahiye jo local ho. agar possible ho
+### Output
+{"location": "Wadala", "time_minutes": 30, "budget_inr": 1500, "interests": ["wellness", "history"], "preferences": ["local"]}
+
+### Input
+I have 5 hours in Kala Ghoda with a budget of ₹300. There are 2 of us and we want adventure, nature, art that is hidden, quiet. you know
+### Output
+{"location": "Kala Ghoda", "time_minutes": 300, "budget_inr": 300, "interests": ["adventure", "nature", "art"], "preferences": ["hidden", "quiet"]}
+
+### Input
+I have 2 hours in Dadar with a budget of ₹200. There are a group of 4 and we want adventure, culture, food that is vegetarian. something like
+### Output
+{"location": "Dadar", "time_minutes": 120, "budget_inr": 200, "interests": ["adventure", "culture", "food"], "preferences": ["vegetarian"]}
+
+### Input
+Mere paas 360 minute hain Bandra mein, budget ₹3000, main akela ko nightlife, nature chahiye jo popular, accessible ho. please
+### Output
+{"location": "Bandra", "time_minutes": 360, "budget_inr": 3000, "interests": ["nightlife", "nature"], "preferences": ["popular", "accessible"]}
+
+### Input
+I have 4 hours in Andheri with a budget of ₹800. There are 2 of us and we want history, heritage, nature that is budget.
+### Output
+{"location": "Andheri", "time_minutes": 240, "budget_inr": 800, "interests": ["history", "heritage", "nature"], "preferences": ["budget"]}
+
+### Input
+Mere paas paanch ghante hain Vile Parle mein, budget ₹2000, hum family ke saath ko heritage chahiye jo accessible, outdoor ho. matlab
+### Output
+{"location": "Vile Parle", "time_minutes": 300, "budget_inr": 2000, "interests": ["heritage"], "preferences": ["accessible", "outdoor"]}
+
+### Input
+120 minutes in Lower Parel, budget ₹1500, 4 log — art, shopping chahiye, local.
+### Output
+{"location": "Lower Parel", "time_minutes": 120, "budget_inr": 1500, "interests": ["art", "shopping"], "preferences": ["local"]}
+
+### Input
+I have 2 hours in Fort with a budget of ₹200. There are 1 person and we want local life, nightlife that is vegetarian. ideally
+### Output
+{"location": "Fort", "time_minutes": 120, "budget_inr": 200, "interests": ["local life", "nightlife"], "preferences": ["vegetarian"]}
+
+### Input
+I have 1 hours in Byculla with a budget of ₹200. There are 2 of us and we want food, nature, wellness that is rooftop, budget.
+### Output
+{"location": "Byculla", "time_minutes": 90, "budget_inr": 200, "interests": ["food", "nature", "wellness"], "preferences": ["rooftop", "budget"]}
+
+### Input
+120 minutes in Goregaon, cheap only, family ke saath — culture chahiye, hidden, local.
+### Output
+{"location": "Goregaon", "time_minutes": 120, "budget_inr": 0, "interests": ["culture"], "preferences": ["hidden", "local"]}
+
+### Input
+Mere paas 45 minute hain Malabar Hill mein, budget ₹800, hum dono ko nightlife, history chahiye jo family-friendly ho. koi acha sa
+### Output
+{"location": "Malabar Hill", "time_minutes": 45, "budget_inr": 800, "interests": ["nightlife", "history"], "preferences": ["family-friendly"]}
+
+### Input
+I have 1 hours in Bandra with a budget of ₹2000. There are a family of 4 and we want culture, local life that is sunset. you know
+### Output
+{"location": "Bandra", "time_minutes": 90, "budget_inr": 2000, "interests": ["culture", "local life"], "preferences": ["sunset"]}
+
+### Input
+Mere paas dedh ghanta hain Goregaon mein, budget ₹800, hum dono ko wellness, local life, history chahiye jo local, waterfront ho. please
+### Output
+{"location": "Goregaon", "time_minutes": 90, "budget_inr": 800, "interests": ["wellness", "local life", "history"], "preferences": ["local", "waterfront"]}
+
+### Input
+Mere paas char ghante hain Versova mein, budget kam hai, hum dost ko nightlife, wellness, art chahiye jo outdoor ho.
+### Output
+{"location": "Versova", "time_minutes": 240, "budget_inr": 0, "interests": ["nightlife", "wellness", "art"], "preferences": ["outdoor"]}
+
+### Input
+Mere paas char ghante hain Churchgate mein, budget ₹3000, main akela ko nature chahiye jo local ho. agar possible ho
+### Output
+{"location": "Churchgate", "time_minutes": 240, "budget_inr": 3000, "interests": ["nature"], "preferences": ["local"]}
+
+### Input
+I have 0 hours in Versova with a budget of ₹2000. There are a group of 4 and we want art, shopping that is local, late-night. please
+### Output
+{"location": "Versova", "time_minutes": 45, "budget_inr": 2000, "interests": ["art", "shopping"], "preferences": ["local", "late-night"]}
+
+### Input
+I have 0 hours in Wadala with a budget of ₹800. There are 2 of us and we want history, heritage, local life that is accessible, budget. ideally
+### Output
+{"location": "Wadala", "time_minutes": 30, "budget_inr": 800, "interests": ["history", "heritage", "local life"], "preferences": ["accessible", "budget"]}
+
+### Input
+30 minutes in Andheri, budget ₹300, 4 log — nightlife chahiye, accessible.
+### Output
+{"location": "Andheri", "time_minutes": 30, "budget_inr": 300, "interests": ["nightlife"], "preferences": ["accessible"]}
+
+### Input
+I have 2 hours in Sion with a budget of ₹2000. There are a family of 4 and we want culture that is indoor, budget. if possible
+### Output
+{"location": "Sion", "time_minutes": 150, "budget_inr": 2000, "interests": ["culture"], "preferences": ["indoor", "budget"]}
+
+### Input
+I have 5 hours in Versova with a budget of ₹1000. There are 2 of us and we want wellness that is hidden, sunset. if possible
+### Output
+{"location": "Versova", "time_minutes": 300, "budget_inr": 1000, "interests": ["wellness"], "preferences": ["hidden", "sunset"]}
+
+### Input
+I have 0 hours in Kurla with a budget of ₹500. There are 1 person and we want history, nightlife that is hidden, waterfront. please
+### Output
+{"location": "Kurla", "time_minutes": 45, "budget_inr": 500, "interests": ["history", "nightlife"], "preferences": ["hidden", "waterfront"]}
+
+### Input
+Mere paas dedh ghanta hain Bandra mein, budget kam hai, hum family ke saath ko history, nature chahiye jo outdoor, sunset ho. please
+### Output
+{"location": "Bandra", "time_minutes": 90, "budget_inr": 0, "interests": ["history", "nature"], "preferences": ["outdoor", "sunset"]}
+
+### Input
+I have 2 hours in Malabar Hill with a budget of ₹1500. There are a family of 4 and we want history, local life, heritage that is hidden, quiet. if possible
+### Output
+{"location": "Malabar Hill", "time_minutes": 120, "budget_inr": 1500, "interests": ["history", "local life", "heritage"], "preferences": ["hidden", "quiet"]}
+
+### Input
+I have 1 hours in Worli with a budget of ₹1000. There are a group of 4 and we want heritage that is quiet.
+### Output
+{"location": "Worli", "time_minutes": 90, "budget_inr": 1000, "interests": ["heritage"], "preferences": ["quiet"]}
+
+### Input
+I have 6 hours in Juhu with a budget of ₹1500. There are a group of 4 and we want food, local life that is waterfront. if possible
+### Output
+{"location": "Juhu", "time_minutes": 360, "budget_inr": 1500, "interests": ["food", "local life"], "preferences": ["waterfront"]}
+
+### Input
+Mere paas 45 minute hain Malabar Hill mein, budget ₹300, main akela ko local life, adventure, shopping chahiye jo hidden ho. matlab
+### Output
+{"location": "Malabar Hill", "time_minutes": 45, "budget_inr": 300, "interests": ["local life", "adventure", "shopping"], "preferences": ["hidden"]}
+
+### Input
+I have 1 hours in Dadar with a budget of ₹500. There are 1 person and we want culture that is quiet, quick. something like
+### Output
+{"location": "Dadar", "time_minutes": 60, "budget_inr": 500, "interests": ["culture"], "preferences": ["quiet", "quick"]}
+
+### Input
+I have 5 hours in Powai with a budget of ₹200. There are a family of 4 and we want heritage that is sunset. ideally
+### Output
+{"location": "Powai", "time_minutes": 300, "budget_inr": 200, "interests": ["heritage"], "preferences": ["sunset"]}
+
+### Input
+I have 0 hours in Fort with a budget of ₹2000. There are a family of 4 and we want adventure that is budget, late-night. something like
+### Output
+{"location": "Fort", "time_minutes": 30, "budget_inr": 2000, "interests": ["adventure"], "preferences": ["budget", "late-night"]}
+
+### Input
+I have 0 hours in Wadala with a budget of as cheap as possible. There are a group of 4 and we want culture, heritage, food that is outdoor. something like
+### Output
+{"location": "Wadala", "time_minutes": 45, "budget_inr": 0, "interests": ["culture", "heritage", "food"], "preferences": ["outdoor"]}
+
+### Input
+Mere paas 45 minute hain Kala Ghoda mein, budget ₹5000, hum dono ko nature, culture chahiye jo quiet, vegetarian ho. matlab
+### Output
+{"location": "Kala Ghoda", "time_minutes": 45, "budget_inr": 5000, "interests": ["nature", "culture"], "preferences": ["quiet", "vegetarian"]}
+
+### Input
+I have 2 hours in Marine Lines with a budget of ₹1000. There are a family of 4 and we want shopping that is quick, family-friendly. something like
+### Output
+{"location": "Marine Lines", "time_minutes": 120, "budget_inr": 1000, "interests": ["shopping"], "preferences": ["quick", "family-friendly"]}
+
+### Input
+240 minutes in Vile Parle, cheap only, we two — adventure, history, culture chahiye, quiet, vegetarian.
+### Output
+{"location": "Vile Parle", "time_minutes": 240, "budget_inr": 0, "interests": ["adventure", "history", "culture"], "preferences": ["quiet", "vegetarian"]}
+
+### Input
+180 minutes in Crawford Market, budget ₹5000, me alone — heritage, adventure, shopping chahiye, hidden.
+### Output
+{"location": "Crawford Market", "time_minutes": 180, "budget_inr": 5000, "interests": ["heritage", "adventure", "shopping"], "preferences": ["hidden"]}
+
+### Input
+Mere paas dedh ghanta hain Sion mein, budget ₹300, hum family ke saath ko nature, wellness, shopping chahiye jo accessible, popular ho. matlab
+### Output
+{"location": "Sion", "time_minutes": 90, "budget_inr": 300, "interests": ["nature", "wellness", "shopping"], "preferences": ["accessible", "popular"]}
+
+### Input
+I have 1 hours in Wadala with a budget of ₹300. There are a group of 4 and we want adventure, nightlife that is popular.
+### Output
+{"location": "Wadala", "time_minutes": 90, "budget_inr": 300, "interests": ["adventure", "nightlife"], "preferences": ["popular"]}
+
+### Input
+I want something local and quiet in Bandra
+### Output
+{"location": "Bandra", "interests": ["local life"], "preferences": ["local", "quiet"]}
+
+### Input
+Mere paas teen ghante hain Powai mein, budget ₹200, hum dost ko art chahiye jo hidden, budget ho. matlab
+### Output
+{"location": "Powai", "time_minutes": 180, "budget_inr": 200, "interests": ["art"], "preferences": ["hidden", "budget"]}
+
+### Input
+Mere paas 360 minute hain Malabar Hill mein, budget ₹5000, hum family ke saath ko nature chahiye jo popular ho. matlab
+### Output
+{"location": "Malabar Hill", "time_minutes": 360, "budget_inr": 5000, "interests": ["nature"], "preferences": ["popular"]}
+
+### Input
+Mere paas teen ghante hain Khar mein, budget ₹500, hum dost ko adventure, shopping, heritage chahiye jo morning ho. matlab
+### Output
+{"location": "Khar", "time_minutes": 180, "budget_inr": 500, "interests": ["adventure", "shopping", "heritage"], "preferences": ["morning"]}
+
+### Input
+360 minutes in Fort, budget ₹1500, me alone — wellness, history chahiye, waterfront.
+### Output
+{"location": "Fort", "time_minutes": 360, "budget_inr": 1500, "interests": ["wellness", "history"], "preferences": ["waterfront"]}
+
+### Input
+I have 4 hours in Bandra with a budget of as cheap as possible. There are a group of 4 and we want adventure, shopping, heritage that is late-night. something like
+### Output
+{"location": "Bandra", "time_minutes": 240, "budget_inr": 0, "interests": ["adventure", "shopping", "heritage"], "preferences": ["late-night"]}
+
+### Input
+150 minutes in Girgaon, budget ₹2000, me alone — local life chahiye, local.
+### Output
+{"location": "Girgaon", "time_minutes": 150, "budget_inr": 2000, "interests": ["local life"], "preferences": ["local"]}
+
+### Input
+Mere paas 360 minute hain Oshiwara mein, budget ₹1500, hum dono ko culture, art, nature chahiye jo local, morning ho. koi acha sa
+### Output
+{"location": "Oshiwara", "time_minutes": 360, "budget_inr": 1500, "interests": ["culture", "art", "nature"], "preferences": ["local", "morning"]}
+
+### Input
+I have 0 hours in Kurla with a budget of ₹3000. There are a family of 4 and we want nature, nightlife that is vegetarian. something like
+### Output
+{"location": "Kurla", "time_minutes": 45, "budget_inr": 3000, "interests": ["nature", "nightlife"], "preferences": ["vegetarian"]}
+
+### Input
+180 minutes in Goregaon, budget ₹2000, we two — wellness chahiye, accessible, morning.
+### Output
+{"location": "Goregaon", "time_minutes": 180, "budget_inr": 2000, "interests": ["wellness"], "preferences": ["accessible", "morning"]}
+
+### Input
+I have 4 hours in Dadar with a budget of ₹200. There are a group of 4 and we want art that is popular.
+### Output
+{"location": "Dadar", "time_minutes": 240, "budget_inr": 200, "interests": ["art"], "preferences": ["popular"]}
+
+### Input
+Mere paas dhai ghante hain Mahim mein, budget kam hai, main akela ko heritage, shopping, culture chahiye jo hidden, popular ho. please
+### Output
+{"location": "Mahim", "time_minutes": 150, "budget_inr": 0, "interests": ["heritage", "shopping", "culture"], "preferences": ["hidden", "popular"]}
+
+### Input
+Mere paas dhai ghante hain Malabar Hill mein, budget ₹2000, main akela ko local life, shopping chahiye jo hidden ho. matlab
+### Output
+{"location": "Malabar Hill", "time_minutes": 150, "budget_inr": 2000, "interests": ["local life", "shopping"], "preferences": ["hidden"]}
+
+### Input
+I have 0 hours in Versova with a budget of ₹200. There are 2 of us and we want art, local life that is morning, local. ideally
+### Output
+{"location": "Versova", "time_minutes": 30, "budget_inr": 200, "interests": ["art", "local life"], "preferences": ["morning", "local"]}
+
+### Input
+120 minutes in Churchgate, budget ₹1000, me alone — heritage chahiye, popular.
+### Output
+{"location": "Churchgate", "time_minutes": 120, "budget_inr": 1000, "interests": ["heritage"], "preferences": ["popular"]}
+
+### Input
+I have 2 hours in Matunga with a budget of ₹1000. There are a group of 4 and we want nature that is late-night, vegetarian. you know
+### Output
+{"location": "Matunga", "time_minutes": 120, "budget_inr": 1000, "interests": ["nature"], "preferences": ["late-night", "vegetarian"]}
+
+### Input
+Mere paas aadha ghanta hain Powai mein, budget ₹1000, hum family ke saath ko culture chahiye jo sunset ho.
+### Output
+{"location": "Powai", "time_minutes": 30, "budget_inr": 1000, "interests": ["culture"], "preferences": ["sunset"]}
+
+### Input
+Mere paas dedh ghanta hain Marine Lines mein, budget ₹1000, hum dost ko local life chahiye jo accessible, outdoor ho. koi acha sa
+### Output
+{"location": "Marine Lines", "time_minutes": 90, "budget_inr": 1000, "interests": ["local life"], "preferences": ["accessible", "outdoor"]}
+
+### Input
+I have 0 hours in Wadala with a budget of ₹2000. There are 2 of us and we want wellness, food, shopping that is local, vegetarian. please
+### Output
+{"location": "Wadala", "time_minutes": 30, "budget_inr": 2000, "interests": ["wellness", "food", "shopping"], "preferences": ["local", "vegetarian"]}
+
+### Input
+240 minutes in Byculla, budget ₹500, me alone — local life chahiye, family-friendly.
+### Output
+{"location": "Byculla", "time_minutes": 240, "budget_inr": 500, "interests": ["local life"], "preferences": ["family-friendly"]}
+
+### Input
+150 minutes in Churchgate, budget ₹300, family ke saath — local life, nature, nightlife chahiye, late-night.
+### Output
+{"location": "Churchgate", "time_minutes": 150, "budget_inr": 300, "interests": ["local life", "nature", "nightlife"], "preferences": ["late-night"]}
+
+### Input
+I have 5 hours in Juhu with a budget of ₹2000. There are a family of 4 and we want shopping, history, heritage that is family-friendly, outdoor. something like
+### Output
+{"location": "Juhu", "time_minutes": 300, "budget_inr": 2000, "interests": ["shopping", "history", "heritage"], "preferences": ["family-friendly", "outdoor"]}
+
+### Input
+300 minutes in Marine Lines, budget ₹1000, me alone — nature chahiye, quick.
+### Output
+{"location": "Marine Lines", "time_minutes": 300, "budget_inr": 1000, "interests": ["nature"], "preferences": ["quick"]}
+
+### Input
+I have 2 hours in Wadala with a budget of ₹200. There are 1 person and we want local life that is waterfront. something like
+### Output
+{"location": "Wadala", "time_minutes": 120, "budget_inr": 200, "interests": ["local life"], "preferences": ["waterfront"]}
+
+### Input
+I have 0 hours in Powai with a budget of ₹3000. There are a family of 4 and we want nature, wellness, adventure that is popular, late-night. ideally
+### Output
+{"location": "Powai", "time_minutes": 30, "budget_inr": 3000, "interests": ["nature", "wellness", "adventure"], "preferences": ["popular", "late-night"]}
+
+### Input
+I have 3 hours in Worli with a budget of ₹1500. There are 2 of us and we want nightlife, nature that is rooftop. please
+### Output
+{"location": "Worli", "time_minutes": 180, "budget_inr": 1500, "interests": ["nightlife", "nature"], "preferences": ["rooftop"]}
+
+### Input
+I have 5 hours in Lower Parel with a budget of ₹2000. There are 1 person and we want history, nature that is outdoor, accessible. please
+### Output
+{"location": "Lower Parel", "time_minutes": 300, "budget_inr": 2000, "interests": ["history", "nature"], "preferences": ["outdoor", "accessible"]}
+
+### Input
+Mere paas ek ghanta hain Kala Ghoda mein, budget ₹5000, hum dost ko nightlife, adventure chahiye jo family-friendly, budget ho. agar possible ho
+### Output
+{"location": "Kala Ghoda", "time_minutes": 60, "budget_inr": 5000, "interests": ["nightlife", "adventure"], "preferences": ["family-friendly", "budget"]}
+
+### Input
+Mere paas aadha ghanta hain Vile Parle mein, budget ₹5000, main akela ko history, wellness chahiye jo vegetarian ho. agar possible ho
+### Output
+{"location": "Vile Parle", "time_minutes": 30, "budget_inr": 5000, "interests": ["history", "wellness"], "preferences": ["vegetarian"]}
+
+### Input
+I have 5 hours in Chembur with a budget of ₹1500. There are 1 person and we want culture that is quick, rooftop. if possible
+### Output
+{"location": "Chembur", "time_minutes": 300, "budget_inr": 1500, "interests": ["culture"], "preferences": ["quick", "rooftop"]}
+
+### Input
+Mere paas char ghante hain Andheri mein, budget ₹5000, hum family ke saath ko nature chahiye jo hidden, waterfront ho. matlab
+### Output
+{"location": "Andheri", "time_minutes": 240, "budget_inr": 5000, "interests": ["nature"], "preferences": ["hidden", "waterfront"]}
+
+### Input
+180 minutes in CSMT, budget ₹500, we two — food chahiye, quick.
+### Output
+{"location": "CSMT", "time_minutes": 180, "budget_inr": 500, "interests": ["food"], "preferences": ["quick"]}
+
+### Input
+I have 1 hours in Girgaon with a budget of ₹3000. There are a group of 4 and we want culture, nature that is budget, waterfront. if possible
+### Output
+{"location": "Girgaon", "time_minutes": 60, "budget_inr": 3000, "interests": ["culture", "nature"], "preferences": ["budget", "waterfront"]}
+
+### Input
+360 minutes in Marine Lines, budget ₹2000, family ke saath — heritage chahiye, late-night, hidden.
+### Output
+{"location": "Marine Lines", "time_minutes": 360, "budget_inr": 2000, "interests": ["heritage"], "preferences": ["late-night", "hidden"]}
+
+### Input
+Mere paas 45 minute hain Dadar mein, budget ₹2000, hum family ke saath ko adventure, culture chahiye jo popular ho. matlab
+### Output
+{"location": "Dadar", "time_minutes": 45, "budget_inr": 2000, "interests": ["adventure", "culture"], "preferences": ["popular"]}
+
+### Input
+I have 0 hours in Fort with a budget of ₹5000. There are 1 person and we want history that is indoor, late-night.
+### Output
+{"location": "Fort", "time_minutes": 45, "budget_inr": 5000, "interests": ["history"], "preferences": ["indoor", "late-night"]}
+
+### Input
+Mere paas dedh ghanta hain Khar mein, budget ₹500, hum family ke saath ko local life, history chahiye jo sunset ho. please
+### Output
+{"location": "Khar", "time_minutes": 90, "budget_inr": 500, "interests": ["local life", "history"], "preferences": ["sunset"]}
+
+### Input
+Mere paas 360 minute hain Andheri mein, budget ₹1500, hum family ke saath ko art, local life, adventure chahiye jo accessible ho.
+### Output
+{"location": "Andheri", "time_minutes": 360, "budget_inr": 1500, "interests": ["art", "local life", "adventure"], "preferences": ["accessible"]}
+
+### Input
+Mere paas 45 minute hain Oshiwara mein, budget ₹5000, main akela ko adventure chahiye jo vegetarian, morning ho. matlab
+### Output
+{"location": "Oshiwara", "time_minutes": 45, "budget_inr": 5000, "interests": ["adventure"], "preferences": ["vegetarian", "morning"]}
+
+### Input
+Mere paas do ghante hain Khar mein, budget kam hai, hum dono ko history chahiye jo quiet ho. agar possible ho
+### Output
+{"location": "Khar", "time_minutes": 120, "budget_inr": 0, "interests": ["history"], "preferences": ["quiet"]}
+
+### Input
+Mere paas teen ghante hain Worli mein, budget ₹300, hum family ke saath ko history, heritage chahiye jo hidden ho. please
+### Output
+{"location": "Worli", "time_minutes": 180, "budget_inr": 300, "interests": ["history", "heritage"], "preferences": ["hidden"]}
+
+### Input
+360 minutes in Parel, budget ₹1000, 4 log — culture, shopping chahiye, rooftop.
+### Output
+{"location": "Parel", "time_minutes": 360, "budget_inr": 1000, "interests": ["culture", "shopping"], "preferences": ["rooftop"]}
+
+### Input
+Mere paas paanch ghante hain Malabar Hill mein, budget ₹500, hum family ke saath ko heritage, local life, wellness chahiye jo hidden, morning ho. koi acha sa
+### Output
+{"location": "Malabar Hill", "time_minutes": 300, "budget_inr": 500, "interests": ["heritage", "local life", "wellness"], "preferences": ["hidden", "morning"]}
+
+### Input
+Mere paas dhai ghante hain Lower Parel mein, budget kam hai, main akela ko history chahiye jo local ho.
+### Output
+{"location": "Lower Parel", "time_minutes": 150, "budget_inr": 0, "interests": ["history"], "preferences": ["local"]}
+
+### Input
+Mere paas 360 minute hain Girgaon mein, budget ₹1000, main akela ko food, wellness chahiye jo vegetarian ho. koi acha sa
+### Output
+{"location": "Girgaon", "time_minutes": 360, "budget_inr": 1000, "interests": ["food", "wellness"], "preferences": ["vegetarian"]}
+
+### Input
+I have 0 hours in Girgaon with a budget of ₹5000. There are 1 person and we want nightlife, art, nature that is family-friendly. if possible
+### Output
+{"location": "Girgaon", "time_minutes": 45, "budget_inr": 5000, "interests": ["nightlife", "art", "nature"], "preferences": ["family-friendly"]}
+
+### Input
+Mere paas teen ghante hain CSMT mein, budget ₹500, hum dono ko wellness chahiye jo local, budget ho.
+### Output
+{"location": "CSMT", "time_minutes": 180, "budget_inr": 500, "interests": ["wellness"], "preferences": ["local", "budget"]}
+
+### Input
+Mere paas char ghante hain Worli mein, budget ₹500, hum family ke saath ko local life, history chahiye jo budget, hidden ho. please
+### Output
+{"location": "Worli", "time_minutes": 240, "budget_inr": 500, "interests": ["local life", "history"], "preferences": ["budget", "hidden"]}
+
+### Input
+90 minutes in Marine Lines, budget ₹2000, we two — shopping, nature, art chahiye, waterfront.
+### Output
+{"location": "Marine Lines", "time_minutes": 90, "budget_inr": 2000, "interests": ["shopping", "nature", "art"], "preferences": ["waterfront"]}
+
+### Input
+I have 1 hours in Lower Parel with a budget of ₹300. There are a family of 4 and we want adventure, local life, nature that is budget, outdoor. you know
+### Output
+{"location": "Lower Parel", "time_minutes": 90, "budget_inr": 300, "interests": ["adventure", "local life", "nature"], "preferences": ["budget", "outdoor"]}
+
+### Input
+Mere paas dhai ghante hain Dadar mein, budget ₹3000, hum dono ko adventure, history chahiye jo sunset ho. please
+### Output
+{"location": "Dadar", "time_minutes": 150, "budget_inr": 3000, "interests": ["adventure", "history"], "preferences": ["sunset"]}
+
+### Input
+Mere paas dedh ghanta hain Lower Parel mein, budget ₹1000, hum dost ko shopping chahiye jo outdoor ho. agar possible ho
+### Output
+{"location": "Lower Parel", "time_minutes": 90, "budget_inr": 1000, "interests": ["shopping"], "preferences": ["outdoor"]}
+
+### Input
+I have 1 hours in Khar with a budget of ₹2000. There are a family of 4 and we want heritage, local life that is quick, budget.
+### Output
+{"location": "Khar", "time_minutes": 60, "budget_inr": 2000, "interests": ["heritage", "local life"], "preferences": ["quick", "budget"]}
+
+### Input
+I have 1 hours in Byculla with a budget of ₹3000. There are 2 of us and we want nature, food that is quick, rooftop. please
+### Output
+{"location": "Byculla", "time_minutes": 60, "budget_inr": 3000, "interests": ["nature", "food"], "preferences": ["quick", "rooftop"]}
+
+### Input
+I have 2 hours in Matunga with a budget of ₹1500. There are 2 of us and we want art, heritage that is morning. you know
+### Output
+{"location": "Matunga", "time_minutes": 150, "budget_inr": 1500, "interests": ["art", "heritage"], "preferences": ["morning"]}
+
+### Input
+Mere paas dedh ghanta hain Mahim mein, budget ₹2000, main akela ko nightlife chahiye jo accessible, indoor ho. agar possible ho
+### Output
+{"location": "Mahim", "time_minutes": 90, "budget_inr": 2000, "interests": ["nightlife"], "preferences": ["accessible", "indoor"]}
+
+### Input
+I have 2 hours in Powai with a budget of ₹5000. There are 1 person and we want art, shopping, nature that is outdoor, late-night. ideally
+### Output
+{"location": "Powai", "time_minutes": 150, "budget_inr": 5000, "interests": ["art", "shopping", "nature"], "preferences": ["outdoor", "late-night"]}
+
+### Input
+Mere paas teen ghante hain Colaba mein, budget ₹500, hum dost ko history chahiye jo budget ho. please
+### Output
+{"location": "Colaba", "time_minutes": 180, "budget_inr": 500, "interests": ["history"], "preferences": ["budget"]}
+
+### Input
+I have 0 hours in Churchgate with a budget of ₹300. There are 2 of us and we want history, local life that is rooftop. please
+### Output
+{"location": "Churchgate", "time_minutes": 45, "budget_inr": 300, "interests": ["history", "local life"], "preferences": ["rooftop"]}
+
+### Input
+I have 1 hours in Wadala with a budget of ₹3000. There are 1 person and we want heritage, nightlife that is budget, quiet. ideally
+### Output
+{"location": "Wadala", "time_minutes": 60, "budget_inr": 3000, "interests": ["heritage", "nightlife"], "preferences": ["budget", "quiet"]}
+
+### Input
+I have 6 hours in Byculla with a budget of ₹5000. There are a family of 4 and we want food, history, culture that is family-friendly, sunset. something like
+### Output
+{"location": "Byculla", "time_minutes": 360, "budget_inr": 5000, "interests": ["food", "history", "culture"], "preferences": ["family-friendly", "sunset"]}
+
+### Input
+I have 0 hours in Andheri with a budget of ₹1000. There are 1 person and we want shopping, food, art that is sunset. you know
+### Output
+{"location": "Andheri", "time_minutes": 30, "budget_inr": 1000, "interests": ["shopping", "food", "art"], "preferences": ["sunset"]}
+
+### Input
+I have 4 hours in Santacruz with a budget of ₹3000. There are 1 person and we want nature that is indoor. if possible
+### Output
+{"location": "Santacruz", "time_minutes": 240, "budget_inr": 3000, "interests": ["nature"], "preferences": ["indoor"]}
+
+### Input
+Mere paas do ghante hain Kala Ghoda mein, budget ₹2000, hum family ke saath ko adventure, history, wellness chahiye jo quick ho.
+### Output
+{"location": "Kala Ghoda", "time_minutes": 120, "budget_inr": 2000, "interests": ["adventure", "history", "wellness"], "preferences": ["quick"]}
+
+### Input
+I have 2 hours in Oshiwara with a budget of as cheap as possible. There are a family of 4 and we want culture, local life that is popular, late-night. you know
+### Output
+{"location": "Oshiwara", "time_minutes": 120, "budget_inr": 0, "interests": ["culture", "local life"], "preferences": ["popular", "late-night"]}
+
+### Input
+Mere paas char ghante hain Goregaon mein, budget ₹800, hum dost ko history, nightlife chahiye jo quiet, accessible ho. matlab
+### Output
+{"location": "Goregaon", "time_minutes": 240, "budget_inr": 800, "interests": ["history", "nightlife"], "preferences": ["quiet", "accessible"]}
+
+### Input
+Mere paas teen ghante hain Santacruz mein, budget ₹5000, hum dost ko history, food chahiye jo sunset, budget ho. koi acha sa
+### Output
+{"location": "Santacruz", "time_minutes": 180, "budget_inr": 5000, "interests": ["history", "food"], "preferences": ["sunset", "budget"]}
+
+### Input
+Mere paas ek ghanta hain Goregaon mein, budget ₹800, main akela ko art chahiye jo outdoor, popular ho. koi acha sa
+### Output
+{"location": "Goregaon", "time_minutes": 60, "budget_inr": 800, "interests": ["art"], "preferences": ["outdoor", "popular"]}
+
+### Input
+Mere paas dhai ghante hain Bandra mein, budget ₹5000, hum dono ko nature chahiye jo waterfront ho. matlab
+### Output
+{"location": "Bandra", "time_minutes": 150, "budget_inr": 5000, "interests": ["nature"], "preferences": ["waterfront"]}
+
+### Input
+Mere paas char ghante hain Colaba mein, budget ₹1000, hum family ke saath ko history, culture, nature chahiye jo family-friendly, vegetarian ho. matlab
+### Output
+{"location": "Colaba", "time_minutes": 240, "budget_inr": 1000, "interests": ["history", "culture", "nature"], "preferences": ["family-friendly", "vegetarian"]}
+
+### Input
+Mere paas dedh ghanta hain Parel mein, budget ₹300, hum dono ko history chahiye jo budget, morning ho. matlab
+### Output
+{"location": "Parel", "time_minutes": 90, "budget_inr": 300, "interests": ["history"], "preferences": ["budget", "morning"]}
+
+### Input
+Mere paas 360 minute hain Girgaon mein, budget ₹500, hum dost ko shopping, local life chahiye jo quick, local ho. koi acha sa
+### Output
+{"location": "Girgaon", "time_minutes": 360, "budget_inr": 500, "interests": ["shopping", "local life"], "preferences": ["quick", "local"]}
+
+### Input
+240 minutes in Byculla, budget ₹2000, family ke saath — nature, nightlife, history chahiye, morning, quick.
+### Output
+{"location": "Byculla", "time_minutes": 240, "budget_inr": 2000, "interests": ["nature", "nightlife", "history"], "preferences": ["morning", "quick"]}
+
+### Input
+Mere paas do ghante hain Goregaon mein, budget ₹300, hum dost ko adventure, history, art chahiye jo rooftop ho. please
+### Output
+{"location": "Goregaon", "time_minutes": 120, "budget_inr": 300, "interests": ["adventure", "history", "art"], "preferences": ["rooftop"]}
+
+### Input
+Mere paas dedh ghanta hain Khar mein, budget kam hai, hum family ke saath ko nature, culture, heritage chahiye jo quick, local ho. matlab
+### Output
+{"location": "Khar", "time_minutes": 90, "budget_inr": 0, "interests": ["nature", "culture", "heritage"], "preferences": ["quick", "local"]}
+
+### Input
+I have 1 hours in Sion with a budget of ₹5000. There are 2 of us and we want nature, adventure that is late-night. something like
+### Output
+{"location": "Sion", "time_minutes": 60, "budget_inr": 5000, "interests": ["nature", "adventure"], "preferences": ["late-night"]}
+
+### Input
+I have 0 hours in Fort with a budget of ₹2000. There are 1 person and we want history, culture that is sunset, quick.
+### Output
+{"location": "Fort", "time_minutes": 45, "budget_inr": 2000, "interests": ["history", "culture"], "preferences": ["sunset", "quick"]}
+
+### Input
+I have 1 hours in Churchgate with a budget of ₹3000. There are a group of 4 and we want adventure, heritage that is outdoor, quick.
+### Output
+{"location": "Churchgate", "time_minutes": 90, "budget_inr": 3000, "interests": ["adventure", "heritage"], "preferences": ["outdoor", "quick"]}
+
+### Input
+60 minutes in Goregaon, budget ₹5000, family ke saath — nightlife, shopping chahiye, rooftop.
+### Output
+{"location": "Goregaon", "time_minutes": 60, "budget_inr": 5000, "interests": ["nightlife", "shopping"], "preferences": ["rooftop"]}
+
+### Input
+240 minutes in Wadala, budget ₹200, we two — wellness chahiye, accessible.
+### Output
+{"location": "Wadala", "time_minutes": 240, "budget_inr": 200, "interests": ["wellness"], "preferences": ["accessible"]}
+
+### Input
+I have 1 hours in Dadar with a budget of ₹3000. There are 1 person and we want food that is hidden. something like
+### Output
+{"location": "Dadar", "time_minutes": 60, "budget_inr": 3000, "interests": ["food"], "preferences": ["hidden"]}
+
+### Input
+Mere paas do ghante hain Marine Lines mein, budget ₹1500, hum dost ko heritage, nature chahiye jo quick ho.
+### Output
+{"location": "Marine Lines", "time_minutes": 120, "budget_inr": 1500, "interests": ["heritage", "nature"], "preferences": ["quick"]}
+
+### Input
+30 minutes in Byculla, budget ₹5000, we two — history, nature chahiye, hidden.
+### Output
+{"location": "Byculla", "time_minutes": 30, "budget_inr": 5000, "interests": ["history", "nature"], "preferences": ["hidden"]}
+
+### Input
+I have 0 hours in Oshiwara with a budget of ₹1000. There are 2 of us and we want shopping that is waterfront. ideally
+### Output
+{"location": "Oshiwara", "time_minutes": 45, "budget_inr": 1000, "interests": ["shopping"], "preferences": ["waterfront"]}
+
+### Input
+Mere paas 360 minute hain Santacruz mein, budget ₹5000, hum dost ko art, local life chahiye jo sunset, rooftop ho.
+### Output
+{"location": "Santacruz", "time_minutes": 360, "budget_inr": 5000, "interests": ["art", "local life"], "preferences": ["sunset", "rooftop"]}
+
+### Input
+300 minutes in Versova, budget ₹800, family ke saath — wellness, culture chahiye, indoor.
+### Output
+{"location": "Versova", "time_minutes": 300, "budget_inr": 800, "interests": ["wellness", "culture"], "preferences": ["indoor"]}
+
+### Input
+Mere paas 360 minute hain Matunga mein, budget ₹2000, hum dost ko shopping, adventure, nature chahiye jo waterfront ho. koi acha sa
+### Output
+{"location": "Matunga", "time_minutes": 360, "budget_inr": 2000, "interests": ["shopping", "adventure", "nature"], "preferences": ["waterfront"]}
+
+### Input
+Mere paas ek ghanta hain Kurla mein, budget ₹300, hum dono ko local life chahiye jo quick ho. please
+### Output
+{"location": "Kurla", "time_minutes": 60, "budget_inr": 300, "interests": ["local life"], "preferences": ["quick"]}
+
+### Input
+I have 0 hours in Oshiwara with a budget of ₹2000. There are a group of 4 and we want nature that is local. ideally
+### Output
+{"location": "Oshiwara", "time_minutes": 30, "budget_inr": 2000, "interests": ["nature"], "preferences": ["local"]}
+
+### Input
+Mere paas paanch ghante hain Worli mein, budget ₹800, hum dost ko nightlife, history, food chahiye jo hidden, morning ho. please
+### Output
+{"location": "Worli", "time_minutes": 300, "budget_inr": 800, "interests": ["nightlife", "history", "food"], "preferences": ["hidden", "morning"]}
+
+### Input
+Mere paas ek ghanta hain Kurla mein, budget ₹5000, main akela ko heritage, nightlife, shopping chahiye jo family-friendly ho. please
+### Output
+{"location": "Kurla", "time_minutes": 60, "budget_inr": 5000, "interests": ["heritage", "nightlife", "shopping"], "preferences": ["family-friendly"]}
+
+### Input
+Mere paas dedh ghanta hain Goregaon mein, budget ₹2000, hum dono ko shopping, heritage, food chahiye jo budget, waterfront ho. koi acha sa
+### Output
+{"location": "Goregaon", "time_minutes": 90, "budget_inr": 2000, "interests": ["shopping", "heritage", "food"], "preferences": ["budget", "waterfront"]}
+
+### Input
+Mere paas ek ghanta hain Juhu mein, budget ₹500, hum dost ko food, nature chahiye jo late-night, popular ho. koi acha sa
+### Output
+{"location": "Juhu", "time_minutes": 60, "budget_inr": 500, "interests": ["food", "nature"], "preferences": ["late-night", "popular"]}
+
+### Input
+I have 3 hours in Fort with a budget of ₹1000. There are 1 person and we want heritage that is quiet, budget. you know
+### Output
+{"location": "Fort", "time_minutes": 180, "budget_inr": 1000, "interests": ["heritage"], "preferences": ["quiet", "budget"]}
+
+### Input
+I have 1 hours in Fort with a budget of ₹800. There are a family of 4 and we want art, local life that is rooftop. ideally
+### Output
+{"location": "Fort", "time_minutes": 60, "budget_inr": 800, "interests": ["art", "local life"], "preferences": ["rooftop"]}
+
+### Input
+180 minutes in Kala Ghoda, budget ₹5000, we two — food chahiye, local.
+### Output
+{"location": "Kala Ghoda", "time_minutes": 180, "budget_inr": 5000, "interests": ["food"], "preferences": ["local"]}
+
+### Input
+I have 1 hours in Mahim with a budget of ₹800. There are 2 of us and we want art, adventure, history that is local, hidden. something like
+### Output
+{"location": "Mahim", "time_minutes": 60, "budget_inr": 800, "interests": ["art", "adventure", "history"], "preferences": ["local", "hidden"]}
+
+### Input
+Mere paas char ghante hain Malabar Hill mein, budget ₹300, main akela ko local life, adventure, wellness chahiye jo budget, quiet ho. agar possible ho
+### Output
+{"location": "Malabar Hill", "time_minutes": 240, "budget_inr": 300, "interests": ["local life", "adventure", "wellness"], "preferences": ["budget", "quiet"]}
+
+### Input
+300 minutes in Vile Parle, budget ₹800, family ke saath — art chahiye, indoor, vegetarian.
+### Output
+{"location": "Vile Parle", "time_minutes": 300, "budget_inr": 800, "interests": ["art"], "preferences": ["indoor", "vegetarian"]}
+
+### Input
+I have 5 hours in Andheri with a budget of ₹1500. There are a family of 4 and we want art, nature, history that is budget, local. something like
+### Output
+{"location": "Andheri", "time_minutes": 300, "budget_inr": 1500, "interests": ["art", "nature", "history"], "preferences": ["budget", "local"]}
+
+### Input
+360 minutes in Kurla, cheap only, we two — heritage, food chahiye, quick.
+### Output
+{"location": "Kurla", "time_minutes": 360, "budget_inr": 0, "interests": ["heritage", "food"], "preferences": ["quick"]}
+
+### Input
+Mere paas 45 minute hain Khar mein, budget kam hai, main akela ko heritage chahiye jo outdoor, waterfront ho. koi acha sa
+### Output
+{"location": "Khar", "time_minutes": 45, "budget_inr": 0, "interests": ["heritage"], "preferences": ["outdoor", "waterfront"]}
+
+### Input
+90 minutes in Matunga, budget ₹3000, me alone — nature, heritage, adventure chahiye, budget.
+### Output
+{"location": "Matunga", "time_minutes": 90, "budget_inr": 3000, "interests": ["nature", "heritage", "adventure"], "preferences": ["budget"]}
+
+### Input
+30 minutes in Kurla, budget ₹1500, family ke saath — wellness, nightlife, shopping chahiye, waterfront, budget.
+### Output
+{"location": "Kurla", "time_minutes": 30, "budget_inr": 1500, "interests": ["wellness", "nightlife", "shopping"], "preferences": ["waterfront", "budget"]}
+
+### Input
+I have 2 hours in Vile Parle with a budget of ₹5000. There are 2 of us and we want local life, heritage that is family-friendly. please
+### Output
+{"location": "Vile Parle", "time_minutes": 120, "budget_inr": 5000, "interests": ["local life", "heritage"], "preferences": ["family-friendly"]}
+
+### Input
+30 minutes in Fort, budget ₹1000, we two — adventure, nature chahiye, popular, quiet.
+### Output
+{"location": "Fort", "time_minutes": 30, "budget_inr": 1000, "interests": ["adventure", "nature"], "preferences": ["popular", "quiet"]}
+
+### Input
+Mere paas teen ghante hain Colaba mein, budget kam hai, hum family ke saath ko culture chahiye jo indoor, quick ho. please
+### Output
+{"location": "Colaba", "time_minutes": 180, "budget_inr": 0, "interests": ["culture"], "preferences": ["indoor", "quick"]}
+
+### Input
+240 minutes in Parel, budget ₹3000, 4 log — nightlife, food, shopping chahiye, budget, popular.
+### Output
+{"location": "Parel", "time_minutes": 240, "budget_inr": 3000, "interests": ["nightlife", "food", "shopping"], "preferences": ["budget", "popular"]}
+
+### Input
+Mere paas 360 minute hain Churchgate mein, budget ₹1000, hum dost ko wellness, art, nightlife chahiye jo quiet, family-friendly ho. agar possible ho
+### Output
+{"location": "Churchgate", "time_minutes": 360, "budget_inr": 1000, "interests": ["wellness", "art", "nightlife"], "preferences": ["quiet", "family-friendly"]}
+
+### Input
+I have 0 hours in Kala Ghoda with a budget of ₹1500. There are 2 of us and we want adventure, history, art that is vegetarian. please
+### Output
+{"location": "Kala Ghoda", "time_minutes": 30, "budget_inr": 1500, "interests": ["adventure", "history", "art"], "preferences": ["vegetarian"]}
+
+### Input
+Mere paas aadha ghanta hain Churchgate mein, budget kam hai, hum dost ko art, local life chahiye jo hidden ho. matlab
+### Output
+{"location": "Churchgate", "time_minutes": 30, "budget_inr": 0, "interests": ["art", "local life"], "preferences": ["hidden"]}
+
+### Input
+Mere paas ek ghanta hain Matunga mein, budget ₹200, hum dono ko nature chahiye jo hidden, waterfront ho. matlab
+### Output
+{"location": "Matunga", "time_minutes": 60, "budget_inr": 200, "interests": ["nature"], "preferences": ["hidden", "waterfront"]}
+
+### Input
+90 minutes in Wadala, budget ₹2000, family ke saath — heritage, culture chahiye, quick.
+### Output
+{"location": "Wadala", "time_minutes": 90, "budget_inr": 2000, "interests": ["heritage", "culture"], "preferences": ["quick"]}
+
+### Input
+240 minutes in Dadar, budget ₹2000, family ke saath — nature, wellness chahiye, sunset.
+### Output
+{"location": "Dadar", "time_minutes": 240, "budget_inr": 2000, "interests": ["nature", "wellness"], "preferences": ["sunset"]}
+
+### Input
+I have 1 hours in Oshiwara with a budget of ₹1000. There are a family of 4 and we want heritage, adventure that is sunset. please
+### Output
+{"location": "Oshiwara", "time_minutes": 60, "budget_inr": 1000, "interests": ["heritage", "adventure"], "preferences": ["sunset"]}
+
+### Input
+Family ke saath 3 ghante, indoor chahiye
+### Output
+{"time_minutes": 180, "preferences": ["indoor", "family-friendly"]}
+
+### Input
+Mere paas char ghante hain Kala Ghoda mein, budget ₹800, hum family ke saath ko history, heritage, nature chahiye jo rooftop ho. matlab
+### Output
+{"location": "Kala Ghoda", "time_minutes": 240, "budget_inr": 800, "interests": ["history", "heritage", "nature"], "preferences": ["rooftop"]}
+
+### Input
+I have 4 hours in Colaba with a budget of ₹1000. There are a family of 4 and we want history, adventure that is family-friendly, sunset. you know
+### Output
+{"location": "Colaba", "time_minutes": 240, "budget_inr": 1000, "interests": ["history", "adventure"], "preferences": ["family-friendly", "sunset"]}
+
+### Input
+Mere paas aadha ghanta hain Kala Ghoda mein, budget ₹500, hum dost ko local life, history, heritage chahiye jo quick ho. matlab
+### Output
+{"location": "Kala Ghoda", "time_minutes": 30, "budget_inr": 500, "interests": ["local life", "history", "heritage"], "preferences": ["quick"]}
+
+### Input
+I have 1 hours in Byculla with a budget of ₹1000. There are 1 person and we want wellness, culture that is local. ideally
+### Output
+{"location": "Byculla", "time_minutes": 90, "budget_inr": 1000, "interests": ["wellness", "culture"], "preferences": ["local"]}
+
+### Input
+150 minutes in Fort, budget ₹3000, family ke saath — culture, adventure, food chahiye, indoor.
+### Output
+{"location": "Fort", "time_minutes": 150, "budget_inr": 3000, "interests": ["culture", "adventure", "food"], "preferences": ["indoor"]}
+
+### Input
+Mere paas teen ghante hain Juhu mein, budget ₹1000, main akela ko culture, food chahiye jo sunset ho. agar possible ho
+### Output
+{"location": "Juhu", "time_minutes": 180, "budget_inr": 1000, "interests": ["culture", "food"], "preferences": ["sunset"]}
+
+### Input
+Mere paas dedh ghanta hain Byculla mein, budget ₹200, hum family ke saath ko art, adventure, wellness chahiye jo waterfront ho. please
+### Output
+{"location": "Byculla", "time_minutes": 90, "budget_inr": 200, "interests": ["art", "adventure", "wellness"], "preferences": ["waterfront"]}
+
+### Input
+Mere paas aadha ghanta hain Oshiwara mein, budget ₹200, hum dost ko history, nightlife chahiye jo rooftop ho. matlab
+### Output
+{"location": "Oshiwara", "time_minutes": 30, "budget_inr": 200, "interests": ["history", "nightlife"], "preferences": ["rooftop"]}
+
+### Input
+I have 4 hours in Crawford Market with a budget of ₹3000. There are 1 person and we want local life, heritage that is indoor. you know
+### Output
+{"location": "Crawford Market", "time_minutes": 240, "budget_inr": 3000, "interests": ["local life", "heritage"], "preferences": ["indoor"]}
+
+### Input
+I have 2 hours in Parel with a budget of ₹1500. There are a family of 4 and we want food, nightlife that is quick, popular. you know
+### Output
+{"location": "Parel", "time_minutes": 150, "budget_inr": 1500, "interests": ["food", "nightlife"], "preferences": ["quick", "popular"]}
+
+### Input
+300 minutes in Goregaon, budget ₹300, 4 log — wellness chahiye, sunset, accessible.
+### Output
+{"location": "Goregaon", "time_minutes": 300, "budget_inr": 300, "interests": ["wellness"], "preferences": ["sunset", "accessible"]}
+
+### Input
+I have 3 hours in Dadar with a budget of ₹500. There are 1 person and we want history, shopping that is popular, morning. ideally
+### Output
+{"location": "Dadar", "time_minutes": 180, "budget_inr": 500, "interests": ["history", "shopping"], "preferences": ["popular", "morning"]}
+
+### Input
+I have 1 hours in Dadar with a budget of ₹1000. There are 1 person and we want local life, adventure, art that is budget. if possible
+### Output
+{"location": "Dadar", "time_minutes": 60, "budget_inr": 1000, "interests": ["local life", "adventure", "art"], "preferences": ["budget"]}
+
+### Input
+Mere paas aadha ghanta hain Oshiwara mein, budget ₹200, hum dost ko nightlife chahiye jo rooftop ho. agar possible ho
+### Output
+{"location": "Oshiwara", "time_minutes": 30, "budget_inr": 200, "interests": ["nightlife"], "preferences": ["rooftop"]}
+
+### Input
+90 minutes in Wadala, budget ₹1500, we two — history chahiye, quick.
+### Output
+{"location": "Wadala", "time_minutes": 90, "budget_inr": 1500, "interests": ["history"], "preferences": ["quick"]}
+
+### Input
+I have 1 hours in Sion with a budget of ₹200. There are 1 person and we want history, adventure, heritage that is local, budget. something like
+### Output
+{"location": "Sion", "time_minutes": 90, "budget_inr": 200, "interests": ["history", "adventure", "heritage"], "preferences": ["local", "budget"]}
+
+### Input
+Mere paas char ghante hain Goregaon mein, budget ₹800, hum dost ko culture, adventure, nature chahiye jo vegetarian ho.
+### Output
+{"location": "Goregaon", "time_minutes": 240, "budget_inr": 800, "interests": ["culture", "adventure", "nature"], "preferences": ["vegetarian"]}
+
+### Input
+I have 4 hours in Santacruz with a budget of ₹800. There are a group of 4 and we want art, food, culture that is accessible. you know
+### Output
+{"location": "Santacruz", "time_minutes": 240, "budget_inr": 800, "interests": ["art", "food", "culture"], "preferences": ["accessible"]}
+
+### Input
+Mere paas 360 minute hain Worli mein, budget ₹300, hum family ke saath ko art chahiye jo hidden ho. agar possible ho
+### Output
+{"location": "Worli", "time_minutes": 360, "budget_inr": 300, "interests": ["art"], "preferences": ["hidden"]}
+
+### Input
+I have 0 hours in Andheri with a budget of ₹500. There are a family of 4 and we want nightlife, nature, local life that is hidden. something like
+### Output
+{"location": "Andheri", "time_minutes": 30, "budget_inr": 500, "interests": ["nightlife", "nature", "local life"], "preferences": ["hidden"]}
+
+### Input
+I have 3 hours in Colaba with a budget of as cheap as possible. There are a group of 4 and we want art that is local, late-night. something like
+### Output
+{"location": "Colaba", "time_minutes": 180, "budget_inr": 0, "interests": ["art"], "preferences": ["local", "late-night"]}
+
+### Input
+I have 3 hours in CSMT with a budget of ₹3000. There are a family of 4 and we want nature, food, nightlife that is outdoor. please
+### Output
+{"location": "CSMT", "time_minutes": 180, "budget_inr": 3000, "interests": ["nature", "food", "nightlife"], "preferences": ["outdoor"]}
+
+### Input
+Mere paas do ghante hain Mahim mein, budget ₹3000, main akela ko nightlife, wellness chahiye jo late-night, popular ho. agar possible ho
+### Output
+{"location": "Mahim", "time_minutes": 120, "budget_inr": 3000, "interests": ["nightlife", "wellness"], "preferences": ["late-night", "popular"]}
+
+### Input
+I have 2 hours in Byculla with a budget of ₹300. There are a group of 4 and we want food, history, nightlife that is popular.
+### Output
+{"location": "Byculla", "time_minutes": 120, "budget_inr": 300, "interests": ["food", "history", "nightlife"], "preferences": ["popular"]}
+
+### Input
+I have 0 hours in Vile Parle with a budget of ₹1500. There are 2 of us and we want adventure, nightlife that is local, sunset.
+### Output
+{"location": "Vile Parle", "time_minutes": 45, "budget_inr": 1500, "interests": ["adventure", "nightlife"], "preferences": ["local", "sunset"]}
+
+### Input
+I have 1 hours in Sion with a budget of ₹300. There are a family of 4 and we want food, adventure, wellness that is rooftop, outdoor. you know
+### Output
+{"location": "Sion", "time_minutes": 60, "budget_inr": 300, "interests": ["food", "adventure", "wellness"], "preferences": ["rooftop", "outdoor"]}
+
+### Input
+Budget ₹500, vegetarian only
+### Output
+{"budget_inr": 500, "preferences": ["vegetarian", "budget"]}
+
+### Input
+I have 1 hours in Mahim with a budget of as cheap as possible. There are a family of 4 and we want culture, history, wellness that is sunset, local. please
+### Output
+{"location": "Mahim", "time_minutes": 90, "budget_inr": 0, "interests": ["culture", "history", "wellness"], "preferences": ["sunset", "local"]}
+
+### Input
+I have 4 hours in Lower Parel with a budget of ₹3000. There are 2 of us and we want adventure, history, wellness that is sunset. please
+### Output
+{"location": "Lower Parel", "time_minutes": 240, "budget_inr": 3000, "interests": ["adventure", "history", "wellness"], "preferences": ["sunset"]}
+
+### Input
+Mere paas dhai ghante hain CSMT mein, budget ₹1500, hum dost ko culture, nightlife, nature chahiye jo popular, outdoor ho. agar possible ho
+### Output
+{"location": "CSMT", "time_minutes": 150, "budget_inr": 1500, "interests": ["culture", "nightlife", "nature"], "preferences": ["popular", "outdoor"]}
+
+### Input
+90 minutes in Parel, budget ₹1500, 4 log — nightlife, history chahiye, rooftop, popular.
+### Output
+{"location": "Parel", "time_minutes": 90, "budget_inr": 1500, "interests": ["nightlife", "history"], "preferences": ["rooftop", "popular"]}
+
+### Input
+Mere paas paanch ghante hain Chembur mein, budget ₹1000, hum dono ko nightlife, heritage chahiye jo rooftop ho.
+### Output
+{"location": "Chembur", "time_minutes": 300, "budget_inr": 1000, "interests": ["nightlife", "heritage"], "preferences": ["rooftop"]}
+
+### Input
+Mere paas paanch ghante hain Malabar Hill mein, budget ₹200, hum dono ko nightlife, adventure chahiye jo popular, morning ho. agar possible ho
+### Output
+{"location": "Malabar Hill", "time_minutes": 300, "budget_inr": 200, "interests": ["nightlife", "adventure"], "preferences": ["popular", "morning"]}
+
+### Input
+240 minutes in Juhu, budget ₹800, family ke saath — nature, heritage chahiye, popular, late-night.
+### Output
+{"location": "Juhu", "time_minutes": 240, "budget_inr": 800, "interests": ["nature", "heritage"], "preferences": ["popular", "late-night"]}
+
+### Input
+I have 4 hours in Powai with a budget of ₹200. There are a family of 4 and we want local life, art, adventure that is family-friendly, waterfront. you know
+### Output
+{"location": "Powai", "time_minutes": 240, "budget_inr": 200, "interests": ["local life", "art", "adventure"], "preferences": ["family-friendly", "waterfront"]}
+
+### Input
+Mere paas dedh ghanta hain Bandra mein, budget ₹3000, hum dono ko history, shopping, art chahiye jo family-friendly, morning ho. agar possible ho
+### Output
+{"location": "Bandra", "time_minutes": 90, "budget_inr": 3000, "interests": ["history", "shopping", "art"], "preferences": ["family-friendly", "morning"]}
+
+### Input
+I have 3 hours in Fort with a budget of as cheap as possible. There are 1 person and we want adventure, local life that is sunset.
+### Output
+{"location": "Fort", "time_minutes": 180, "budget_inr": 0, "interests": ["adventure", "local life"], "preferences": ["sunset"]}
+
+### Input
+Mere paas teen ghante hain Byculla mein, budget ₹500, main akela ko wellness, local life chahiye jo accessible ho.
+### Output
+{"location": "Byculla", "time_minutes": 180, "budget_inr": 500, "interests": ["wellness", "local life"], "preferences": ["accessible"]}
+
+### Input
+Mere paas ek ghanta hain Powai mein, budget ₹500, hum family ke saath ko local life chahiye jo sunset ho. matlab
+### Output
+{"location": "Powai", "time_minutes": 60, "budget_inr": 500, "interests": ["local life"], "preferences": ["sunset"]}
+
+### Input
+I have 1 hours in Vile Parle with a budget of ₹3000. There are a family of 4 and we want history, adventure, nature that is morning, outdoor. if possible
+### Output
+{"location": "Vile Parle", "time_minutes": 60, "budget_inr": 3000, "interests": ["history", "adventure", "nature"], "preferences": ["morning", "outdoor"]}
+
+### Input
+Mere paas char ghante hain Goregaon mein, budget ₹200, main akela ko history, adventure chahiye jo quick, budget ho. please
+### Output
+{"location": "Goregaon", "time_minutes": 240, "budget_inr": 200, "interests": ["history", "adventure"], "preferences": ["quick", "budget"]}
+
+### Input
+Mere paas 360 minute hain Mahim mein, budget ₹500, main akela ko history chahiye jo quiet ho. koi acha sa
+### Output
+{"location": "Mahim", "time_minutes": 360, "budget_inr": 500, "interests": ["history"], "preferences": ["quiet"]}
+
+### Input
+Mere paas do ghante hain Andheri mein, budget ₹800, hum dono ko adventure chahiye jo hidden ho. matlab
+### Output
+{"location": "Andheri", "time_minutes": 120, "budget_inr": 800, "interests": ["adventure"], "preferences": ["hidden"]}
+
+### Input
+60 minutes in Bandra, budget ₹200, 4 log — shopping, wellness, heritage chahiye, sunset, indoor.
+### Output
+{"location": "Bandra", "time_minutes": 60, "budget_inr": 200, "interests": ["shopping", "wellness", "heritage"], "preferences": ["sunset", "indoor"]}
+
+### Input
+Mere paas aadha ghanta hain Chembur mein, budget ₹1000, hum family ke saath ko shopping, wellness chahiye jo quiet ho. koi acha sa
+### Output
+{"location": "Chembur", "time_minutes": 30, "budget_inr": 1000, "interests": ["shopping", "wellness"], "preferences": ["quiet"]}
+
+### Input
+30 minutes in Crawford Market, budget ₹800, we two — art, nature, wellness chahiye, morning.
+### Output
+{"location": "Crawford Market", "time_minutes": 30, "budget_inr": 800, "interests": ["art", "nature", "wellness"], "preferences": ["morning"]}
+
+### Input
+Mere paas teen ghante hain Parel mein, budget ₹3000, hum family ke saath ko wellness, heritage, nature chahiye jo sunset, family-friendly ho. koi acha sa
+### Output
+{"location": "Parel", "time_minutes": 180, "budget_inr": 3000, "interests": ["wellness", "heritage", "nature"], "preferences": ["sunset", "family-friendly"]}
+
+### Input
+I have 3 hours in Khar with a budget of ₹1500. There are a family of 4 and we want adventure, wellness that is waterfront, accessible. ideally
+### Output
+{"location": "Khar", "time_minutes": 180, "budget_inr": 1500, "interests": ["adventure", "wellness"], "preferences": ["waterfront", "accessible"]}
+
+### Input
+Mere paas dhai ghante hain Girgaon mein, budget ₹500, hum dost ko art, history, shopping chahiye jo waterfront ho. matlab
+### Output
+{"location": "Girgaon", "time_minutes": 150, "budget_inr": 500, "interests": ["art", "history", "shopping"], "preferences": ["waterfront"]}
+
+### Input
+I have 2 hours in Girgaon with a budget of as cheap as possible. There are 1 person and we want local life, adventure, history that is indoor. ideally
+### Output
+{"location": "Girgaon", "time_minutes": 150, "budget_inr": 0, "interests": ["local life", "adventure", "history"], "preferences": ["indoor"]}
+
+### Input
+Mere paas dedh ghanta hain Lower Parel mein, budget ₹1000, main akela ko heritage, nature chahiye jo local ho.
+### Output
+{"location": "Lower Parel", "time_minutes": 90, "budget_inr": 1000, "interests": ["heritage", "nature"], "preferences": ["local"]}
+
+### Input
+I have 5 hours in Girgaon with a budget of ₹1000. There are a family of 4 and we want art, local life that is rooftop. if possible
+### Output
+{"location": "Girgaon", "time_minutes": 300, "budget_inr": 1000, "interests": ["art", "local life"], "preferences": ["rooftop"]}
+
+### Input
+I have 6 hours in Malabar Hill with a budget of ₹500. There are a family of 4 and we want culture that is budget, quiet. you know
+### Output
+{"location": "Malabar Hill", "time_minutes": 360, "budget_inr": 500, "interests": ["culture"], "preferences": ["budget", "quiet"]}
+
+### Input
+300 minutes in Girgaon, budget ₹5000, 4 log — nightlife chahiye, morning, outdoor.
+### Output
+{"location": "Girgaon", "time_minutes": 300, "budget_inr": 5000, "interests": ["nightlife"], "preferences": ["morning", "outdoor"]}
+
+### Input
+Mere paas paanch ghante hain Santacruz mein, budget ₹5000, main akela ko art, shopping chahiye jo budget, accessible ho.
+### Output
+{"location": "Santacruz", "time_minutes": 300, "budget_inr": 5000, "interests": ["art", "shopping"], "preferences": ["budget", "accessible"]}
+
+### Input
+I have 3 hours in Churchgate with a budget of as cheap as possible. There are 2 of us and we want heritage, wellness that is quiet.
+### Output
+{"location": "Churchgate", "time_minutes": 180, "budget_inr": 0, "interests": ["heritage", "wellness"], "preferences": ["quiet"]}
+
+### Input
+I have 2 hours in Khar with a budget of as cheap as possible. There are 1 person and we want shopping that is family-friendly. ideally
+### Output
+{"location": "Khar", "time_minutes": 150, "budget_inr": 0, "interests": ["shopping"], "preferences": ["family-friendly"]}
+
+### Input
+I have 5 hours in Wadala with a budget of ₹5000. There are a family of 4 and we want nightlife that is quiet. please
+### Output
+{"location": "Wadala", "time_minutes": 300, "budget_inr": 5000, "interests": ["nightlife"], "preferences": ["quiet"]}
+
+### Input
+300 minutes in CSMT, budget ₹500, we two — shopping, nightlife, history chahiye, vegetarian, sunset.
+### Output
+{"location": "CSMT", "time_minutes": 300, "budget_inr": 500, "interests": ["shopping", "nightlife", "history"], "preferences": ["vegetarian", "sunset"]}
+
+### Input
+120 minutes in Powai, budget ₹2000, we two — culture, nature, adventure chahiye, hidden.
+### Output
+{"location": "Powai", "time_minutes": 120, "budget_inr": 2000, "interests": ["culture", "nature", "adventure"], "preferences": ["hidden"]}
+
+### Input
+I have 1 hours in Churchgate with a budget of ₹5000. There are 2 of us and we want nature, local life, culture that is family-friendly.
+### Output
+{"location": "Churchgate", "time_minutes": 90, "budget_inr": 5000, "interests": ["nature", "local life", "culture"], "preferences": ["family-friendly"]}
+
+### Input
+240 minutes in Wadala, budget ₹500, 4 log — shopping, nature, art chahiye, late-night.
+### Output
+{"location": "Wadala", "time_minutes": 240, "budget_inr": 500, "interests": ["shopping", "nature", "art"], "preferences": ["late-night"]}
+
+### Input
+Mere paas dhai ghante hain Khar mein, budget ₹5000, hum family ke saath ko nature, history chahiye jo morning ho. koi acha sa
+### Output
+{"location": "Khar", "time_minutes": 150, "budget_inr": 5000, "interests": ["nature", "history"], "preferences": ["morning"]}
+
+### Input
+I have 2 hours in Girgaon with a budget of ₹800. There are 1 person and we want wellness that is hidden, morning. ideally
+### Output
+{"location": "Girgaon", "time_minutes": 150, "budget_inr": 800, "interests": ["wellness"], "preferences": ["hidden", "morning"]}
+
+### Input
+300 minutes in Marine Lines, budget ₹500, me alone — adventure chahiye, waterfront, budget.
+### Output
+{"location": "Marine Lines", "time_minutes": 300, "budget_inr": 500, "interests": ["adventure"], "preferences": ["waterfront", "budget"]}
+
+### Input
+Mere paas aadha ghanta hain Powai mein, budget ₹200, hum dono ko art, nightlife chahiye jo popular, rooftop ho. please
+### Output
+{"location": "Powai", "time_minutes": 30, "budget_inr": 200, "interests": ["art", "nightlife"], "preferences": ["popular", "rooftop"]}
+
+### Input
+I have 4 hours in Parel with a budget of as cheap as possible. There are a group of 4 and we want shopping, art that is accessible. please
+### Output
+{"location": "Parel", "time_minutes": 240, "budget_inr": 0, "interests": ["shopping", "art"], "preferences": ["accessible"]}
+
+### Input
+45 minutes in Marine Lines, budget ₹300, 4 log — history, culture chahiye, morning.
+### Output
+{"location": "Marine Lines", "time_minutes": 45, "budget_inr": 300, "interests": ["history", "culture"], "preferences": ["morning"]}
+
+### Input
+I have 0 hours in Fort with a budget of ₹1000. There are a family of 4 and we want shopping that is family-friendly, local. please
+### Output
+{"location": "Fort", "time_minutes": 45, "budget_inr": 1000, "interests": ["shopping"], "preferences": ["family-friendly", "local"]}
+
+### Input
+Mere paas aadha ghanta hain Girgaon mein, budget ₹200, main akela ko wellness, heritage chahiye jo waterfront, vegetarian ho. matlab
+### Output
+{"location": "Girgaon", "time_minutes": 30, "budget_inr": 200, "interests": ["wellness", "heritage"], "preferences": ["waterfront", "vegetarian"]}
+
+### Input
+120 minutes in Fort, budget ₹800, family ke saath — local life, shopping chahiye, vegetarian, local.
+### Output
+{"location": "Fort", "time_minutes": 120, "budget_inr": 800, "interests": ["local life", "shopping"], "preferences": ["vegetarian", "local"]}
+
+### Input
+60 minutes in Crawford Market, budget ₹500, me alone — heritage, wellness, nightlife chahiye, family-friendly, hidden.
+### Output
+{"location": "Crawford Market", "time_minutes": 60, "budget_inr": 500, "interests": ["heritage", "wellness", "nightlife"], "preferences": ["family-friendly", "hidden"]}
+
+### Input
+Mere paas teen ghante hain Wadala mein, budget ₹1500, main akela ko culture chahiye jo local ho.
+### Output
+{"location": "Wadala", "time_minutes": 180, "budget_inr": 1500, "interests": ["culture"], "preferences": ["local"]}
+
+### Input
+I have 2 hours in Girgaon with a budget of ₹5000. There are a group of 4 and we want wellness, shopping, history that is morning, quiet.
+### Output
+{"location": "Girgaon", "time_minutes": 150, "budget_inr": 5000, "interests": ["wellness", "shopping", "history"], "preferences": ["morning", "quiet"]}
+
+### Input
+180 minutes in Khar, budget ₹3000, 4 log — art chahiye, indoor.
+### Output
+{"location": "Khar", "time_minutes": 180, "budget_inr": 3000, "interests": ["art"], "preferences": ["indoor"]}
+
+### Input
+I have 0 hours in Matunga with a budget of ₹300. There are 1 person and we want wellness, local life, art that is quick. if possible
+### Output
+{"location": "Matunga", "time_minutes": 45, "budget_inr": 300, "interests": ["wellness", "local life", "art"], "preferences": ["quick"]}
+
+### Input
+Mere paas char ghante hain Worli mein, budget ₹1000, hum family ke saath ko shopping, food chahiye jo rooftop, late-night ho.
+### Output
+{"location": "Worli", "time_minutes": 240, "budget_inr": 1000, "interests": ["shopping", "food"], "preferences": ["rooftop", "late-night"]}
+
+### Input
+180 minutes in Fort, budget ₹500, family ke saath — history, shopping, culture chahiye, morning.
+### Output
+{"location": "Fort", "time_minutes": 180, "budget_inr": 500, "interests": ["history", "shopping", "culture"], "preferences": ["morning"]}
+
+### Input
+I have 4 hours in Vile Parle with a budget of ₹200. There are 1 person and we want wellness that is local.
+### Output
+{"location": "Vile Parle", "time_minutes": 240, "budget_inr": 200, "interests": ["wellness"], "preferences": ["local"]}
+
+### Input
+Mere paas teen ghante hain Bandra mein, budget ₹3000, hum dono ko local life, food, heritage chahiye jo quiet, budget ho. matlab
+### Output
+{"location": "Bandra", "time_minutes": 180, "budget_inr": 3000, "interests": ["local life", "food", "heritage"], "preferences": ["quiet", "budget"]}
+
+### Input
+Mere paas dhai ghante hain Marine Lines mein, budget ₹5000, hum dost ko shopping, history, local life chahiye jo quiet, popular ho. koi acha sa
+### Output
+{"location": "Marine Lines", "time_minutes": 150, "budget_inr": 5000, "interests": ["shopping", "history", "local life"], "preferences": ["quiet", "popular"]}
+
+### Input
+Mere paas paanch ghante hain Fort mein, budget ₹1000, hum family ke saath ko heritage, culture, food chahiye jo rooftop ho. agar possible ho
+### Output
+{"location": "Fort", "time_minutes": 300, "budget_inr": 1000, "interests": ["heritage", "culture", "food"], "preferences": ["rooftop"]}
+
+### Input
+Mere paas ek ghanta hain Wadala mein, budget ₹1500, hum dono ko adventure, culture, nature chahiye jo quick, popular ho. agar possible ho
+### Output
+{"location": "Wadala", "time_minutes": 60, "budget_inr": 1500, "interests": ["adventure", "culture", "nature"], "preferences": ["quick", "popular"]}
+
+### Input
+Kuch hidden gems batao
+### Output
+{"preferences": ["hidden"]}
+
+### Input
+I have 5 hours in Juhu with a budget of ₹1000. There are 2 of us and we want nature, local life, history that is morning. you know
+### Output
+{"location": "Juhu", "time_minutes": 300, "budget_inr": 1000, "interests": ["nature", "local life", "history"], "preferences": ["morning"]}
+
+### Input
+I have 1 hours in Mahim with a budget of ₹1000. There are 1 person and we want adventure, wellness, culture that is hidden, family-friendly. ideally
+### Output
+{"location": "Mahim", "time_minutes": 60, "budget_inr": 1000, "interests": ["adventure", "wellness", "culture"], "preferences": ["hidden", "family-friendly"]}
+
+### Input
+120 minutes in Girgaon, budget ₹1500, family ke saath — nightlife chahiye, vegetarian.
+### Output
+{"location": "Girgaon", "time_minutes": 120, "budget_inr": 1500, "interests": ["nightlife"], "preferences": ["vegetarian"]}
+
+### Input
+Mere paas aadha ghanta hain Juhu mein, budget kam hai, hum dono ko history, nightlife chahiye jo local ho. koi acha sa
+### Output
+{"location": "Juhu", "time_minutes": 30, "budget_inr": 0, "interests": ["history", "nightlife"], "preferences": ["local"]}
+
+### Input
+120 minutes in Fort, budget ₹200, we two — local life chahiye, local.
+### Output
+{"location": "Fort", "time_minutes": 120, "budget_inr": 200, "interests": ["local life"], "preferences": ["local"]}
+
+### Input
+I have 5 hours in Parel with a budget of ₹300. There are a group of 4 and we want art that is family-friendly, quiet. you know
+### Output
+{"location": "Parel", "time_minutes": 300, "budget_inr": 300, "interests": ["art"], "preferences": ["family-friendly", "quiet"]}
+
+### Input
+I have 0 hours in Parel with a budget of ₹500. There are 2 of us and we want adventure, local life, heritage that is sunset, hidden. if possible
+### Output
+{"location": "Parel", "time_minutes": 45, "budget_inr": 500, "interests": ["adventure", "local life", "heritage"], "preferences": ["sunset", "hidden"]}
+
+### Input
+I have 6 hours in Versova with a budget of ₹5000. There are a group of 4 and we want adventure that is outdoor.
+### Output
+{"location": "Versova", "time_minutes": 360, "budget_inr": 5000, "interests": ["adventure"], "preferences": ["outdoor"]}
+
+### Input
+Mere paas do ghante hain CSMT mein, budget ₹5000, hum dost ko history chahiye jo quiet, late-night ho. matlab
+### Output
+{"location": "CSMT", "time_minutes": 120, "budget_inr": 5000, "interests": ["history"], "preferences": ["quiet", "late-night"]}
+
+### Input
+I have 6 hours in Andheri with a budget of ₹500. There are a family of 4 and we want shopping that is popular. ideally
+### Output
+{"location": "Andheri", "time_minutes": 360, "budget_inr": 500, "interests": ["shopping"], "preferences": ["popular"]}
+
+### Input
+I have 6 hours in Worli with a budget of ₹1000. There are a family of 4 and we want nightlife, art that is waterfront, morning. please
+### Output
+{"location": "Worli", "time_minutes": 360, "budget_inr": 1000, "interests": ["nightlife", "art"], "preferences": ["waterfront", "morning"]}
+
+### Input
+I have 6 hours in Oshiwara with a budget of ₹1000. There are 2 of us and we want culture, nature, art that is waterfront, quiet. you know
+### Output
+{"location": "Oshiwara", "time_minutes": 360, "budget_inr": 1000, "interests": ["culture", "nature", "art"], "preferences": ["waterfront", "quiet"]}
+
+### Input
+Mere paas dhai ghante hain Churchgate mein, budget ₹500, hum dono ko culture, history chahiye jo morning ho. matlab
+### Output
+{"location": "Churchgate", "time_minutes": 150, "budget_inr": 500, "interests": ["culture", "history"], "preferences": ["morning"]}
+
+### Input
+I have 1 hours in Worli with a budget of ₹500. There are 2 of us and we want heritage, nightlife that is sunset, popular.
+### Output
+{"location": "Worli", "time_minutes": 60, "budget_inr": 500, "interests": ["heritage", "nightlife"], "preferences": ["sunset", "popular"]}
+
+### Input
+300 minutes in Khar, budget ₹300, we two — adventure, culture chahiye, vegetarian, late-night.
+### Output
+{"location": "Khar", "time_minutes": 300, "budget_inr": 300, "interests": ["adventure", "culture"], "preferences": ["vegetarian", "late-night"]}
+
+### Input
+I have 1 hours in CSMT with a budget of ₹3000. There are 1 person and we want culture, nightlife, nature that is indoor, outdoor. you know
+### Output
+{"location": "CSMT", "time_minutes": 60, "budget_inr": 3000, "interests": ["culture", "nightlife", "nature"], "preferences": ["indoor", "outdoor"]}
+
+### Input
+45 minutes in Oshiwara, budget ₹200, 4 log — culture chahiye, popular.
+### Output
+{"location": "Oshiwara", "time_minutes": 45, "budget_inr": 200, "interests": ["culture"], "preferences": ["popular"]}
+
+### Input
+60 minutes in Versova, budget ₹800, we two — art chahiye, sunset.
+### Output
+{"location": "Versova", "time_minutes": 60, "budget_inr": 800, "interests": ["art"], "preferences": ["sunset"]}
+
+### Input
+Mere paas dedh ghanta hain CSMT mein, budget ₹200, hum dono ko local life chahiye jo indoor ho. matlab
+### Output
+{"location": "CSMT", "time_minutes": 90, "budget_inr": 200, "interests": ["local life"], "preferences": ["indoor"]}
+
+### Input
+Mere paas 45 minute hain Oshiwara mein, budget ₹800, hum dost ko heritage, nature chahiye jo hidden ho. matlab
+### Output
+{"location": "Oshiwara", "time_minutes": 45, "budget_inr": 800, "interests": ["heritage", "nature"], "preferences": ["hidden"]}
+
+### Input
+30 minutes in Mahim, budget ₹800, family ke saath — heritage, nightlife, wellness chahiye, sunset, quick.
+### Output
+{"location": "Mahim", "time_minutes": 30, "budget_inr": 800, "interests": ["heritage", "nightlife", "wellness"], "preferences": ["sunset", "quick"]}
+
+### Input
+240 minutes in Khar, budget ₹2000, family ke saath — shopping, local life chahiye, waterfront.
+### Output
+{"location": "Khar", "time_minutes": 240, "budget_inr": 2000, "interests": ["shopping", "local life"], "preferences": ["waterfront"]}
+
+### Input
+Mere paas aadha ghanta hain Lower Parel mein, budget ₹1500, hum family ke saath ko local life, art, history chahiye jo waterfront ho.
+### Output
+{"location": "Lower Parel", "time_minutes": 30, "budget_inr": 1500, "interests": ["local life", "art", "history"], "preferences": ["waterfront"]}
+
+### Input
+I have 1 hours in Wadala with a budget of as cheap as possible. There are a family of 4 and we want wellness, history that is indoor, sunset. something like
+### Output
+{"location": "Wadala", "time_minutes": 90, "budget_inr": 0, "interests": ["wellness", "history"], "preferences": ["indoor", "sunset"]}
+
+### Input
+I have 2 hours in Worli with a budget of ₹2000. There are a family of 4 and we want nightlife that is waterfront, accessible. ideally
+### Output
+{"location": "Worli", "time_minutes": 150, "budget_inr": 2000, "interests": ["nightlife"], "preferences": ["waterfront", "accessible"]}
+
+### Input
+180 minutes in Powai, cheap only, 4 log — wellness chahiye, outdoor, morning.
+### Output
+{"location": "Powai", "time_minutes": 180, "budget_inr": 0, "interests": ["wellness"], "preferences": ["outdoor", "morning"]}
+
+### Input
+I have 0 hours in Kala Ghoda with a budget of ₹300. There are 1 person and we want culture, adventure that is late-night, family-friendly. something like
+### Output
+{"location": "Kala Ghoda", "time_minutes": 45, "budget_inr": 300, "interests": ["culture", "adventure"], "preferences": ["late-night", "family-friendly"]}
+
+### Input
+Mere paas 360 minute hain Powai mein, budget kam hai, main akela ko wellness, history, food chahiye jo outdoor ho. please
+### Output
+{"location": "Powai", "time_minutes": 360, "budget_inr": 0, "interests": ["wellness", "history", "food"], "preferences": ["outdoor"]}
+
+### Input
+Mere paas aadha ghanta hain Parel mein, budget ₹200, hum family ke saath ko local life, nightlife, shopping chahiye jo rooftop, accessible ho. agar possible ho
+### Output
+{"location": "Parel", "time_minutes": 30, "budget_inr": 200, "interests": ["local life", "nightlife", "shopping"], "preferences": ["rooftop", "accessible"]}
+
+### Input
+I have 5 hours in Wadala with a budget of ₹5000. There are a family of 4 and we want history, nature that is hidden, waterfront. please
+### Output
+{"location": "Wadala", "time_minutes": 300, "budget_inr": 5000, "interests": ["history", "nature"], "preferences": ["hidden", "waterfront"]}
+
+### Input
+I have 0 hours in Khar with a budget of ₹5000. There are a family of 4 and we want local life, adventure, shopping that is budget.
+### Output
+{"location": "Khar", "time_minutes": 30, "budget_inr": 5000, "interests": ["local life", "adventure", "shopping"], "preferences": ["budget"]}
+
+### Input
+Mere paas ek ghanta hain Oshiwara mein, budget ₹200, hum dost ko nature, culture chahiye jo late-night, morning ho. matlab
+### Output
+{"location": "Oshiwara", "time_minutes": 60, "budget_inr": 200, "interests": ["nature", "culture"], "preferences": ["late-night", "morning"]}
+
+### Input
+Mere paas dedh ghanta hain Goregaon mein, budget ₹3000, hum dost ko history, culture, art chahiye jo family-friendly, popular ho. koi acha sa
+### Output
+{"location": "Goregaon", "time_minutes": 90, "budget_inr": 3000, "interests": ["history", "culture", "art"], "preferences": ["family-friendly", "popular"]}
+
+### Input
+150 minutes in Byculla, budget ₹2000, 4 log — food chahiye, budget, outdoor.
+### Output
+{"location": "Byculla", "time_minutes": 150, "budget_inr": 2000, "interests": ["food"], "preferences": ["budget", "outdoor"]}
+
+### Input
+I have 1 hours in Bandra with a budget of ₹200. There are 2 of us and we want art that is morning. please
+### Output
+{"location": "Bandra", "time_minutes": 60, "budget_inr": 200, "interests": ["art"], "preferences": ["morning"]}
+
+### Input
+30 minutes in Khar, cheap only, family ke saath — adventure, wellness, nightlife chahiye, accessible, waterfront.
+### Output
+{"location": "Khar", "time_minutes": 30, "budget_inr": 0, "interests": ["adventure", "wellness", "nightlife"], "preferences": ["accessible", "waterfront"]}
+
+### Input
+Mere paas dhai ghante hain Malabar Hill mein, budget ₹2000, hum family ke saath ko wellness chahiye jo hidden, quick ho. agar possible ho
+### Output
+{"location": "Malabar Hill", "time_minutes": 150, "budget_inr": 2000, "interests": ["wellness"], "preferences": ["hidden", "quick"]}
+
+### Input
+Mere paas 360 minute hain Girgaon mein, budget ₹300, hum dono ko culture, heritage, local life chahiye jo popular, budget ho. koi acha sa
+### Output
+{"location": "Girgaon", "time_minutes": 360, "budget_inr": 300, "interests": ["culture", "heritage", "local life"], "preferences": ["popular", "budget"]}
+
+### Input
+Mere paas do ghante hain Colaba mein, budget ₹3000, hum family ke saath ko nightlife chahiye jo quick, family-friendly ho. koi acha sa
+### Output
+{"location": "Colaba", "time_minutes": 120, "budget_inr": 3000, "interests": ["nightlife"], "preferences": ["quick", "family-friendly"]}
+
+### Input
+Mere paas 45 minute hain Dadar mein, budget ₹2000, hum family ke saath ko shopping, culture chahiye jo outdoor, vegetarian ho. agar possible ho
+### Output
+{"location": "Dadar", "time_minutes": 45, "budget_inr": 2000, "interests": ["shopping", "culture"], "preferences": ["outdoor", "vegetarian"]}
+
+### Input
+Mere paas ek ghanta hain Kurla mein, budget ₹1500, hum family ke saath ko nightlife, wellness, heritage chahiye jo hidden, sunset ho.
+### Output
+{"location": "Kurla", "time_minutes": 60, "budget_inr": 1500, "interests": ["nightlife", "wellness", "heritage"], "preferences": ["hidden", "sunset"]}
+
+### Input
+I have 2 hours in Fort with a budget of ₹1000. There are 1 person and we want adventure, heritage, food that is waterfront, quiet. something like
+### Output
+{"location": "Fort", "time_minutes": 120, "budget_inr": 1000, "interests": ["adventure", "heritage", "food"], "preferences": ["waterfront", "quiet"]}
+
+### Input
+I have 2 hours in Fort with a budget of as cheap as possible. There are a family of 4 and we want food, art that is popular, outdoor.
+### Output
+{"location": "Fort", "time_minutes": 150, "budget_inr": 0, "interests": ["food", "art"], "preferences": ["popular", "outdoor"]}
+
+### Input
+Rooftop dinner near Marine Lines
+### Output
+{"location": "Marine Lines", "interests": ["food"], "preferences": ["rooftop"]}
+
+### Input
+Mere paas ek ghanta hain Dadar mein, budget ₹300, hum family ke saath ko local life, history chahiye jo indoor ho. agar possible ho
+### Output
+{"location": "Dadar", "time_minutes": 60, "budget_inr": 300, "interests": ["local life", "history"], "preferences": ["indoor"]}
+
+### Input
+360 minutes in Wadala, budget ₹2000, family ke saath — nightlife chahiye, local.
+### Output
+{"location": "Wadala", "time_minutes": 360, "budget_inr": 2000, "interests": ["nightlife"], "preferences": ["local"]}
+
+### Input
+Mere paas 360 minute hain Mahim mein, budget ₹800, hum dost ko shopping chahiye jo rooftop, budget ho. koi acha sa
+### Output
+{"location": "Mahim", "time_minutes": 360, "budget_inr": 800, "interests": ["shopping"], "preferences": ["rooftop", "budget"]}
+
+### Input
+I have 2 hours in Juhu with a budget of ₹800. There are a group of 4 and we want wellness, food, history that is family-friendly, accessible.
+### Output
+{"location": "Juhu", "time_minutes": 150, "budget_inr": 800, "interests": ["wellness", "food", "history"], "preferences": ["family-friendly", "accessible"]}
+
+### Input
+I have 0 hours in Marine Lines with a budget of as cheap as possible. There are 1 person and we want culture, heritage that is accessible, morning. ideally
+### Output
+{"location": "Marine Lines", "time_minutes": 30, "budget_inr": 0, "interests": ["culture", "heritage"], "preferences": ["accessible", "morning"]}
+
+### Input
+I have 2 hours in Churchgate with a budget of ₹200. There are 2 of us and we want shopping that is local. you know
+### Output
+{"location": "Churchgate", "time_minutes": 120, "budget_inr": 200, "interests": ["shopping"], "preferences": ["local"]}
+
+### Input
+45 minutes in Kurla, budget ₹3000, me alone — shopping, local life chahiye, late-night, accessible.
+### Output
+{"location": "Kurla", "time_minutes": 45, "budget_inr": 3000, "interests": ["shopping", "local life"], "preferences": ["late-night", "accessible"]}
+
+### Input
+I have 1 hours in Versova with a budget of ₹5000. There are 2 of us and we want nature that is local. ideally
+### Output
+{"location": "Versova", "time_minutes": 90, "budget_inr": 5000, "interests": ["nature"], "preferences": ["local"]}
+
+### Input
+120 minutes in Crawford Market, budget ₹3000, 4 log — culture chahiye, budget.
+### Output
+{"location": "Crawford Market", "time_minutes": 120, "budget_inr": 3000, "interests": ["culture"], "preferences": ["budget"]}
+
+### Input
+I have 1 hours in Wadala with a budget of ₹2000. There are a family of 4 and we want wellness, history, culture that is vegetarian. if possible
+### Output
+{"location": "Wadala", "time_minutes": 60, "budget_inr": 2000, "interests": ["wellness", "history", "culture"], "preferences": ["vegetarian"]}
+
+### Input
+Mere paas ek ghanta hain Kala Ghoda mein, budget ₹3000, hum dono ko culture, history, wellness chahiye jo accessible, quick ho. please
+### Output
+{"location": "Kala Ghoda", "time_minutes": 60, "budget_inr": 3000, "interests": ["culture", "history", "wellness"], "preferences": ["accessible", "quick"]}
+
+### Input
+I have 0 hours in Juhu with a budget of ₹200. There are a family of 4 and we want culture, history, food that is quiet, outdoor. something like
+### Output
+{"location": "Juhu", "time_minutes": 30, "budget_inr": 200, "interests": ["culture", "history", "food"], "preferences": ["quiet", "outdoor"]}
+
+### Input
+240 minutes in Sion, budget ₹5000, me alone — wellness, culture, local life chahiye, sunset, hidden.
+### Output
+{"location": "Sion", "time_minutes": 240, "budget_inr": 5000, "interests": ["wellness", "culture", "local life"], "preferences": ["sunset", "hidden"]}
+
+### Input
+Mere paas 360 minute hain Parel mein, budget ₹800, hum dono ko nightlife, food chahiye jo budget ho. please
+### Output
+{"location": "Parel", "time_minutes": 360, "budget_inr": 800, "interests": ["nightlife", "food"], "preferences": ["budget"]}
+
+### Input
+180 minutes in Versova, budget ₹5000, 4 log — adventure, heritage chahiye, budget, morning.
+### Output
+{"location": "Versova", "time_minutes": 180, "budget_inr": 5000, "interests": ["adventure", "heritage"], "preferences": ["budget", "morning"]}
+
+### Input
+I have 4 hours in Parel with a budget of ₹300. There are a group of 4 and we want nature, history that is late-night. you know
+### Output
+{"location": "Parel", "time_minutes": 240, "budget_inr": 300, "interests": ["nature", "history"], "preferences": ["late-night"]}
+
+### Input
+300 minutes in Versova, budget ₹3000, family ke saath — nature, local life, wellness chahiye, morning, hidden.
+### Output
+{"location": "Versova", "time_minutes": 300, "budget_inr": 3000, "interests": ["nature", "local life", "wellness"], "preferences": ["morning", "hidden"]}
+
+### Input
+30 minutes in Worli, budget ₹2000, family ke saath — culture, local life chahiye, budget, indoor.
+### Output
+{"location": "Worli", "time_minutes": 30, "budget_inr": 2000, "interests": ["culture", "local life"], "preferences": ["budget", "indoor"]}
+
+### Input
+I have 1 hours in Malabar Hill with a budget of ₹1000. There are a family of 4 and we want history that is local, vegetarian. something like
+### Output
+{"location": "Malabar Hill", "time_minutes": 60, "budget_inr": 1000, "interests": ["history"], "preferences": ["local", "vegetarian"]}
+
+### Input
+I have 2 hours in Lower Parel with a budget of ₹1000. There are 2 of us and we want shopping, adventure that is indoor.
+### Output
+{"location": "Lower Parel", "time_minutes": 150, "budget_inr": 1000, "interests": ["shopping", "adventure"], "preferences": ["indoor"]}
+
+### Input
+Mere paas aadha ghanta hain Worli mein, budget kam hai, main akela ko nightlife chahiye jo indoor ho. koi acha sa
+### Output
+{"location": "Worli", "time_minutes": 30, "budget_inr": 0, "interests": ["nightlife"], "preferences": ["indoor"]}
+
+### Input
+30 minutes in Wadala, cheap only, me alone — shopping, wellness, history chahiye, waterfront.
+### Output
+{"location": "Wadala", "time_minutes": 30, "budget_inr": 0, "interests": ["shopping", "wellness", "history"], "preferences": ["waterfront"]}
+
+### Input
+90 minutes in Andheri, budget ₹3000, 4 log — wellness, food, nightlife chahiye, popular, hidden.
+### Output
+{"location": "Andheri", "time_minutes": 90, "budget_inr": 3000, "interests": ["wellness", "food", "nightlife"], "preferences": ["popular", "hidden"]}
+
+### Input
+Mere paas do ghante hain Girgaon mein, budget ₹300, hum dono ko nature, local life chahiye jo hidden, budget ho.
+### Output
+{"location": "Girgaon", "time_minutes": 120, "budget_inr": 300, "interests": ["nature", "local life"], "preferences": ["hidden", "budget"]}
+
+### Input
+Mere paas do ghante hain Juhu mein, budget ₹500, main akela ko nightlife, culture, local life chahiye jo indoor ho.
+### Output
+{"location": "Juhu", "time_minutes": 120, "budget_inr": 500, "interests": ["nightlife", "culture", "local life"], "preferences": ["indoor"]}
+
+### Input
+Cheap street food walk in Dadar
+### Output
+{"location": "Dadar", "interests": ["food", "local life"], "preferences": ["budget", "outdoor"]}
+
+### Input
+240 minutes in Powai, budget ₹800, family ke saath — adventure, heritage chahiye, quiet, late-night.
+### Output
+{"location": "Powai", "time_minutes": 240, "budget_inr": 800, "interests": ["adventure", "heritage"], "preferences": ["quiet", "late-night"]}
+
+### Input
+Mere paas char ghante hain Parel mein, budget ₹200, hum dost ko heritage, culture chahiye jo outdoor, vegetarian ho. please
+### Output
+{"location": "Parel", "time_minutes": 240, "budget_inr": 200, "interests": ["heritage", "culture"], "preferences": ["outdoor", "vegetarian"]}
+
+### Input
+150 minutes in Mahim, budget ₹800, me alone — food, heritage, nature chahiye, rooftop.
+### Output
+{"location": "Mahim", "time_minutes": 150, "budget_inr": 800, "interests": ["food", "heritage", "nature"], "preferences": ["rooftop"]}
+
+### Input
+300 minutes in Versova, budget ₹3000, me alone — culture chahiye, vegetarian, family-friendly.
+### Output
+{"location": "Versova", "time_minutes": 300, "budget_inr": 3000, "interests": ["culture"], "preferences": ["vegetarian", "family-friendly"]}
+
+### Input
+Mere paas 360 minute hain Bandra mein, budget ₹500, hum dono ko art, culture chahiye jo hidden, outdoor ho. koi acha sa
+### Output
+{"location": "Bandra", "time_minutes": 360, "budget_inr": 500, "interests": ["art", "culture"], "preferences": ["hidden", "outdoor"]}
+
+### Input
+I have 2 hours in Malabar Hill with a budget of ₹3000. There are a family of 4 and we want wellness that is budget. please
+### Output
+{"location": "Malabar Hill", "time_minutes": 120, "budget_inr": 3000, "interests": ["wellness"], "preferences": ["budget"]}
+
+### Input
+I have 4 hours in Juhu with a budget of ₹5000. There are 1 person and we want nightlife that is outdoor. you know
+### Output
+{"location": "Juhu", "time_minutes": 240, "budget_inr": 5000, "interests": ["nightlife"], "preferences": ["outdoor"]}
+
+### Input
+45 minutes in Malabar Hill, budget ₹800, me alone — local life, heritage chahiye, popular.
+### Output
+{"location": "Malabar Hill", "time_minutes": 45, "budget_inr": 800, "interests": ["local life", "heritage"], "preferences": ["popular"]}
+
+### Input
+Mere paas aadha ghanta hain Kurla mein, budget ₹200, hum dono ko shopping, food, history chahiye jo popular ho. agar possible ho
+### Output
+{"location": "Kurla", "time_minutes": 30, "budget_inr": 200, "interests": ["shopping", "food", "history"], "preferences": ["popular"]}
+
+### Input
+Mere paas do ghante hain Lower Parel mein, budget ₹500, hum dost ko history, heritage, art chahiye jo hidden, sunset ho. koi acha sa
+### Output
+{"location": "Lower Parel", "time_minutes": 120, "budget_inr": 500, "interests": ["history", "heritage", "art"], "preferences": ["hidden", "sunset"]}
+
+### Input
+360 minutes in Fort, budget ₹800, family ke saath — culture, local life chahiye, family-friendly, late-night.
+### Output
+{"location": "Fort", "time_minutes": 360, "budget_inr": 800, "interests": ["culture", "local life"], "preferences": ["family-friendly", "late-night"]}
+
+### Input
+45 minutes in Lower Parel, budget ₹5000, 4 log — wellness chahiye, rooftop, sunset.
+### Output
+{"location": "Lower Parel", "time_minutes": 45, "budget_inr": 5000, "interests": ["wellness"], "preferences": ["rooftop", "sunset"]}
+
+### Input
+I have 0 hours in Bandra with a budget of ₹5000. There are a group of 4 and we want local life, adventure that is accessible. if possible
+### Output
+{"location": "Bandra", "time_minutes": 45, "budget_inr": 5000, "interests": ["local life", "adventure"], "preferences": ["accessible"]}
+
+### Input
+I have 1 hours in Chembur with a budget of ₹200. There are 1 person and we want culture, wellness, adventure that is sunset.
+### Output
+{"location": "Chembur", "time_minutes": 60, "budget_inr": 200, "interests": ["culture", "wellness", "adventure"], "preferences": ["sunset"]}
+
+### Input
+Mere paas dhai ghante hain Kurla mein, budget ₹5000, hum dost ko art chahiye jo family-friendly, outdoor ho. agar possible ho
+### Output
+{"location": "Kurla", "time_minutes": 150, "budget_inr": 5000, "interests": ["art"], "preferences": ["family-friendly", "outdoor"]}
+
+### Input
+Mere paas char ghante hain Lower Parel mein, budget ₹2000, hum dono ko culture chahiye jo waterfront ho.
+### Output
+{"location": "Lower Parel", "time_minutes": 240, "budget_inr": 2000, "interests": ["culture"], "preferences": ["waterfront"]}
+
+### Input
+Mere paas 45 minute hain Oshiwara mein, budget ₹5000, hum dost ko shopping, nightlife chahiye jo rooftop ho. matlab
+### Output
+{"location": "Oshiwara", "time_minutes": 45, "budget_inr": 5000, "interests": ["shopping", "nightlife"], "preferences": ["rooftop"]}
+
+### Input
+90 minutes in Dadar, budget ₹800, family ke saath — nature, art, local life chahiye, quiet.
+### Output
+{"location": "Dadar", "time_minutes": 90, "budget_inr": 800, "interests": ["nature", "art", "local life"], "preferences": ["quiet"]}
+
+### Input
+Mere paas 360 minute hain Chembur mein, budget ₹500, hum family ke saath ko nature, shopping chahiye jo rooftop ho. matlab
+### Output
+{"location": "Chembur", "time_minutes": 360, "budget_inr": 500, "interests": ["nature", "shopping"], "preferences": ["rooftop"]}
+
+### Input
+I have 3 hours in Andheri with a budget of as cheap as possible. There are a family of 4 and we want nature that is local, outdoor. you know
+### Output
+{"location": "Andheri", "time_minutes": 180, "budget_inr": 0, "interests": ["nature"], "preferences": ["local", "outdoor"]}
+
+### Input
+I have 0 hours in Worli with a budget of as cheap as possible. There are a group of 4 and we want nightlife that is morning. if possible
+### Output
+{"location": "Worli", "time_minutes": 45, "budget_inr": 0, "interests": ["nightlife"], "preferences": ["morning"]}
+
+### Input
+Kuch accha khaane ka jagah Colaba mein
+### Output
+{"location": "Colaba", "interests": ["food"]}
+
+### Input
+Mere paas paanch ghante hain Vile Parle mein, budget ₹1000, hum dost ko local life, food chahiye jo local ho. agar possible ho
+### Output
+{"location": "Vile Parle", "time_minutes": 300, "budget_inr": 1000, "interests": ["local life", "food"], "preferences": ["local"]}
+
+### Input
+I have 0 hours in Santacruz with a budget of ₹3000. There are a family of 4 and we want history, culture that is quiet, outdoor. please
+### Output
+{"location": "Santacruz", "time_minutes": 45, "budget_inr": 3000, "interests": ["history", "culture"], "preferences": ["quiet", "outdoor"]}
+
+### Input
+Mere paas aadha ghanta hain Versova mein, budget ₹300, main akela ko wellness, culture, food chahiye jo outdoor, quick ho. matlab
+### Output
+{"location": "Versova", "time_minutes": 30, "budget_inr": 300, "interests": ["wellness", "culture", "food"], "preferences": ["outdoor", "quick"]}
+
+### Input
+Mere paas aadha ghanta hain Bandra mein, budget ₹1500, main akela ko wellness, nightlife chahiye jo hidden, outdoor ho. matlab
+### Output
+{"location": "Bandra", "time_minutes": 30, "budget_inr": 1500, "interests": ["wellness", "nightlife"], "preferences": ["hidden", "outdoor"]}
+
+### Input
+I have 0 hours in Vile Parle with a budget of ₹200. There are 1 person and we want art, adventure that is rooftop. ideally
+### Output
+{"location": "Vile Parle", "time_minutes": 45, "budget_inr": 200, "interests": ["art", "adventure"], "preferences": ["rooftop"]}
+
+### Input
+45 minutes in Vile Parle, budget ₹1500, family ke saath — food chahiye, quiet, late-night.
+### Output
+{"location": "Vile Parle", "time_minutes": 45, "budget_inr": 1500, "interests": ["food"], "preferences": ["quiet", "late-night"]}
+
+### Input
+Mere paas aadha ghanta hain Versova mein, budget ₹200, main akela ko local life, adventure, nature chahiye jo waterfront ho. koi acha sa
+### Output
+{"location": "Versova", "time_minutes": 30, "budget_inr": 200, "interests": ["local life", "adventure", "nature"], "preferences": ["waterfront"]}
+
+### Input
+I have 0 hours in Goregaon with a budget of ₹800. There are 1 person and we want nightlife that is indoor, hidden.
+### Output
+{"location": "Goregaon", "time_minutes": 30, "budget_inr": 800, "interests": ["nightlife"], "preferences": ["indoor", "hidden"]}
+
+### Input
+I have 0 hours in Mahim with a budget of ₹200. There are a family of 4 and we want shopping, nightlife that is morning, indoor. please
+### Output
+{"location": "Mahim", "time_minutes": 45, "budget_inr": 200, "interests": ["shopping", "nightlife"], "preferences": ["morning", "indoor"]}
+
+### Input
+Mere paas paanch ghante hain Marine Lines mein, budget ₹200, hum family ke saath ko nature, culture, history chahiye jo budget ho. agar possible ho
+### Output
+{"location": "Marine Lines", "time_minutes": 300, "budget_inr": 200, "interests": ["nature", "culture", "history"], "preferences": ["budget"]}
+
+### Input
+I have 4 hours in Santacruz with a budget of ₹200. There are 2 of us and we want heritage, history that is family-friendly. ideally
+### Output
+{"location": "Santacruz", "time_minutes": 240, "budget_inr": 200, "interests": ["heritage", "history"], "preferences": ["family-friendly"]}
+
+### Input
+180 minutes in Lower Parel, budget ₹300, 4 log — nightlife, history, wellness chahiye, hidden.
+### Output
+{"location": "Lower Parel", "time_minutes": 180, "budget_inr": 300, "interests": ["nightlife", "history", "wellness"], "preferences": ["hidden"]}
+
+### Input
+Mere paas ek ghanta hain Byculla mein, budget ₹3000, hum family ke saath ko local life chahiye jo local ho. agar possible ho
+### Output
+{"location": "Byculla", "time_minutes": 60, "budget_inr": 3000, "interests": ["local life"], "preferences": ["local"]}
+
+### Input
+240 minutes in Parel, budget ₹3000, 4 log — wellness chahiye, late-night, waterfront.
+### Output
+{"location": "Parel", "time_minutes": 240, "budget_inr": 3000, "interests": ["wellness"], "preferences": ["late-night", "waterfront"]}
+
+### Input
+I have 1 hours in Kala Ghoda with a budget of as cheap as possible. There are a family of 4 and we want food, wellness, nightlife that is quiet, budget. something like
+### Output
+{"location": "Kala Ghoda", "time_minutes": 60, "budget_inr": 0, "interests": ["food", "wellness", "nightlife"], "preferences": ["quiet", "budget"]}
+
+### Input
+60 minutes in Girgaon, budget ₹2000, me alone — shopping, nightlife chahiye, outdoor.
+### Output
+{"location": "Girgaon", "time_minutes": 60, "budget_inr": 2000, "interests": ["shopping", "nightlife"], "preferences": ["outdoor"]}
+
+### Input
+Mere paas dhai ghante hain Powai mein, budget ₹800, main akela ko nature, culture, art chahiye jo local, morning ho.
+### Output
+{"location": "Powai", "time_minutes": 150, "budget_inr": 800, "interests": ["nature", "culture", "art"], "preferences": ["local", "morning"]}
+
+### Input
+I have 4 hours in Vile Parle with a budget of as cheap as possible. There are a family of 4 and we want culture, food, adventure that is hidden. ideally
+### Output
+{"location": "Vile Parle", "time_minutes": 240, "budget_inr": 0, "interests": ["culture", "food", "adventure"], "preferences": ["hidden"]}
+
+### Input
+I have 0 hours in Kurla with a budget of ₹3000. There are a group of 4 and we want shopping, culture that is popular, outdoor. ideally
+### Output
+{"location": "Kurla", "time_minutes": 45, "budget_inr": 3000, "interests": ["shopping", "culture"], "preferences": ["popular", "outdoor"]}
+
+### Input
+I have 6 hours in Matunga with a budget of ₹2000. There are 2 of us and we want heritage that is rooftop. ideally
+### Output
+{"location": "Matunga", "time_minutes": 360, "budget_inr": 2000, "interests": ["heritage"], "preferences": ["rooftop"]}
+
+### Input
+I have 5 hours in Malabar Hill with a budget of ₹300. There are a group of 4 and we want nightlife, art, heritage that is outdoor, hidden. you know
+### Output
+{"location": "Malabar Hill", "time_minutes": 300, "budget_inr": 300, "interests": ["nightlife", "art", "heritage"], "preferences": ["outdoor", "hidden"]}
+
+### Input
+Mere paas 45 minute hain Lower Parel mein, budget ₹2000, hum dost ko heritage chahiye jo vegetarian ho. please
+### Output
+{"location": "Lower Parel", "time_minutes": 45, "budget_inr": 2000, "interests": ["heritage"], "preferences": ["vegetarian"]}
+
+### Input
+30 minutes in Santacruz, budget ₹200, 4 log — heritage, food chahiye, quick.
+### Output
+{"location": "Santacruz", "time_minutes": 30, "budget_inr": 200, "interests": ["heritage", "food"], "preferences": ["quick"]}
+
+### Input
+Mere paas teen ghante hain CSMT mein, budget ₹800, hum dono ko wellness chahiye jo family-friendly ho.
+### Output
+{"location": "CSMT", "time_minutes": 180, "budget_inr": 800, "interests": ["wellness"], "preferences": ["family-friendly"]}
+
+### Input
+Mere paas ek ghanta hain Wadala mein, budget ₹1000, hum dono ko local life, nature chahiye jo accessible, sunset ho. agar possible ho
+### Output
+{"location": "Wadala", "time_minutes": 60, "budget_inr": 1000, "interests": ["local life", "nature"], "preferences": ["accessible", "sunset"]}
+
+### Input
+Mere paas dedh ghanta hain Parel mein, budget kam hai, main akela ko heritage chahiye jo popular, rooftop ho. matlab
+### Output
+{"location": "Parel", "time_minutes": 90, "budget_inr": 0, "interests": ["heritage"], "preferences": ["popular", "rooftop"]}
+
+### Input
+Mere paas 45 minute hain Marine Lines mein, budget ₹800, main akela ko nature, culture, history chahiye jo family-friendly, waterfront ho. agar possible ho
+### Output
+{"location": "Marine Lines", "time_minutes": 45, "budget_inr": 800, "interests": ["nature", "culture", "history"], "preferences": ["family-friendly", "waterfront"]}
+
+### Input
+30 minutes in Vile Parle, budget ₹5000, we two — wellness chahiye, outdoor, budget.
+### Output
+{"location": "Vile Parle", "time_minutes": 30, "budget_inr": 5000, "interests": ["wellness"], "preferences": ["outdoor", "budget"]}
+
+### Input
+90 minutes in Worli, budget ₹1500, family ke saath — nightlife chahiye, popular, hidden.
+### Output
+{"location": "Worli", "time_minutes": 90, "budget_inr": 1500, "interests": ["nightlife"], "preferences": ["popular", "hidden"]}
+
+### Input
+Mere paas aadha ghanta hain Malabar Hill mein, budget ₹1500, hum family ke saath ko history, culture, art chahiye jo hidden ho. please
+### Output
+{"location": "Malabar Hill", "time_minutes": 30, "budget_inr": 1500, "interests": ["history", "culture", "art"], "preferences": ["hidden"]}
+
+### Input
+Mere paas do ghante hain Wadala mein, budget ₹300, hum family ke saath ko local life, history, wellness chahiye jo quick ho. matlab
+### Output
+{"location": "Wadala", "time_minutes": 120, "budget_inr": 300, "interests": ["local life", "history", "wellness"], "preferences": ["quick"]}
+
+### Input
+I have 2 hours in Worli with a budget of ₹1500. There are 2 of us and we want shopping that is outdoor, sunset. ideally
+### Output
+{"location": "Worli", "time_minutes": 120, "budget_inr": 1500, "interests": ["shopping"], "preferences": ["outdoor", "sunset"]}

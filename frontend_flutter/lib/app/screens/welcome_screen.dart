@@ -4,13 +4,12 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/data_providers.dart';
 import '../../core/role/user_role.dart';
-import '../../core/theme/app_theme.dart';
 import '../widgets/brand.dart';
 
-/// ENTRY SCREEN: Role selection before authentication.
+/// ENTRY SCREEN: Straight to Sign In / Sign Up.
 ///
-/// This is the FIRST screen the user sees. It clearly separates
-/// the two product roles — Explorer and Guide — before any auth.
+/// No role-selection gate. Users land here and immediately see the
+/// sign-in and create-account actions, with guest access below the fold.
 class WelcomeScreen extends ConsumerStatefulWidget {
   const WelcomeScreen({super.key});
 
@@ -19,35 +18,46 @@ class WelcomeScreen extends ConsumerStatefulWidget {
 }
 
 class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _animCtrl;
+    with TickerProviderStateMixin {
+  late final AnimationController _bgCtrl;
+  late final AnimationController _fadeCtrl;
   late final Animation<double> _fadeIn;
+  late final Animation<double> _slideUp;
 
   @override
   void initState() {
     super.initState();
-    _animCtrl = AnimationController(
+    _bgCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(seconds: 8),
+    )..repeat(reverse: true);
+
+    _fadeCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
     );
-    _fadeIn = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOutCubic);
-    _animCtrl.forward();
+    _fadeIn = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOutCubic);
+    _slideUp = Tween<double>(begin: 32, end: 0).animate(
+      CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOutCubic),
+    );
+    _fadeCtrl.forward();
   }
 
   @override
   void dispose() {
-    _animCtrl.dispose();
+    _bgCtrl.dispose();
+    _fadeCtrl.dispose();
     super.dispose();
   }
 
-  void _continueAsExplorer() {
+  void _signIn() {
     ref.read(userRoleProvider.notifier).setRole(UserRole.explorer);
     context.go('/login');
   }
 
-  void _continueAsGuide() {
-    ref.read(userRoleProvider.notifier).setRole(UserRole.guide);
-    context.go('/guide-login');
+  void _signUp() {
+    ref.read(userRoleProvider.notifier).setRole(UserRole.explorer);
+    context.go('/signup');
   }
 
   void _continueAsGuest() async {
@@ -56,151 +66,190 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
     if (mounted) context.go('/home');
   }
 
+  void _guideLogin() {
+    ref.read(userRoleProvider.notifier).setRole(UserRole.guide);
+    context.go('/guide-login');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.canvas,
       body: DecoratedBox(
-        decoration: const BoxDecoration(gradient: AppColors.sandGradient),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF0F0F0F), Color(0xFF1A1208), Color(0xFF0F0F0F)],
+          ),
+        ),
         child: SafeArea(
-          child: FadeTransition(
-            opacity: _fadeIn,
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 520),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // ── Brand Header
-                      const Column(
+          child: AnimatedBuilder(
+            animation: _fadeCtrl,
+            builder: (context, _) => Transform.translate(
+              offset: Offset(0, _slideUp.value),
+              child: Opacity(
+                opacity: _fadeIn.value,
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(28, 24, 28, 36),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 420),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          BrandMark(height: 64),
-                          SizedBox(height: 14),
-                          Text(
-                            'LocalIQ',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 32,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -1.2,
+                          // ── Logo + Brand
+                          Center(
+                            child: Column(
+                              children: [
+                                Container(
+                                  width: 88,
+                                  height: 88,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(22),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFFE05A2B).withValues(alpha: 0.35),
+                                        blurRadius: 32,
+                                        spreadRadius: 4,
+                                      ),
+                                    ],
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(22),
+                                    child: BrandMark(height: 88),
+                                  ),
+                                ),
+                                const SizedBox(height: 18),
+                                const Text(
+                                  'LocalIQ',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 34,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -1.4,
+                                    height: 1.0,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                const Text(
+                                  'Discover local. Smarter.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Color(0xFFB0A090),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    letterSpacing: 0.2,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          SizedBox(height: 6),
-                          Text(
-                            'Discover local. Smarter.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Color(0xFFBCC9E4),
-                              fontSize: 14.5,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          const SizedBox(height: 52),
+
+                          // ── Sign In (primary)
+                          _PrimaryButton(
+                            label: 'Sign In',
+                            onTap: _signIn,
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 36),
+                          const SizedBox(height: 12),
 
-                      // ── Role selection heading
-                      const Text(
-                        'How will you use LocalIQ?',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.5,
-                          height: 1.2,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      const Text(
-                        'Pick your role to get started.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Color(0xFFBCC9E4),
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
+                          // ── Create Account (secondary)
+                          _SecondaryButton(
+                            label: 'Create Account',
+                            onTap: _signUp,
+                          ),
+                          const SizedBox(height: 28),
 
-                      // ── Explorer Card
-                      _RoleCard(
-                        icon: Icons.explore_rounded,
-                        title: 'Explorer / Traveler',
-                        accent: AppColors.blue,
-                        bullets: const [
-                          'Discover experiences',
-                          'Meet people nearby',
-                          'Build plans & itineraries',
-                          'Find local guides',
-                        ],
-                        ctaLabel: 'Continue as Explorer',
-                        onCta: _continueAsExplorer,
-                      ),
-                      const SizedBox(height: 14),
+                          // ── Divider
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Divider(
+                                  color: Colors.white.withValues(alpha: 0.12),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 14),
+                                child: Text(
+                                  'or',
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.35),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Divider(
+                                  color: Colors.white.withValues(alpha: 0.12),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
 
-                      // ── Guide Card
-                      _RoleCard(
-                        icon: Icons.person_pin_circle_rounded,
-                        title: 'Local Guide / Provider',
-                        accent: AppColors.violet,
-                        bullets: const [
-                          'Offer experiences',
-                          'Manage bookings',
-                          'Set your availability',
-                          'Earn from tours',
-                        ],
-                        ctaLabel: 'Continue as Guide',
-                        onCta: _continueAsGuide,
-                      ),
-
-                      const SizedBox(height: 22),
-
-                      // ── Guest access
-                      Row(
-                        children: const [
-                          Expanded(child: Divider(color: Color(0x33FFFFFF))),
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 12),
-                            child: Text(
-                              'or',
-                              style: TextStyle(
-                                color: Color(0xFF8FA3C4),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
+                          // ── Guest
+                          GestureDetector(
+                            onTap: _continueAsGuest,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.12),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.person_outline_rounded,
+                                    size: 17,
+                                    color: Colors.white.withValues(alpha: 0.55),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Continue as Guest',
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(alpha: 0.55),
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
-                          Expanded(child: Divider(color: Color(0x33FFFFFF))),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Guest mode: full explore experience. Nothing saved to an account.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.28),
+                              fontSize: 11.5,
+                              height: 1.4,
+                            ),
+                          ),
+                          const SizedBox(height: 28),
+
+                          // ── Guide login (small, subtle)
+                          Center(
+                            child: GestureDetector(
+                              onTap: _guideLogin,
+                              child: Text(
+                                'Are you a Local Guide? Sign in here →',
+                                style: TextStyle(
+                                  color: const Color(0xFFE05A2B).withValues(alpha: 0.75),
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
-                      const SizedBox(height: 16),
-                      OutlinedButton.icon(
-                        onPressed: _continueAsGuest,
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          side: BorderSide(
-                            color: Colors.white.withValues(alpha: 0.25),
-                          ),
-                          minimumSize: const Size(double.infinity, 46),
-                        ),
-                        icon: const Icon(Icons.person_outline_rounded, size: 18),
-                        label: const Text('Continue as Guest'),
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Guest mode: full explore experience. Nothing saved to an account.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Color(0xFF8FA3C4),
-                          fontSize: 11.5,
-                          height: 1.4,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -212,106 +261,105 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
   }
 }
 
-class _RoleCard extends StatelessWidget {
-  const _RoleCard({
-    required this.icon,
-    required this.title,
-    required this.accent,
-    required this.bullets,
-    required this.ctaLabel,
-    required this.onCta,
-  });
+class _PrimaryButton extends StatefulWidget {
+  const _PrimaryButton({required this.label, required this.onTap});
+  final String label;
+  final VoidCallback onTap;
 
-  final IconData icon;
-  final String title;
-  final Color accent;
-  final List<String> bullets;
-  final String ctaLabel;
-  final VoidCallback onCta;
+  @override
+  State<_PrimaryButton> createState() => _PrimaryButtonState();
+}
+
+class _PrimaryButtonState extends State<_PrimaryButton> {
+  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.12),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: accent, size: 22),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16,
-                    letterSpacing: -0.3,
-                  ),
-                ),
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        widget.onTap();
+      },
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.97 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        child: Container(
+          height: 52,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            gradient: const LinearGradient(
+              colors: [Color(0xFFE05A2B), Color(0xFFD44B1E)],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFE05A2B).withValues(alpha: 0.4),
+                blurRadius: 20,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          ...bullets.map(
-            (b) => Padding(
-              padding: const EdgeInsets.only(bottom: 5),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.check_circle_rounded, size: 13, color: accent),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      b,
-                      style: const TextStyle(
-                        color: Color(0xFFD3DFF5),
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w500,
-                        height: 1.3,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+          alignment: Alignment.center,
+          child: Text(
+            widget.label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              fontSize: 16,
+              letterSpacing: -0.2,
             ),
           ),
-          const SizedBox(height: 14),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: onCta,
-              style: FilledButton.styleFrom(
-                backgroundColor: accent,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 44),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                ),
-              ),
-              child: Text(
-                ctaLabel,
-                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
-              ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SecondaryButton extends StatefulWidget {
+  const _SecondaryButton({required this.label, required this.onTap});
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  State<_SecondaryButton> createState() => _SecondaryButtonState();
+}
+
+class _SecondaryButtonState extends State<_SecondaryButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        widget.onTap();
+      },
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.97 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        child: Container(
+          height: 52,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            color: Colors.white.withValues(alpha: 0.08),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.18),
             ),
           ),
-        ],
+          alignment: Alignment.center,
+          child: Text(
+            widget.label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+              fontSize: 16,
+              letterSpacing: -0.2,
+            ),
+          ),
+        ),
       ),
     );
   }

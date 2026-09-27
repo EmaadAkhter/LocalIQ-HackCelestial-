@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "582115132932",
+    "project_id": "nexora-ai-492721",
+    "storage_bucket": "nexora-ai-492721.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:582115132932:android:localiq_nexora",
+        "android_client_info": {
+          "package_name": "com.nexify.localiq.localiq"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "582115132932-ak582gapmvn66pf62q7un6c8fpfhasko.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.nexify.localiq.localiq",
+            "certificate_hash": "e5f96d322dc220ac37676_placeholder"
+          }
+        },
+        {
+          "client_id": "582115132932-3gdhql9buvp3oebehq0s8ks4d5i4o8q7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAHABXGb5ulJB6syE0tV916dciI4AForoA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "582115132932-3gdhql9buvp3oebehq0s8ks4d5i4o8q7.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

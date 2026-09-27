@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../chat/domain/chat_thread.dart';
 import '../../../models/social.dart';
 import '../../../shared/widgets/app_image.dart';
 import '../application/meetup_controller.dart';
@@ -46,7 +48,7 @@ class _PeopleScreenState extends ConsumerState<PeopleScreen>
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
-        title: const Text('Fellow Explorers'),
+        title: const Text('Your Matches'),
         bottom: TabBar(
           controller: _tabCtrl,
           indicatorColor: AppColors.primary,
@@ -214,7 +216,7 @@ class _PeopleScreenState extends ConsumerState<PeopleScreen>
                               type: NotificationType.meetupUpdate,
                               title: 'Meetup Invitation Sent',
                               body: 'Waiting for ${match.displayName} to accept your invitation to "${experienceCtrl.text.trim()}".',
-                              actionRoute: '/people',
+                              actionRoute: '/people/matches',
                             );
 
                         Navigator.pop(ctx);
@@ -427,17 +429,44 @@ class _MatchCard extends StatelessWidget {
               ),
             )
           else
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                icon: const Icon(Icons.send_rounded, size: 16),
-                label: const Text('Propose Meetup'),
-                onPressed: onPropose,
-                style: OutlinedButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                  foregroundColor: AppColors.primary,
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.chat_bubble_outline_rounded, size: 15),
+                    label: const Text('Chat'),
+                    onPressed: () {
+                      context.push(
+                        '/chat/2',
+                        extra: ChatThread(
+                          id: 2,
+                          kind: 'meetup',
+                          otherUserId: int.tryParse(match.userId) ?? 202,
+                          otherName: match.displayName,
+                          otherAvatarUrl: match.photoUrl,
+                          contextLabel: 'Matched Explorer · ${match.compatibilityPercent}% Match',
+                        ),
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 3,
+                  child: FilledButton.icon(
+                    icon: const Icon(Icons.send_rounded, size: 15),
+                    label: const Text('Propose Meetup'),
+                    onPressed: onPropose,
+                    style: FilledButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+                ),
+              ],
             ),
         ],
       ),
@@ -628,7 +657,7 @@ class _ReceivedInvitationCard extends ConsumerWidget {
                             type: NotificationType.meetupUpdate,
                             title: 'Invitation Declined',
                             body: 'You declined the invitation to "${request.experienceTitle}".',
-                            actionRoute: '/people',
+                            actionRoute: '/people/matches',
                           );
                     },
                     style: OutlinedButton.styleFrom(
@@ -646,13 +675,39 @@ class _ReceivedInvitationCard extends ConsumerWidget {
                             type: NotificationType.meetupUpdate,
                             title: 'Meetup Confirmed! 🎉',
                             body: 'Meetup confirmed with Elena Rostova for "${request.experienceTitle}".',
-                            actionRoute: '/people',
+                            actionRoute: '/people/matches',
                           );
                     },
                     child: const Text('Accept Meetup'),
                   ),
                 ),
               ],
+            ),
+          ],
+          if (isAccepted) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
+                label: const Text('Chat with Elena'),
+                onPressed: () {
+                  context.push(
+                    '/chat/2',
+                    extra: const ChatThread(
+                      id: 2,
+                      kind: 'meetup',
+                      otherUserId: 202,
+                      otherName: 'Elena Rostova',
+                      contextLabel: 'Random Meetup · Heritage & Art Deco Walk',
+                    ),
+                  );
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.success,
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
             ),
           ],
           if (isDeclined) ...[

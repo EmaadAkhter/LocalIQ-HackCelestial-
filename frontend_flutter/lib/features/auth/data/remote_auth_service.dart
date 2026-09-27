@@ -22,6 +22,7 @@ import '../domain/auth_service.dart';
 /// cold start; `restore()` is the seam for that.
 class RemoteAuthService implements AuthService {
   RemoteAuthService(this._client, {AuthTokenStore? tokenStore, this.tokenHolder})
+      // ignore: prefer_initializing_formals
       : _tokenStore = tokenStore ?? InMemoryAuthTokenStore();
 
   final JsonApiClient _client;

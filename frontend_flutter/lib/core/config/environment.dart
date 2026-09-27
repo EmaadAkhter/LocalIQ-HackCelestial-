@@ -23,8 +23,11 @@ extension LocalIqEnvironmentX on LocalIqEnvironment {
   /// **not** sufficient on its own — see `docs/BACKEND_CONTRACT.md` for the
   /// endpoint-by-endpoint gap.
   String get apiBaseUrl => switch (this) {
-        // On device, localhost points at the device/emulator, not the host.
-        LocalIqEnvironment.dev => 'http://10.0.2.2:8000/api/v1',
+        // On web/desktop, talk to localhost.
+        // On Android EMULATOR, 10.0.2.2 maps to the host machine.
+        // On a PHYSICAL device, set --dart-define=LOCALIQ_API_BASE_URL=http://<your-machine-ip>:8000/api/v1
+        LocalIqEnvironment.dev =>
+          kIsWeb ? 'http://localhost:8000/api/v1' : 'http://10.0.2.2:8000/api/v1',
         LocalIqEnvironment.staging => 'https://staging-api.localiq.app/api/v1',
         LocalIqEnvironment.prod => 'https://api.localiq.app/api/v1',
       };
@@ -124,6 +127,7 @@ class Environment {
         const String.fromEnvironment('LOCALIQ_GOOGLE_PLACES_API_KEY'),
     googleServerClientId: const String.fromEnvironment(
       'LOCALIQ_GOOGLE_SERVER_CLIENT_ID',
+      defaultValue: '582115132932-3gdhql9buvp3oebehq0s8ks4d5i4o8q7.apps.googleusercontent.com',
     ),
     useOfflineData: const bool.fromEnvironment(
       'LOCALIQ_OFFLINE',

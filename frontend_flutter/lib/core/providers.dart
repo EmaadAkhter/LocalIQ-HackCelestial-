@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../features/auth/data/google_sign_in_service.dart';
 import '../features/auth/data/local_auth_service.dart';
 import '../features/auth/data/remote_auth_service.dart';
+import '../features/auth/data/shared_prefs_token_store.dart';
 import '../features/auth/domain/auth_service.dart';
 import '../features/context/data/local_context_repository.dart';
 import '../features/context/data/remote_context_repository.dart';
@@ -150,10 +151,21 @@ final contextRepositoryProvider = Provider<ContextRepository>((ref) {
 
 // -------------------------------------------------------------------- auth
 
+/// Async because SharedPreferences.getInstance() is a Future.
+final sharedPrefsTokenStoreProvider =
+    FutureProvider<SharedPrefsAuthTokenStore>((ref) async {
+  return SharedPrefsAuthTokenStore.create();
+}, name: 'localiq.tokenStore');
+
 final authServiceProvider = Provider<AuthService>((ref) {
   if (!ref.watch(remoteDataEnabledProvider)) return LocalAuthService();
+  // Use the persistent store if it is already resolved; fall back to in-memory
+  // on first build (the FutureProvider will rebuild the tree once ready).
+  final storeAsync = ref.watch(sharedPrefsTokenStoreProvider);
+  final tokenStore = storeAsync.value;
   return RemoteAuthService(
     ref.watch(apiClientProvider),
+    tokenStore: tokenStore,
     tokenHolder: ref.watch(authTokenHolderProvider),
   );
 }, name: 'localiq.authService');

@@ -1,0 +1,1110 @@
+You are LocalIQ's explanation writer. Given one experience,
+the traveller's constraints, and the weather context, write 2-4 concise lines
+in LocalIQ's house style. Always reference time fit, cost fit, and how the
+experience matches a stated preference or the weather. Be honest about
+trade-offs when the budget or time is tight. No filler, no emoji.
+
+### Input
+{"experience": {"name": "Sanjay Gandhi National Park", "category": "nature", "cost_inr": 85, "duration_minutes": 240, "indoor": false, "tags": ["nature", "adventure", "outdoor"]}, "constraints": {"time_minutes": 45, "budget_inr": 3000, "interests": ["shopping", "nightlife"], "preferences": ["quick"]}, "context": {"weather": "rain"}}
+### Output
+Sanjay Gandhi National Park runs 240 minutes, a little over your 45-minute window; costs about ₹85, within your ₹3000 budget; is outdoor — a likely washout in this rain.
+
+### Input
+{"experience": {"name": "Cafe Zoe", "category": "cafe", "cost_inr": 350, "duration_minutes": 90, "indoor": true, "tags": ["local", "quiet", "food"]}, "constraints": {"time_minutes": 180, "budget_inr": 2000, "interests": ["wellness"], "preferences": ["hidden", "quick"]}, "context": {"weather": "rain"}}
+### Output
+Cafe Zoe fits your 180-minute window; costs about ₹350, within your ₹2000 budget; is indoor — good for today's rain.
+
+### Input
+{"experience": {"name": "Global Vipassana Pagoda", "category": "meditation", "cost_inr": 0, "duration_minutes": 120, "indoor": true, "tags": ["wellness", "quiet", "free"]}, "constraints": {"time_minutes": 60, "budget_inr": 2000, "interests": ["adventure"], "preferences": ["budget", "waterfront"]}, "context": {"weather": "cloudy"}}
+### Output
+Global Vipassana Pagoda runs 120 minutes, a little over your 60-minute window; is free; is indoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Haji Ali Dargah", "category": "heritage", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["heritage", "culture", "free"]}, "constraints": {"time_minutes": 150, "budget_inr": 0, "interests": ["history"], "preferences": ["accessible", "rooftop"]}, "context": {"weather": "clear"}}
+### Output
+Haji Ali Dargah fits your 150-minute window; is free; is outdoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Bandra Chapel Road Street Art", "category": "walk", "cost_inr": 0, "duration_minutes": 45, "indoor": false, "tags": ["art", "local", "hidden"]}, "constraints": {"time_minutes": 180, "budget_inr": 300, "interests": ["art"], "preferences": ["morning"]}, "context": {"weather": "cloudy"}}
+### Output
+Bandra Chapel Road Street Art fits your 180-minute window; is free; is outdoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Marine Drive Promenade", "category": "walk", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["waterfront", "sunset", "free"]}, "constraints": {"time_minutes": 300, "budget_inr": 5000, "interests": ["culture", "nightlife"], "preferences": ["waterfront"]}, "context": {"weather": "storm"}}
+### Output
+Marine Drive Promenade fits your 300-minute window; is free; matches your waterfront preference.
+
+### Input
+{"experience": {"name": "Kala Ghoda Cafe", "category": "cafe", "cost_inr": 500, "duration_minutes": 60, "indoor": true, "tags": ["art", "quiet", "food"]}, "constraints": {"time_minutes": 360, "budget_inr": 1000, "interests": ["nightlife"], "preferences": ["budget"]}, "context": {"weather": "storm"}}
+### Output
+Kala Ghoda Cafe fits your 360-minute window; costs about ₹500, within your ₹1000 budget; is indoor — a sensible pick for the storm.
+
+### Input
+{"experience": {"name": "Kala Ghoda Cafe", "category": "cafe", "cost_inr": 500, "duration_minutes": 60, "indoor": true, "tags": ["art", "quiet", "food"]}, "constraints": {"time_minutes": 60, "interests": ["history", "nightlife"], "preferences": ["hidden"]}, "context": {"weather": "clear"}}
+### Output
+Kala Ghoda Cafe fits your 60-minute window; is indoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Cafe Zoe", "category": "cafe", "cost_inr": 350, "duration_minutes": 90, "indoor": true, "tags": ["local", "quiet", "food"]}, "constraints": {"time_minutes": 150, "budget_inr": 0, "interests": ["food"], "preferences": ["morning", "indoor"]}, "context": {"weather": "cloudy"}}
+### Output
+Cafe Zoe fits your 150-minute window; costs about ₹350, a stretch on your ₹0 budget; matches your indoor preference.
+
+### Input
+{"experience": {"name": "Global Vipassana Pagoda", "category": "meditation", "cost_inr": 0, "duration_minutes": 120, "indoor": true, "tags": ["wellness", "quiet", "free"]}, "constraints": {"time_minutes": 360, "budget_inr": 0, "interests": ["shopping"], "preferences": ["accessible"]}, "context": {"weather": "storm"}}
+### Output
+Global Vipassana Pagoda fits your 360-minute window; is free; is indoor — a sensible pick for the storm.
+
+### Input
+{"experience": {"name": "Versova Fishing Village", "category": "walk", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["local life", "morning", "hidden"]}, "constraints": {"time_minutes": 360, "budget_inr": 0, "interests": ["local life"], "preferences": ["hidden", "family-friendly"]}, "context": {"weather": "cloudy"}}
+### Output
+Versova Fishing Village fits your 360-minute window; is free; matches your hidden preference.
+
+### Input
+{"experience": {"name": "Oshiwara Night Market", "category": "market", "cost_inr": 250, "duration_minutes": 90, "indoor": false, "tags": ["food", "nightlife", "late-night"]}, "constraints": {"time_minutes": 150, "budget_inr": 500, "interests": ["wellness"], "preferences": ["waterfront"]}, "context": {"weather": "hot"}}
+### Output
+Oshiwara Night Market fits your 150-minute window; costs about ₹250, within your ₹500 budget; is outdoor — better early or after sunset to dodge the heat.
+
+### Input
+{"experience": {"name": "Cafe Zoe", "category": "cafe", "cost_inr": 350, "duration_minutes": 90, "indoor": true, "tags": ["local", "quiet", "food"]}, "constraints": {"time_minutes": 30, "budget_inr": 1500, "interests": ["heritage"], "preferences": ["budget", "morning"]}, "context": {"weather": "cloudy"}}
+### Output
+Cafe Zoe runs 90 minutes, a little over your 30-minute window; costs about ₹350, within your ₹1500 budget; is indoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Prithvi Theatre", "category": "theatre", "cost_inr": 400, "duration_minutes": 120, "indoor": true, "tags": ["culture", "art", "evening"]}, "constraints": {"time_minutes": 180, "budget_inr": 5000, "interests": ["nightlife", "wellness"], "preferences": ["morning", "vegetarian"]}, "context": {"weather": "rain"}}
+### Output
+Prithvi Theatre fits your 180-minute window; costs about ₹400, within your ₹5000 budget; is indoor — good for today's rain.
+
+### Input
+{"experience": {"name": "Marine Drive Promenade", "category": "walk", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["waterfront", "sunset", "free"]}, "constraints": {"budget_inr": 200, "interests": ["art"], "preferences": ["morning", "indoor"]}, "context": {"weather": "clear"}}
+### Output
+Marine Drive Promenade is free; is outdoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Chor Bazaar Antique Hunt", "category": "market", "cost_inr": 0, "duration_minutes": 120, "indoor": false, "tags": ["shopping", "heritage", "hidden"]}, "constraints": {"time_minutes": 45, "budget_inr": 3000, "interests": ["art"], "preferences": ["outdoor", "quiet"]}, "context": {"weather": "clear"}}
+### Output
+Chor Bazaar Antique Hunt runs 120 minutes, a little over your 45-minute window; is free; matches your outdoor preference.
+
+### Input
+{"experience": {"name": "Haji Ali Dargah", "category": "heritage", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["heritage", "culture", "free"]}, "constraints": {"time_minutes": 180, "budget_inr": 1000, "interests": ["art"], "preferences": ["quick"]}, "context": {"weather": "storm"}}
+### Output
+Haji Ali Dargah fits your 180-minute window; is free; is outdoor — risky during a storm.
+
+### Input
+{"experience": {"name": "Jehangir Art Gallery", "category": "gallery", "cost_inr": 100, "duration_minutes": 75, "indoor": true, "tags": ["art", "culture", "indoor"]}, "constraints": {"time_minutes": 180, "budget_inr": 5000, "interests": ["wellness"], "preferences": ["late-night"]}, "context": {"weather": "rain"}}
+### Output
+Jehangir Art Gallery fits your 180-minute window; costs about ₹100, within your ₹5000 budget; is indoor — good for today's rain.
+
+### Input
+{"experience": {"name": "Carter Road Sunset Promenade", "category": "walk", "cost_inr": 0, "duration_minutes": 45, "indoor": false, "tags": ["waterfront", "sunset", "free"]}, "constraints": {"time_minutes": 180, "budget_inr": 300, "interests": ["shopping"], "preferences": ["hidden", "sunset"]}, "context": {"weather": "clear"}}
+### Output
+Carter Road Sunset Promenade fits your 180-minute window; is free; matches your sunset preference.
+
+### Input
+{"experience": {"name": "Sanjay Gandhi National Park", "category": "nature", "cost_inr": 85, "duration_minutes": 240, "indoor": false, "tags": ["nature", "adventure", "outdoor"]}, "constraints": {"budget_inr": 3000, "interests": ["food"], "preferences": ["accessible", "quiet"]}, "context": {"weather": "clear"}}
+### Output
+Sanjay Gandhi National Park costs about ₹85, within your ₹3000 budget; is outdoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Haji Ali Dargah", "category": "heritage", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["heritage", "culture", "free"]}, "constraints": {"time_minutes": 60, "budget_inr": 0, "interests": ["nightlife"], "preferences": ["hidden", "local"]}, "context": {"weather": "clear"}}
+### Output
+Haji Ali Dargah fits your 60-minute window; is free; is outdoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Jehangir Art Gallery", "category": "gallery", "cost_inr": 100, "duration_minutes": 75, "indoor": true, "tags": ["art", "culture", "indoor"]}, "constraints": {"time_minutes": 360, "budget_inr": 5000, "interests": ["nightlife"], "preferences": ["quick"]}, "context": {"weather": "hot"}}
+### Output
+Jehangir Art Gallery fits your 360-minute window; costs about ₹100, within your ₹5000 budget; is indoor — shaded from the midday heat.
+
+### Input
+{"experience": {"name": "Prithvi Theatre", "category": "theatre", "cost_inr": 400, "duration_minutes": 120, "indoor": true, "tags": ["culture", "art", "evening"]}, "constraints": {"time_minutes": 60, "budget_inr": 300, "interests": ["shopping"], "preferences": ["indoor", "quiet"]}, "context": {"weather": "storm"}}
+### Output
+Prithvi Theatre runs 120 minutes, a little over your 60-minute window; costs about ₹400, a stretch on your ₹300 budget; matches your indoor preference.
+
+### Input
+{"experience": {"name": "Kala Ghoda Cafe", "category": "cafe", "cost_inr": 500, "duration_minutes": 60, "indoor": true, "tags": ["art", "quiet", "food"]}, "constraints": {"time_minutes": 360, "budget_inr": 200, "interests": ["nightlife", "local life"], "preferences": ["outdoor", "late-night"]}, "context": {"weather": "rain"}}
+### Output
+Kala Ghoda Cafe fits your 360-minute window; costs about ₹500, a stretch on your ₹200 budget; is indoor — good for today's rain.
+
+### Input
+{"experience": {"name": "Oshiwara Night Market", "category": "market", "cost_inr": 250, "duration_minutes": 90, "indoor": false, "tags": ["food", "nightlife", "late-night"]}, "constraints": {"time_minutes": 45, "budget_inr": 1000, "interests": ["shopping"], "preferences": ["outdoor"]}, "context": {"weather": "rain"}}
+### Output
+Oshiwara Night Market runs 90 minutes, a little over your 45-minute window; costs about ₹250, within your ₹1000 budget; matches your outdoor preference.
+
+### Input
+{"experience": {"name": "Oshiwara Night Market", "category": "market", "cost_inr": 250, "duration_minutes": 90, "indoor": false, "tags": ["food", "nightlife", "late-night"]}, "constraints": {"time_minutes": 90, "budget_inr": 1000, "interests": ["local life", "history"], "preferences": ["popular", "outdoor"]}, "context": {"weather": "rain"}}
+### Output
+Oshiwara Night Market fits your 90-minute window; costs about ₹250, within your ₹1000 budget; matches your outdoor preference.
+
+### Input
+{"experience": {"name": "Colaba Causeway Bazaar", "category": "market", "cost_inr": 0, "duration_minutes": 90, "indoor": false, "tags": ["shopping", "budget", "popular"]}, "constraints": {"time_minutes": 180, "budget_inr": 200, "interests": ["local life"], "preferences": ["late-night", "rooftop"]}, "context": {"weather": "cloudy"}}
+### Output
+Colaba Causeway Bazaar fits your 180-minute window; is free; is outdoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Sanjay Gandhi National Park", "category": "nature", "cost_inr": 85, "duration_minutes": 240, "indoor": false, "tags": ["nature", "adventure", "outdoor"]}, "constraints": {"time_minutes": 90, "budget_inr": 1500, "interests": ["food"], "preferences": ["late-night", "sunset"]}, "context": {"weather": "rain"}}
+### Output
+Sanjay Gandhi National Park runs 240 minutes, a little over your 90-minute window; costs about ₹85, within your ₹1500 budget; is outdoor — a likely washout in this rain.
+
+### Input
+{"experience": {"name": "Sanjay Gandhi National Park", "category": "nature", "cost_inr": 85, "duration_minutes": 240, "indoor": false, "tags": ["nature", "adventure", "outdoor"]}, "constraints": {"time_minutes": 240, "budget_inr": 1500, "interests": ["shopping", "culture"], "preferences": ["indoor", "accessible"]}, "context": {"weather": "clear"}}
+### Output
+Sanjay Gandhi National Park fits your 240-minute window; costs about ₹85, within your ₹1500 budget; is outdoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Dadar Flower Market", "category": "market", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["local life", "morning", "budget"]}, "constraints": {"time_minutes": 240, "budget_inr": 500, "interests": ["nature"], "preferences": ["family-friendly", "morning"]}, "context": {"weather": "rain"}}
+### Output
+Dadar Flower Market fits your 240-minute window; is free; matches your morning preference.
+
+### Input
+{"experience": {"name": "Prithvi Theatre", "category": "theatre", "cost_inr": 400, "duration_minutes": 120, "indoor": true, "tags": ["culture", "art", "evening"]}, "constraints": {"time_minutes": 120, "budget_inr": 200, "interests": ["adventure", "nature"], "preferences": ["hidden"]}, "context": {"weather": "clear"}}
+### Output
+Prithvi Theatre fits your 120-minute window; costs about ₹400, a stretch on your ₹200 budget; is indoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Dadar Flower Market", "category": "market", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["local life", "morning", "budget"]}, "constraints": {"time_minutes": 150, "budget_inr": 200, "interests": ["heritage", "history"], "preferences": ["local", "late-night"]}, "context": {"weather": "storm"}}
+### Output
+Dadar Flower Market fits your 150-minute window; is free; is outdoor — risky during a storm.
+
+### Input
+{"experience": {"name": "Chor Bazaar Antique Hunt", "category": "market", "cost_inr": 0, "duration_minutes": 120, "indoor": false, "tags": ["shopping", "heritage", "hidden"]}, "constraints": {"time_minutes": 45, "budget_inr": 200, "interests": ["heritage", "local life"], "preferences": ["morning"]}, "context": {"weather": "rain"}}
+### Output
+Chor Bazaar Antique Hunt runs 120 minutes, a little over your 45-minute window; is free; is outdoor — a likely washout in this rain.
+
+### Input
+{"experience": {"name": "Oshiwara Night Market", "category": "market", "cost_inr": 250, "duration_minutes": 90, "indoor": false, "tags": ["food", "nightlife", "late-night"]}, "constraints": {"budget_inr": 3000, "interests": ["food", "culture"], "preferences": ["quick"]}, "context": {"weather": "clear"}}
+### Output
+Oshiwara Night Market costs about ₹250, within your ₹3000 budget; is outdoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Colaba Causeway Bazaar", "category": "market", "cost_inr": 0, "duration_minutes": 90, "indoor": false, "tags": ["shopping", "budget", "popular"]}, "constraints": {"time_minutes": 360, "budget_inr": 5000, "interests": ["culture"], "preferences": ["budget", "local"]}, "context": {"weather": "rain"}}
+### Output
+Colaba Causeway Bazaar fits your 360-minute window; is free; matches your budget preference.
+
+### Input
+{"experience": {"name": "Colaba Causeway Bazaar", "category": "market", "cost_inr": 0, "duration_minutes": 90, "indoor": false, "tags": ["shopping", "budget", "popular"]}, "constraints": {"time_minutes": 240, "budget_inr": 2000, "interests": ["food", "adventure"], "preferences": ["outdoor"]}, "context": {"weather": "storm"}}
+### Output
+Colaba Causeway Bazaar fits your 240-minute window; is free; matches your outdoor preference.
+
+### Input
+{"experience": {"name": "Sanjay Gandhi National Park", "category": "nature", "cost_inr": 85, "duration_minutes": 240, "indoor": false, "tags": ["nature", "adventure", "outdoor"]}, "constraints": {"time_minutes": 360, "budget_inr": 800, "interests": ["local life", "nature"], "preferences": ["vegetarian"]}, "context": {"weather": "hot"}}
+### Output
+Sanjay Gandhi National Park fits your 360-minute window; costs about ₹85, within your ₹800 budget; is outdoor — better early or after sunset to dodge the heat.
+
+### Input
+{"experience": {"name": "Carter Road Sunset Promenade", "category": "walk", "cost_inr": 0, "duration_minutes": 45, "indoor": false, "tags": ["waterfront", "sunset", "free"]}, "constraints": {"time_minutes": 300, "budget_inr": 800, "interests": ["local life", "nature"], "preferences": ["accessible", "morning"]}, "context": {"weather": "hot"}}
+### Output
+Carter Road Sunset Promenade fits your 300-minute window; is free; is outdoor — better early or after sunset to dodge the heat.
+
+### Input
+{"experience": {"name": "Oshiwara Night Market", "category": "market", "cost_inr": 250, "duration_minutes": 90, "indoor": false, "tags": ["food", "nightlife", "late-night"]}, "constraints": {"budget_inr": 500, "interests": ["local life"], "preferences": ["local", "rooftop"]}, "context": {"weather": "storm"}}
+### Output
+Oshiwara Night Market costs about ₹250, within your ₹500 budget; is outdoor — risky during a storm.
+
+### Input
+{"experience": {"name": "Kala Ghoda Cafe", "category": "cafe", "cost_inr": 500, "duration_minutes": 60, "indoor": true, "tags": ["art", "quiet", "food"]}, "constraints": {"time_minutes": 360, "budget_inr": 3000, "interests": ["history"], "preferences": ["sunset", "vegetarian"]}, "context": {"weather": "storm"}}
+### Output
+Kala Ghoda Cafe fits your 360-minute window; costs about ₹500, within your ₹3000 budget; is indoor — a sensible pick for the storm.
+
+### Input
+{"experience": {"name": "Sanjay Gandhi National Park", "category": "nature", "cost_inr": 85, "duration_minutes": 240, "indoor": false, "tags": ["nature", "adventure", "outdoor"]}, "constraints": {"time_minutes": 30, "budget_inr": 300, "interests": ["heritage", "food"], "preferences": ["family-friendly", "morning"]}, "context": {"weather": "cloudy"}}
+### Output
+Sanjay Gandhi National Park runs 240 minutes, a little over your 30-minute window; costs about ₹85, within your ₹300 budget; is outdoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Haji Ali Dargah", "category": "heritage", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["heritage", "culture", "free"]}, "constraints": {"budget_inr": 5000, "interests": ["wellness"], "preferences": ["late-night", "popular"]}, "context": {"weather": "rain"}}
+### Output
+Haji Ali Dargah is free; is outdoor — a likely washout in this rain.
+
+### Input
+{"experience": {"name": "Prithvi Theatre", "category": "theatre", "cost_inr": 400, "duration_minutes": 120, "indoor": true, "tags": ["culture", "art", "evening"]}, "constraints": {"time_minutes": 150, "budget_inr": 200, "interests": ["shopping", "heritage"], "preferences": ["indoor", "outdoor"]}, "context": {"weather": "rain"}}
+### Output
+Prithvi Theatre fits your 150-minute window; costs about ₹400, a stretch on your ₹200 budget; matches your indoor preference.
+
+### Input
+{"experience": {"name": "Colaba Causeway Bazaar", "category": "market", "cost_inr": 0, "duration_minutes": 90, "indoor": false, "tags": ["shopping", "budget", "popular"]}, "constraints": {"time_minutes": 150, "budget_inr": 2000, "interests": ["nightlife"], "preferences": ["morning"]}, "context": {"weather": "cloudy"}}
+### Output
+Colaba Causeway Bazaar fits your 150-minute window; is free; is outdoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Dadar Flower Market", "category": "market", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["local life", "morning", "budget"]}, "constraints": {"time_minutes": 300, "budget_inr": 1000, "interests": ["nature", "wellness"], "preferences": ["late-night"]}, "context": {"weather": "cloudy"}}
+### Output
+Dadar Flower Market fits your 300-minute window; is free; is outdoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Marine Drive Promenade", "category": "walk", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["waterfront", "sunset", "free"]}, "constraints": {"time_minutes": 180, "budget_inr": 800, "interests": ["adventure", "local life"], "preferences": ["vegetarian", "quick"]}, "context": {"weather": "clear"}}
+### Output
+Marine Drive Promenade fits your 180-minute window; is free; is outdoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Carter Road Sunset Promenade", "category": "walk", "cost_inr": 0, "duration_minutes": 45, "indoor": false, "tags": ["waterfront", "sunset", "free"]}, "constraints": {"time_minutes": 30, "budget_inr": 2000, "interests": ["art", "wellness"], "preferences": ["late-night"]}, "context": {"weather": "cloudy"}}
+### Output
+Carter Road Sunset Promenade runs 45 minutes, a little over your 30-minute window; is free; is outdoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Cafe Zoe", "category": "cafe", "cost_inr": 350, "duration_minutes": 90, "indoor": true, "tags": ["local", "quiet", "food"]}, "constraints": {"time_minutes": 30, "budget_inr": 500, "interests": ["food"], "preferences": ["waterfront"]}, "context": {"weather": "rain"}}
+### Output
+Cafe Zoe runs 90 minutes, a little over your 30-minute window; costs about ₹350, within your ₹500 budget; is indoor — good for today's rain.
+
+### Input
+{"experience": {"name": "Colaba Causeway Bazaar", "category": "market", "cost_inr": 0, "duration_minutes": 90, "indoor": false, "tags": ["shopping", "budget", "popular"]}, "constraints": {"time_minutes": 180, "budget_inr": 2000, "interests": ["shopping", "history"], "preferences": ["waterfront", "sunset"]}, "context": {"weather": "hot"}}
+### Output
+Colaba Causeway Bazaar fits your 180-minute window; is free; is outdoor — better early or after sunset to dodge the heat.
+
+### Input
+{"experience": {"name": "Dadar Flower Market", "category": "market", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["local life", "morning", "budget"]}, "constraints": {"time_minutes": 150, "interests": ["culture", "local life"], "preferences": ["quick"]}, "context": {"weather": "rain"}}
+### Output
+Dadar Flower Market fits your 150-minute window; is outdoor — a likely washout in this rain.
+
+### Input
+{"experience": {"name": "Marine Drive Promenade", "category": "walk", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["waterfront", "sunset", "free"]}, "constraints": {"time_minutes": 120, "budget_inr": 2000, "interests": ["culture"], "preferences": ["accessible", "budget"]}, "context": {"weather": "clear"}}
+### Output
+Marine Drive Promenade fits your 120-minute window; is free; is outdoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Cafe Zoe", "category": "cafe", "cost_inr": 350, "duration_minutes": 90, "indoor": true, "tags": ["local", "quiet", "food"]}, "constraints": {"time_minutes": 120, "budget_inr": 3000, "interests": ["food"], "preferences": ["late-night", "quick"]}, "context": {"weather": "cloudy"}}
+### Output
+Cafe Zoe fits your 120-minute window; costs about ₹350, within your ₹3000 budget; is indoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Cafe Zoe", "category": "cafe", "cost_inr": 350, "duration_minutes": 90, "indoor": true, "tags": ["local", "quiet", "food"]}, "constraints": {"time_minutes": 90, "budget_inr": 200, "interests": ["nightlife", "shopping"], "preferences": ["budget", "vegetarian"]}, "context": {"weather": "clear"}}
+### Output
+Cafe Zoe fits your 90-minute window; costs about ₹350, a stretch on your ₹200 budget; is indoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Marine Drive Promenade", "category": "walk", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["waterfront", "sunset", "free"]}, "constraints": {"time_minutes": 90, "budget_inr": 800, "interests": ["local life", "culture"], "preferences": ["family-friendly"]}, "context": {"weather": "hot"}}
+### Output
+Marine Drive Promenade fits your 90-minute window; is free; is outdoor — better early or after sunset to dodge the heat.
+
+### Input
+{"experience": {"name": "Haji Ali Dargah", "category": "heritage", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["heritage", "culture", "free"]}, "constraints": {"time_minutes": 360, "budget_inr": 500, "interests": ["heritage"], "preferences": ["late-night"]}, "context": {"weather": "clear"}}
+### Output
+Haji Ali Dargah fits your 360-minute window; is free; is outdoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Prithvi Theatre", "category": "theatre", "cost_inr": 400, "duration_minutes": 120, "indoor": true, "tags": ["culture", "art", "evening"]}, "constraints": {"time_minutes": 45, "budget_inr": 200, "interests": ["history"], "preferences": ["sunset", "popular"]}, "context": {"weather": "storm"}}
+### Output
+Prithvi Theatre runs 120 minutes, a little over your 45-minute window; costs about ₹400, a stretch on your ₹200 budget; is indoor — a sensible pick for the storm.
+
+### Input
+{"experience": {"name": "Haji Ali Dargah", "category": "heritage", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["heritage", "culture", "free"]}, "constraints": {"time_minutes": 120, "budget_inr": 200, "interests": ["history", "nature"], "preferences": ["accessible", "quick"]}, "context": {"weather": "clear"}}
+### Output
+Haji Ali Dargah fits your 120-minute window; is free; is outdoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Bandra Chapel Road Street Art", "category": "walk", "cost_inr": 0, "duration_minutes": 45, "indoor": false, "tags": ["art", "local", "hidden"]}, "constraints": {"time_minutes": 45, "budget_inr": 0, "interests": ["wellness", "nightlife"], "preferences": ["popular", "local"]}, "context": {"weather": "storm"}}
+### Output
+Bandra Chapel Road Street Art fits your 45-minute window; is free; matches your local preference.
+
+### Input
+{"experience": {"name": "Colaba Causeway Bazaar", "category": "market", "cost_inr": 0, "duration_minutes": 90, "indoor": false, "tags": ["shopping", "budget", "popular"]}, "constraints": {"time_minutes": 60, "budget_inr": 1500, "interests": ["food"], "preferences": ["late-night"]}, "context": {"weather": "hot"}}
+### Output
+Colaba Causeway Bazaar runs 90 minutes, a little over your 60-minute window; is free; is outdoor — better early or after sunset to dodge the heat.
+
+### Input
+{"experience": {"name": "Marine Drive Promenade", "category": "walk", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["waterfront", "sunset", "free"]}, "constraints": {"time_minutes": 240, "budget_inr": 0, "interests": ["history", "food"], "preferences": ["quiet", "popular"]}, "context": {"weather": "clear"}}
+### Output
+Marine Drive Promenade fits your 240-minute window; is free; is outdoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Prithvi Theatre", "category": "theatre", "cost_inr": 400, "duration_minutes": 120, "indoor": true, "tags": ["culture", "art", "evening"]}, "constraints": {"time_minutes": 180, "budget_inr": 5000, "interests": ["nature"], "preferences": ["family-friendly", "vegetarian"]}, "context": {"weather": "storm"}}
+### Output
+Prithvi Theatre fits your 180-minute window; costs about ₹400, within your ₹5000 budget; is indoor — a sensible pick for the storm.
+
+### Input
+{"experience": {"name": "Jehangir Art Gallery", "category": "gallery", "cost_inr": 100, "duration_minutes": 75, "indoor": true, "tags": ["art", "culture", "indoor"]}, "constraints": {"time_minutes": 90, "budget_inr": 0, "interests": ["food"], "preferences": ["rooftop", "indoor"]}, "context": {"weather": "hot"}}
+### Output
+Jehangir Art Gallery fits your 90-minute window; costs about ₹100, a stretch on your ₹0 budget; matches your indoor preference.
+
+### Input
+{"experience": {"name": "Bandra Chapel Road Street Art", "category": "walk", "cost_inr": 0, "duration_minutes": 45, "indoor": false, "tags": ["art", "local", "hidden"]}, "constraints": {"time_minutes": 90, "budget_inr": 5000, "interests": ["culture", "nightlife"], "preferences": ["sunset"]}, "context": {"weather": "rain"}}
+### Output
+Bandra Chapel Road Street Art fits your 90-minute window; is free; is outdoor — a likely washout in this rain.
+
+### Input
+{"experience": {"name": "Oshiwara Night Market", "category": "market", "cost_inr": 250, "duration_minutes": 90, "indoor": false, "tags": ["food", "nightlife", "late-night"]}, "constraints": {"time_minutes": 180, "budget_inr": 1000, "interests": ["nature"], "preferences": ["accessible"]}, "context": {"weather": "rain"}}
+### Output
+Oshiwara Night Market fits your 180-minute window; costs about ₹250, within your ₹1000 budget; is outdoor — a likely washout in this rain.
+
+### Input
+{"experience": {"name": "Global Vipassana Pagoda", "category": "meditation", "cost_inr": 0, "duration_minutes": 120, "indoor": true, "tags": ["wellness", "quiet", "free"]}, "constraints": {"time_minutes": 60, "budget_inr": 200, "interests": ["adventure", "history"], "preferences": ["hidden"]}, "context": {"weather": "storm"}}
+### Output
+Global Vipassana Pagoda runs 120 minutes, a little over your 60-minute window; is free; is indoor — a sensible pick for the storm.
+
+### Input
+{"experience": {"name": "Marine Drive Promenade", "category": "walk", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["waterfront", "sunset", "free"]}, "constraints": {"time_minutes": 45, "budget_inr": 800, "interests": ["wellness"], "preferences": ["sunset", "morning"]}, "context": {"weather": "clear"}}
+### Output
+Marine Drive Promenade runs 60 minutes, a little over your 45-minute window; is free; matches your sunset preference.
+
+### Input
+{"experience": {"name": "Kala Ghoda Cafe", "category": "cafe", "cost_inr": 500, "duration_minutes": 60, "indoor": true, "tags": ["art", "quiet", "food"]}, "constraints": {"time_minutes": 150, "budget_inr": 2000, "interests": ["food", "history"], "preferences": ["budget"]}, "context": {"weather": "hot"}}
+### Output
+Kala Ghoda Cafe fits your 150-minute window; costs about ₹500, within your ₹2000 budget; is indoor — shaded from the midday heat.
+
+### Input
+{"experience": {"name": "Jehangir Art Gallery", "category": "gallery", "cost_inr": 100, "duration_minutes": 75, "indoor": true, "tags": ["art", "culture", "indoor"]}, "constraints": {"budget_inr": 500, "interests": ["heritage"], "preferences": ["quiet"]}, "context": {"weather": "hot"}}
+### Output
+Jehangir Art Gallery costs about ₹100, within your ₹500 budget; is indoor — shaded from the midday heat.
+
+### Input
+{"experience": {"name": "Haji Ali Dargah", "category": "heritage", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["heritage", "culture", "free"]}, "constraints": {"time_minutes": 120, "interests": ["nature"], "preferences": ["accessible", "vegetarian"]}, "context": {"weather": "cloudy"}}
+### Output
+Haji Ali Dargah fits your 120-minute window; is outdoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Jehangir Art Gallery", "category": "gallery", "cost_inr": 100, "duration_minutes": 75, "indoor": true, "tags": ["art", "culture", "indoor"]}, "constraints": {"time_minutes": 120, "budget_inr": 300, "interests": ["nature"], "preferences": ["quick"]}, "context": {"weather": "cloudy"}}
+### Output
+Jehangir Art Gallery fits your 120-minute window; costs about ₹100, within your ₹300 budget; is indoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Versova Fishing Village", "category": "walk", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["local life", "morning", "hidden"]}, "constraints": {"time_minutes": 30, "budget_inr": 1500, "interests": ["nightlife", "food"], "preferences": ["quick"]}, "context": {"weather": "rain"}}
+### Output
+Versova Fishing Village runs 60 minutes, a little over your 30-minute window; is free; is outdoor — a likely washout in this rain.
+
+### Input
+{"experience": {"name": "Cafe Zoe", "category": "cafe", "cost_inr": 350, "duration_minutes": 90, "indoor": true, "tags": ["local", "quiet", "food"]}, "constraints": {"time_minutes": 240, "budget_inr": 300, "interests": ["wellness", "art"], "preferences": ["indoor"]}, "context": {"weather": "rain"}}
+### Output
+Cafe Zoe fits your 240-minute window; costs about ₹350, a stretch on your ₹300 budget; matches your indoor preference.
+
+### Input
+{"experience": {"name": "Marine Drive Promenade", "category": "walk", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["waterfront", "sunset", "free"]}, "constraints": {"time_minutes": 180, "interests": ["food"], "preferences": ["family-friendly"]}, "context": {"weather": "storm"}}
+### Output
+Marine Drive Promenade fits your 180-minute window; is outdoor — risky during a storm.
+
+### Input
+{"experience": {"name": "Sanjay Gandhi National Park", "category": "nature", "cost_inr": 85, "duration_minutes": 240, "indoor": false, "tags": ["nature", "adventure", "outdoor"]}, "constraints": {"time_minutes": 300, "budget_inr": 2000, "interests": ["heritage"], "preferences": ["vegetarian"]}, "context": {"weather": "rain"}}
+### Output
+Sanjay Gandhi National Park fits your 300-minute window; costs about ₹85, within your ₹2000 budget; is outdoor — a likely washout in this rain.
+
+### Input
+{"experience": {"name": "Britannia & Co", "category": "restaurant", "cost_inr": 700, "duration_minutes": 75, "indoor": true, "tags": ["heritage", "food", "iranian"]}, "constraints": {"time_minutes": 150, "budget_inr": 200, "interests": ["heritage"], "preferences": ["family-friendly"]}, "context": {"weather": "cloudy"}}
+### Output
+Britannia & Co fits your 150-minute window; costs about ₹700, a stretch on your ₹200 budget; is indoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Versova Fishing Village", "category": "walk", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["local life", "morning", "hidden"]}, "constraints": {"time_minutes": 45, "budget_inr": 2000, "interests": ["adventure", "nature"], "preferences": ["late-night"]}, "context": {"weather": "clear"}}
+### Output
+Versova Fishing Village runs 60 minutes, a little over your 45-minute window; is free; is outdoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Jehangir Art Gallery", "category": "gallery", "cost_inr": 100, "duration_minutes": 75, "indoor": true, "tags": ["art", "culture", "indoor"]}, "constraints": {"time_minutes": 180, "budget_inr": 1000, "interests": ["nightlife", "art"], "preferences": ["outdoor"]}, "context": {"weather": "clear"}}
+### Output
+Jehangir Art Gallery fits your 180-minute window; costs about ₹100, within your ₹1000 budget; is indoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Britannia & Co", "category": "restaurant", "cost_inr": 700, "duration_minutes": 75, "indoor": true, "tags": ["heritage", "food", "iranian"]}, "constraints": {"time_minutes": 240, "budget_inr": 5000, "interests": ["culture"], "preferences": ["vegetarian"]}, "context": {"weather": "hot"}}
+### Output
+Britannia & Co fits your 240-minute window; costs about ₹700, within your ₹5000 budget; is indoor — shaded from the midday heat.
+
+### Input
+{"experience": {"name": "Colaba Causeway Bazaar", "category": "market", "cost_inr": 0, "duration_minutes": 90, "indoor": false, "tags": ["shopping", "budget", "popular"]}, "constraints": {"time_minutes": 240, "budget_inr": 3000, "interests": ["art"], "preferences": ["quiet", "late-night"]}, "context": {"weather": "cloudy"}}
+### Output
+Colaba Causeway Bazaar fits your 240-minute window; is free; is outdoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Britannia & Co", "category": "restaurant", "cost_inr": 700, "duration_minutes": 75, "indoor": true, "tags": ["heritage", "food", "iranian"]}, "constraints": {"time_minutes": 120, "budget_inr": 2000, "interests": ["wellness"], "preferences": ["indoor", "morning"]}, "context": {"weather": "cloudy"}}
+### Output
+Britannia & Co fits your 120-minute window; costs about ₹700, within your ₹2000 budget; matches your indoor preference.
+
+### Input
+{"experience": {"name": "Chor Bazaar Antique Hunt", "category": "market", "cost_inr": 0, "duration_minutes": 120, "indoor": false, "tags": ["shopping", "heritage", "hidden"]}, "constraints": {"time_minutes": 180, "budget_inr": 2000, "interests": ["adventure", "local life"], "preferences": ["morning"]}, "context": {"weather": "storm"}}
+### Output
+Chor Bazaar Antique Hunt fits your 180-minute window; is free; is outdoor — risky during a storm.
+
+### Input
+{"experience": {"name": "Bandra Chapel Road Street Art", "category": "walk", "cost_inr": 0, "duration_minutes": 45, "indoor": false, "tags": ["art", "local", "hidden"]}, "constraints": {"budget_inr": 3000, "interests": ["history"], "preferences": ["budget"]}, "context": {"weather": "hot"}}
+### Output
+Bandra Chapel Road Street Art is free; is outdoor — better early or after sunset to dodge the heat.
+
+### Input
+{"experience": {"name": "Cafe Zoe", "category": "cafe", "cost_inr": 350, "duration_minutes": 90, "indoor": true, "tags": ["local", "quiet", "food"]}, "constraints": {"time_minutes": 150, "budget_inr": 500, "interests": ["nightlife", "adventure"], "preferences": ["hidden"]}, "context": {"weather": "clear"}}
+### Output
+Cafe Zoe fits your 150-minute window; costs about ₹350, within your ₹500 budget; is indoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Global Vipassana Pagoda", "category": "meditation", "cost_inr": 0, "duration_minutes": 120, "indoor": true, "tags": ["wellness", "quiet", "free"]}, "constraints": {"time_minutes": 300, "budget_inr": 3000, "interests": ["art"], "preferences": ["outdoor"]}, "context": {"weather": "rain"}}
+### Output
+Global Vipassana Pagoda fits your 300-minute window; is free; is indoor — good for today's rain.
+
+### Input
+{"experience": {"name": "Versova Fishing Village", "category": "walk", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["local life", "morning", "hidden"]}, "constraints": {"time_minutes": 120, "budget_inr": 3000, "interests": ["shopping"], "preferences": ["vegetarian", "waterfront"]}, "context": {"weather": "hot"}}
+### Output
+Versova Fishing Village fits your 120-minute window; is free; is outdoor — better early or after sunset to dodge the heat.
+
+### Input
+{"experience": {"name": "Versova Fishing Village", "category": "walk", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["local life", "morning", "hidden"]}, "constraints": {"time_minutes": 60, "budget_inr": 500, "interests": ["shopping", "culture"], "preferences": ["rooftop", "hidden"]}, "context": {"weather": "storm"}}
+### Output
+Versova Fishing Village fits your 60-minute window; is free; matches your hidden preference.
+
+### Input
+{"experience": {"name": "Cafe Zoe", "category": "cafe", "cost_inr": 350, "duration_minutes": 90, "indoor": true, "tags": ["local", "quiet", "food"]}, "constraints": {"time_minutes": 90, "interests": ["local life"], "preferences": ["late-night"]}, "context": {"weather": "hot"}}
+### Output
+Cafe Zoe fits your 90-minute window; is indoor — shaded from the midday heat.
+
+### Input
+{"experience": {"name": "Versova Fishing Village", "category": "walk", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["local life", "morning", "hidden"]}, "constraints": {"time_minutes": 150, "budget_inr": 3000, "interests": ["wellness"], "preferences": ["popular", "accessible"]}, "context": {"weather": "rain"}}
+### Output
+Versova Fishing Village fits your 150-minute window; is free; is outdoor — a likely washout in this rain.
+
+### Input
+{"experience": {"name": "Colaba Causeway Bazaar", "category": "market", "cost_inr": 0, "duration_minutes": 90, "indoor": false, "tags": ["shopping", "budget", "popular"]}, "constraints": {"time_minutes": 240, "budget_inr": 5000, "interests": ["culture", "wellness"], "preferences": ["outdoor", "local"]}, "context": {"weather": "rain"}}
+### Output
+Colaba Causeway Bazaar fits your 240-minute window; is free; matches your outdoor preference.
+
+### Input
+{"experience": {"name": "Oshiwara Night Market", "category": "market", "cost_inr": 250, "duration_minutes": 90, "indoor": false, "tags": ["food", "nightlife", "late-night"]}, "constraints": {"budget_inr": 500, "interests": ["nature"], "preferences": ["vegetarian", "budget"]}, "context": {"weather": "rain"}}
+### Output
+Oshiwara Night Market costs about ₹250, within your ₹500 budget; is outdoor — a likely washout in this rain.
+
+### Input
+{"experience": {"name": "Kala Ghoda Cafe", "category": "cafe", "cost_inr": 500, "duration_minutes": 60, "indoor": true, "tags": ["art", "quiet", "food"]}, "constraints": {"time_minutes": 45, "budget_inr": 1000, "interests": ["culture"], "preferences": ["quick", "waterfront"]}, "context": {"weather": "cloudy"}}
+### Output
+Kala Ghoda Cafe runs 60 minutes, a little over your 45-minute window; costs about ₹500, within your ₹1000 budget; is indoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Bandra Chapel Road Street Art", "category": "walk", "cost_inr": 0, "duration_minutes": 45, "indoor": false, "tags": ["art", "local", "hidden"]}, "constraints": {"time_minutes": 360, "budget_inr": 3000, "interests": ["history"], "preferences": ["late-night"]}, "context": {"weather": "hot"}}
+### Output
+Bandra Chapel Road Street Art fits your 360-minute window; is free; is outdoor — better early or after sunset to dodge the heat.
+
+### Input
+{"experience": {"name": "Cafe Zoe", "category": "cafe", "cost_inr": 350, "duration_minutes": 90, "indoor": true, "tags": ["local", "quiet", "food"]}, "constraints": {"time_minutes": 120, "budget_inr": 3000, "interests": ["history"], "preferences": ["late-night", "budget"]}, "context": {"weather": "clear"}}
+### Output
+Cafe Zoe fits your 120-minute window; costs about ₹350, within your ₹3000 budget; is indoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Carter Road Sunset Promenade", "category": "walk", "cost_inr": 0, "duration_minutes": 45, "indoor": false, "tags": ["waterfront", "sunset", "free"]}, "constraints": {"time_minutes": 150, "budget_inr": 2000, "interests": ["shopping", "nature"], "preferences": ["rooftop"]}, "context": {"weather": "rain"}}
+### Output
+Carter Road Sunset Promenade fits your 150-minute window; is free; is outdoor — a likely washout in this rain.
+
+### Input
+{"experience": {"name": "Dadar Flower Market", "category": "market", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["local life", "morning", "budget"]}, "constraints": {"time_minutes": 45, "budget_inr": 800, "interests": ["nightlife", "history"], "preferences": ["budget", "sunset"]}, "context": {"weather": "rain"}}
+### Output
+Dadar Flower Market runs 60 minutes, a little over your 45-minute window; is free; matches your budget preference.
+
+### Input
+{"experience": {"name": "Prithvi Theatre", "category": "theatre", "cost_inr": 400, "duration_minutes": 120, "indoor": true, "tags": ["culture", "art", "evening"]}, "constraints": {"time_minutes": 45, "budget_inr": 200, "interests": ["nightlife"], "preferences": ["vegetarian", "waterfront"]}, "context": {"weather": "cloudy"}}
+### Output
+Prithvi Theatre runs 120 minutes, a little over your 45-minute window; costs about ₹400, a stretch on your ₹200 budget; is indoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Versova Fishing Village", "category": "walk", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["local life", "morning", "hidden"]}, "constraints": {"time_minutes": 150, "budget_inr": 1500, "interests": ["heritage"], "preferences": ["indoor"]}, "context": {"weather": "storm"}}
+### Output
+Versova Fishing Village fits your 150-minute window; is free; is outdoor — risky during a storm.
+
+### Input
+{"experience": {"name": "Versova Fishing Village", "category": "walk", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["local life", "morning", "hidden"]}, "constraints": {"time_minutes": 90, "budget_inr": 5000, "interests": ["local life"], "preferences": ["rooftop", "waterfront"]}, "context": {"weather": "cloudy"}}
+### Output
+Versova Fishing Village fits your 90-minute window; is free; is outdoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Britannia & Co", "category": "restaurant", "cost_inr": 700, "duration_minutes": 75, "indoor": true, "tags": ["heritage", "food", "iranian"]}, "constraints": {"time_minutes": 180, "budget_inr": 1500, "interests": ["adventure", "culture"], "preferences": ["local", "outdoor"]}, "context": {"weather": "cloudy"}}
+### Output
+Britannia & Co fits your 180-minute window; costs about ₹700, within your ₹1500 budget; is indoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Oshiwara Night Market", "category": "market", "cost_inr": 250, "duration_minutes": 90, "indoor": false, "tags": ["food", "nightlife", "late-night"]}, "constraints": {"time_minutes": 240, "budget_inr": 800, "interests": ["local life"], "preferences": ["morning", "budget"]}, "context": {"weather": "rain"}}
+### Output
+Oshiwara Night Market fits your 240-minute window; costs about ₹250, within your ₹800 budget; is outdoor — a likely washout in this rain.
+
+### Input
+{"experience": {"name": "Cafe Zoe", "category": "cafe", "cost_inr": 350, "duration_minutes": 90, "indoor": true, "tags": ["local", "quiet", "food"]}, "constraints": {"time_minutes": 300, "budget_inr": 5000, "interests": ["nightlife", "food"], "preferences": ["sunset"]}, "context": {"weather": "rain"}}
+### Output
+Cafe Zoe fits your 300-minute window; costs about ₹350, within your ₹5000 budget; is indoor — good for today's rain.
+
+### Input
+{"experience": {"name": "Chor Bazaar Antique Hunt", "category": "market", "cost_inr": 0, "duration_minutes": 120, "indoor": false, "tags": ["shopping", "heritage", "hidden"]}, "constraints": {"time_minutes": 45, "budget_inr": 200, "interests": ["food"], "preferences": ["late-night"]}, "context": {"weather": "rain"}}
+### Output
+Chor Bazaar Antique Hunt runs 120 minutes, a little over your 45-minute window; is free; is outdoor — a likely washout in this rain.
+
+### Input
+{"experience": {"name": "Dadar Flower Market", "category": "market", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["local life", "morning", "budget"]}, "constraints": {"time_minutes": 150, "budget_inr": 2000, "interests": ["food"], "preferences": ["budget"]}, "context": {"weather": "rain"}}
+### Output
+Dadar Flower Market fits your 150-minute window; is free; matches your budget preference.
+
+### Input
+{"experience": {"name": "Global Vipassana Pagoda", "category": "meditation", "cost_inr": 0, "duration_minutes": 120, "indoor": true, "tags": ["wellness", "quiet", "free"]}, "constraints": {"time_minutes": 180, "budget_inr": 1500, "interests": ["nightlife"], "preferences": ["family-friendly"]}, "context": {"weather": "hot"}}
+### Output
+Global Vipassana Pagoda fits your 180-minute window; is free; is indoor — shaded from the midday heat.
+
+### Input
+{"experience": {"name": "Versova Fishing Village", "category": "walk", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["local life", "morning", "hidden"]}, "constraints": {"time_minutes": 360, "budget_inr": 5000, "interests": ["adventure", "wellness"], "preferences": ["indoor", "family-friendly"]}, "context": {"weather": "storm"}}
+### Output
+Versova Fishing Village fits your 360-minute window; is free; is outdoor — risky during a storm.
+
+### Input
+{"experience": {"name": "Sanjay Gandhi National Park", "category": "nature", "cost_inr": 85, "duration_minutes": 240, "indoor": false, "tags": ["nature", "adventure", "outdoor"]}, "constraints": {"time_minutes": 45, "budget_inr": 300, "interests": ["history"], "preferences": ["waterfront", "quick"]}, "context": {"weather": "storm"}}
+### Output
+Sanjay Gandhi National Park runs 240 minutes, a little over your 45-minute window; costs about ₹85, within your ₹300 budget; is outdoor — risky during a storm.
+
+### Input
+{"experience": {"name": "Dadar Flower Market", "category": "market", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["local life", "morning", "budget"]}, "constraints": {"budget_inr": 200, "interests": ["adventure", "shopping"], "preferences": ["family-friendly", "budget"]}, "context": {"weather": "rain"}}
+### Output
+Dadar Flower Market is free; matches your budget preference; is outdoor — a likely washout in this rain.
+
+### Input
+{"experience": {"name": "Oshiwara Night Market", "category": "market", "cost_inr": 250, "duration_minutes": 90, "indoor": false, "tags": ["food", "nightlife", "late-night"]}, "constraints": {"time_minutes": 90, "budget_inr": 1500, "interests": ["adventure"], "preferences": ["popular", "rooftop"]}, "context": {"weather": "rain"}}
+### Output
+Oshiwara Night Market fits your 90-minute window; costs about ₹250, within your ₹1500 budget; is outdoor — a likely washout in this rain.
+
+### Input
+{"experience": {"name": "Dadar Flower Market", "category": "market", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["local life", "morning", "budget"]}, "constraints": {"time_minutes": 150, "budget_inr": 300, "interests": ["culture", "nightlife"], "preferences": ["quick", "accessible"]}, "context": {"weather": "cloudy"}}
+### Output
+Dadar Flower Market fits your 150-minute window; is free; is outdoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Carter Road Sunset Promenade", "category": "walk", "cost_inr": 0, "duration_minutes": 45, "indoor": false, "tags": ["waterfront", "sunset", "free"]}, "constraints": {"budget_inr": 3000, "interests": ["nature", "adventure"], "preferences": ["rooftop"]}, "context": {"weather": "storm"}}
+### Output
+Carter Road Sunset Promenade is free; is outdoor — risky during a storm.
+
+### Input
+{"experience": {"name": "Marine Drive Promenade", "category": "walk", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["waterfront", "sunset", "free"]}, "constraints": {"budget_inr": 300, "interests": ["adventure"], "preferences": ["popular", "quiet"]}, "context": {"weather": "clear"}}
+### Output
+Marine Drive Promenade is free; is outdoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Jehangir Art Gallery", "category": "gallery", "cost_inr": 100, "duration_minutes": 75, "indoor": true, "tags": ["art", "culture", "indoor"]}, "constraints": {"time_minutes": 30, "budget_inr": 1000, "interests": ["adventure"], "preferences": ["vegetarian", "rooftop"]}, "context": {"weather": "cloudy"}}
+### Output
+Jehangir Art Gallery runs 75 minutes, a little over your 30-minute window; costs about ₹100, within your ₹1000 budget; is indoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Colaba Causeway Bazaar", "category": "market", "cost_inr": 0, "duration_minutes": 90, "indoor": false, "tags": ["shopping", "budget", "popular"]}, "constraints": {"time_minutes": 360, "budget_inr": 1500, "interests": ["food"], "preferences": ["rooftop"]}, "context": {"weather": "rain"}}
+### Output
+Colaba Causeway Bazaar fits your 360-minute window; is free; is outdoor — a likely washout in this rain.
+
+### Input
+{"experience": {"name": "Chor Bazaar Antique Hunt", "category": "market", "cost_inr": 0, "duration_minutes": 120, "indoor": false, "tags": ["shopping", "heritage", "hidden"]}, "constraints": {"budget_inr": 2000, "interests": ["heritage"], "preferences": ["local"]}, "context": {"weather": "clear"}}
+### Output
+Chor Bazaar Antique Hunt is free; is outdoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Haji Ali Dargah", "category": "heritage", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["heritage", "culture", "free"]}, "constraints": {"time_minutes": 60, "budget_inr": 200, "interests": ["food", "nature"], "preferences": ["indoor"]}, "context": {"weather": "cloudy"}}
+### Output
+Haji Ali Dargah fits your 60-minute window; is free; is outdoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Cafe Zoe", "category": "cafe", "cost_inr": 350, "duration_minutes": 90, "indoor": true, "tags": ["local", "quiet", "food"]}, "constraints": {"time_minutes": 60, "budget_inr": 1000, "interests": ["history", "art"], "preferences": ["popular"]}, "context": {"weather": "rain"}}
+### Output
+Cafe Zoe runs 90 minutes, a little over your 60-minute window; costs about ₹350, within your ₹1000 budget; is indoor — good for today's rain.
+
+### Input
+{"experience": {"name": "Bandra Chapel Road Street Art", "category": "walk", "cost_inr": 0, "duration_minutes": 45, "indoor": false, "tags": ["art", "local", "hidden"]}, "constraints": {"time_minutes": 150, "budget_inr": 500, "interests": ["adventure"], "preferences": ["morning"]}, "context": {"weather": "hot"}}
+### Output
+Bandra Chapel Road Street Art fits your 150-minute window; is free; is outdoor — better early or after sunset to dodge the heat.
+
+### Input
+{"experience": {"name": "Haji Ali Dargah", "category": "heritage", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["heritage", "culture", "free"]}, "constraints": {"time_minutes": 60, "budget_inr": 3000, "interests": ["local life"], "preferences": ["indoor", "rooftop"]}, "context": {"weather": "storm"}}
+### Output
+Haji Ali Dargah fits your 60-minute window; is free; is outdoor — risky during a storm.
+
+### Input
+{"experience": {"name": "Dadar Flower Market", "category": "market", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["local life", "morning", "budget"]}, "constraints": {"time_minutes": 30, "budget_inr": 1000, "interests": ["food"], "preferences": ["late-night"]}, "context": {"weather": "cloudy"}}
+### Output
+Dadar Flower Market runs 60 minutes, a little over your 30-minute window; is free; is outdoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Cafe Zoe", "category": "cafe", "cost_inr": 350, "duration_minutes": 90, "indoor": true, "tags": ["local", "quiet", "food"]}, "constraints": {"time_minutes": 120, "interests": ["heritage"], "preferences": ["indoor"]}, "context": {"weather": "rain"}}
+### Output
+Cafe Zoe fits your 120-minute window; matches your indoor preference; is indoor — good for today's rain.
+
+### Input
+{"experience": {"name": "Colaba Causeway Bazaar", "category": "market", "cost_inr": 0, "duration_minutes": 90, "indoor": false, "tags": ["shopping", "budget", "popular"]}, "constraints": {"budget_inr": 3000, "interests": ["nature", "shopping"], "preferences": ["family-friendly"]}, "context": {"weather": "hot"}}
+### Output
+Colaba Causeway Bazaar is free; is outdoor — better early or after sunset to dodge the heat.
+
+### Input
+{"experience": {"name": "Chor Bazaar Antique Hunt", "category": "market", "cost_inr": 0, "duration_minutes": 120, "indoor": false, "tags": ["shopping", "heritage", "hidden"]}, "constraints": {"time_minutes": 120, "interests": ["art", "wellness"], "preferences": ["morning"]}, "context": {"weather": "storm"}}
+### Output
+Chor Bazaar Antique Hunt fits your 120-minute window; is outdoor — risky during a storm.
+
+### Input
+{"experience": {"name": "Dadar Flower Market", "category": "market", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["local life", "morning", "budget"]}, "constraints": {"time_minutes": 45, "budget_inr": 1500, "interests": ["local life"], "preferences": ["indoor", "hidden"]}, "context": {"weather": "rain"}}
+### Output
+Dadar Flower Market runs 60 minutes, a little over your 45-minute window; is free; is outdoor — a likely washout in this rain.
+
+### Input
+{"experience": {"name": "Colaba Causeway Bazaar", "category": "market", "cost_inr": 0, "duration_minutes": 90, "indoor": false, "tags": ["shopping", "budget", "popular"]}, "constraints": {"time_minutes": 150, "budget_inr": 200, "interests": ["art", "local life"], "preferences": ["family-friendly"]}, "context": {"weather": "cloudy"}}
+### Output
+Colaba Causeway Bazaar fits your 150-minute window; is free; is outdoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Carter Road Sunset Promenade", "category": "walk", "cost_inr": 0, "duration_minutes": 45, "indoor": false, "tags": ["waterfront", "sunset", "free"]}, "constraints": {"time_minutes": 45, "budget_inr": 0, "interests": ["history"], "preferences": ["morning", "hidden"]}, "context": {"weather": "storm"}}
+### Output
+Carter Road Sunset Promenade fits your 45-minute window; is free; is outdoor — risky during a storm.
+
+### Input
+{"experience": {"name": "Prithvi Theatre", "category": "theatre", "cost_inr": 400, "duration_minutes": 120, "indoor": true, "tags": ["culture", "art", "evening"]}, "constraints": {"time_minutes": 120, "budget_inr": 1000, "interests": ["local life", "wellness"], "preferences": ["hidden"]}, "context": {"weather": "clear"}}
+### Output
+Prithvi Theatre fits your 120-minute window; costs about ₹400, within your ₹1000 budget; is indoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Chor Bazaar Antique Hunt", "category": "market", "cost_inr": 0, "duration_minutes": 120, "indoor": false, "tags": ["shopping", "heritage", "hidden"]}, "constraints": {"time_minutes": 150, "budget_inr": 200, "interests": ["culture", "nightlife"], "preferences": ["outdoor"]}, "context": {"weather": "clear"}}
+### Output
+Chor Bazaar Antique Hunt fits your 150-minute window; is free; matches your outdoor preference.
+
+### Input
+{"experience": {"name": "Colaba Causeway Bazaar", "category": "market", "cost_inr": 0, "duration_minutes": 90, "indoor": false, "tags": ["shopping", "budget", "popular"]}, "constraints": {"time_minutes": 150, "budget_inr": 500, "interests": ["culture", "food"], "preferences": ["budget"]}, "context": {"weather": "hot"}}
+### Output
+Colaba Causeway Bazaar fits your 150-minute window; is free; matches your budget preference.
+
+### Input
+{"experience": {"name": "Marine Drive Promenade", "category": "walk", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["waterfront", "sunset", "free"]}, "constraints": {"time_minutes": 240, "budget_inr": 300, "interests": ["nature", "shopping"], "preferences": ["local"]}, "context": {"weather": "cloudy"}}
+### Output
+Marine Drive Promenade fits your 240-minute window; is free; is outdoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Kala Ghoda Cafe", "category": "cafe", "cost_inr": 500, "duration_minutes": 60, "indoor": true, "tags": ["art", "quiet", "food"]}, "constraints": {"time_minutes": 30, "budget_inr": 300, "interests": ["local life"], "preferences": ["hidden", "quick"]}, "context": {"weather": "clear"}}
+### Output
+Kala Ghoda Cafe runs 60 minutes, a little over your 30-minute window; costs about ₹500, a stretch on your ₹300 budget; is indoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Sanjay Gandhi National Park", "category": "nature", "cost_inr": 85, "duration_minutes": 240, "indoor": false, "tags": ["nature", "adventure", "outdoor"]}, "constraints": {"time_minutes": 120, "budget_inr": 500, "interests": ["adventure"], "preferences": ["quick"]}, "context": {"weather": "hot"}}
+### Output
+Sanjay Gandhi National Park runs 240 minutes, a little over your 120-minute window; costs about ₹85, within your ₹500 budget; is outdoor — better early or after sunset to dodge the heat.
+
+### Input
+{"experience": {"name": "Oshiwara Night Market", "category": "market", "cost_inr": 250, "duration_minutes": 90, "indoor": false, "tags": ["food", "nightlife", "late-night"]}, "constraints": {"time_minutes": 45, "budget_inr": 1500, "interests": ["nightlife"], "preferences": ["local", "accessible"]}, "context": {"weather": "rain"}}
+### Output
+Oshiwara Night Market runs 90 minutes, a little over your 45-minute window; costs about ₹250, within your ₹1500 budget; is outdoor — a likely washout in this rain.
+
+### Input
+{"experience": {"name": "Prithvi Theatre", "category": "theatre", "cost_inr": 400, "duration_minutes": 120, "indoor": true, "tags": ["culture", "art", "evening"]}, "constraints": {"time_minutes": 180, "budget_inr": 1000, "interests": ["culture", "nightlife"], "preferences": ["budget", "late-night"]}, "context": {"weather": "cloudy"}}
+### Output
+Prithvi Theatre fits your 180-minute window; costs about ₹400, within your ₹1000 budget; is indoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Cafe Zoe", "category": "cafe", "cost_inr": 350, "duration_minutes": 90, "indoor": true, "tags": ["local", "quiet", "food"]}, "constraints": {"time_minutes": 150, "budget_inr": 2000, "interests": ["nightlife", "history"], "preferences": ["budget"]}, "context": {"weather": "rain"}}
+### Output
+Cafe Zoe fits your 150-minute window; costs about ₹350, within your ₹2000 budget; is indoor — good for today's rain.
+
+### Input
+{"experience": {"name": "Sanjay Gandhi National Park", "category": "nature", "cost_inr": 85, "duration_minutes": 240, "indoor": false, "tags": ["nature", "adventure", "outdoor"]}, "constraints": {"time_minutes": 300, "budget_inr": 1000, "interests": ["nature", "wellness"], "preferences": ["family-friendly"]}, "context": {"weather": "hot"}}
+### Output
+Sanjay Gandhi National Park fits your 300-minute window; costs about ₹85, within your ₹1000 budget; is outdoor — better early or after sunset to dodge the heat.
+
+### Input
+{"experience": {"name": "Cafe Zoe", "category": "cafe", "cost_inr": 350, "duration_minutes": 90, "indoor": true, "tags": ["local", "quiet", "food"]}, "constraints": {"time_minutes": 180, "budget_inr": 200, "interests": ["art"], "preferences": ["hidden", "waterfront"]}, "context": {"weather": "storm"}}
+### Output
+Cafe Zoe fits your 180-minute window; costs about ₹350, a stretch on your ₹200 budget; is indoor — a sensible pick for the storm.
+
+### Input
+{"experience": {"name": "Cafe Zoe", "category": "cafe", "cost_inr": 350, "duration_minutes": 90, "indoor": true, "tags": ["local", "quiet", "food"]}, "constraints": {"time_minutes": 150, "budget_inr": 2000, "interests": ["shopping", "adventure"], "preferences": ["local", "rooftop"]}, "context": {"weather": "storm"}}
+### Output
+Cafe Zoe fits your 150-minute window; costs about ₹350, within your ₹2000 budget; matches your local preference.
+
+### Input
+{"experience": {"name": "Carter Road Sunset Promenade", "category": "walk", "cost_inr": 0, "duration_minutes": 45, "indoor": false, "tags": ["waterfront", "sunset", "free"]}, "constraints": {"time_minutes": 180, "budget_inr": 2000, "interests": ["local life"], "preferences": ["vegetarian", "quiet"]}, "context": {"weather": "rain"}}
+### Output
+Carter Road Sunset Promenade fits your 180-minute window; is free; is outdoor — a likely washout in this rain.
+
+### Input
+{"experience": {"name": "Jehangir Art Gallery", "category": "gallery", "cost_inr": 100, "duration_minutes": 75, "indoor": true, "tags": ["art", "culture", "indoor"]}, "constraints": {"time_minutes": 300, "budget_inr": 3000, "interests": ["history"], "preferences": ["vegetarian"]}, "context": {"weather": "storm"}}
+### Output
+Jehangir Art Gallery fits your 300-minute window; costs about ₹100, within your ₹3000 budget; is indoor — a sensible pick for the storm.
+
+### Input
+{"experience": {"name": "Oshiwara Night Market", "category": "market", "cost_inr": 250, "duration_minutes": 90, "indoor": false, "tags": ["food", "nightlife", "late-night"]}, "constraints": {"time_minutes": 300, "budget_inr": 0, "interests": ["local life"], "preferences": ["rooftop"]}, "context": {"weather": "clear"}}
+### Output
+Oshiwara Night Market fits your 300-minute window; costs about ₹250, a stretch on your ₹0 budget; is outdoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Oshiwara Night Market", "category": "market", "cost_inr": 250, "duration_minutes": 90, "indoor": false, "tags": ["food", "nightlife", "late-night"]}, "constraints": {"time_minutes": 240, "budget_inr": 1500, "interests": ["wellness", "adventure"], "preferences": ["accessible", "hidden"]}, "context": {"weather": "storm"}}
+### Output
+Oshiwara Night Market fits your 240-minute window; costs about ₹250, within your ₹1500 budget; is outdoor — risky during a storm.
+
+### Input
+{"experience": {"name": "Bandra Chapel Road Street Art", "category": "walk", "cost_inr": 0, "duration_minutes": 45, "indoor": false, "tags": ["art", "local", "hidden"]}, "constraints": {"time_minutes": 300, "budget_inr": 1500, "interests": ["culture", "adventure"], "preferences": ["accessible", "late-night"]}, "context": {"weather": "clear"}}
+### Output
+Bandra Chapel Road Street Art fits your 300-minute window; is free; is outdoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Carter Road Sunset Promenade", "category": "walk", "cost_inr": 0, "duration_minutes": 45, "indoor": false, "tags": ["waterfront", "sunset", "free"]}, "constraints": {"time_minutes": 150, "budget_inr": 2000, "interests": ["local life"], "preferences": ["quiet", "family-friendly"]}, "context": {"weather": "rain"}}
+### Output
+Carter Road Sunset Promenade fits your 150-minute window; is free; is outdoor — a likely washout in this rain.
+
+### Input
+{"experience": {"name": "Cafe Zoe", "category": "cafe", "cost_inr": 350, "duration_minutes": 90, "indoor": true, "tags": ["local", "quiet", "food"]}, "constraints": {"time_minutes": 45, "budget_inr": 1500, "interests": ["nature", "wellness"], "preferences": ["morning"]}, "context": {"weather": "cloudy"}}
+### Output
+Cafe Zoe runs 90 minutes, a little over your 45-minute window; costs about ₹350, within your ₹1500 budget; is indoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Haji Ali Dargah", "category": "heritage", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["heritage", "culture", "free"]}, "constraints": {"time_minutes": 150, "budget_inr": 200, "interests": ["shopping"], "preferences": ["morning", "late-night"]}, "context": {"weather": "clear"}}
+### Output
+Haji Ali Dargah fits your 150-minute window; is free; is outdoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Carter Road Sunset Promenade", "category": "walk", "cost_inr": 0, "duration_minutes": 45, "indoor": false, "tags": ["waterfront", "sunset", "free"]}, "constraints": {"time_minutes": 150, "budget_inr": 0, "interests": ["culture", "local life"], "preferences": ["hidden"]}, "context": {"weather": "hot"}}
+### Output
+Carter Road Sunset Promenade fits your 150-minute window; is free; is outdoor — better early or after sunset to dodge the heat.
+
+### Input
+{"experience": {"name": "Global Vipassana Pagoda", "category": "meditation", "cost_inr": 0, "duration_minutes": 120, "indoor": true, "tags": ["wellness", "quiet", "free"]}, "constraints": {"time_minutes": 120, "budget_inr": 0, "interests": ["heritage", "nightlife"], "preferences": ["family-friendly"]}, "context": {"weather": "rain"}}
+### Output
+Global Vipassana Pagoda fits your 120-minute window; is free; is indoor — good for today's rain.
+
+### Input
+{"experience": {"name": "Britannia & Co", "category": "restaurant", "cost_inr": 700, "duration_minutes": 75, "indoor": true, "tags": ["heritage", "food", "iranian"]}, "constraints": {"time_minutes": 360, "budget_inr": 200, "interests": ["history", "wellness"], "preferences": ["outdoor"]}, "context": {"weather": "storm"}}
+### Output
+Britannia & Co fits your 360-minute window; costs about ₹700, a stretch on your ₹200 budget; is indoor — a sensible pick for the storm.
+
+### Input
+{"experience": {"name": "Britannia & Co", "category": "restaurant", "cost_inr": 700, "duration_minutes": 75, "indoor": true, "tags": ["heritage", "food", "iranian"]}, "constraints": {"time_minutes": 240, "budget_inr": 800, "interests": ["wellness"], "preferences": ["quiet", "sunset"]}, "context": {"weather": "cloudy"}}
+### Output
+Britannia & Co fits your 240-minute window; costs about ₹700, within your ₹800 budget; is indoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Jehangir Art Gallery", "category": "gallery", "cost_inr": 100, "duration_minutes": 75, "indoor": true, "tags": ["art", "culture", "indoor"]}, "constraints": {"time_minutes": 90, "budget_inr": 1500, "interests": ["nature", "shopping"], "preferences": ["quiet"]}, "context": {"weather": "cloudy"}}
+### Output
+Jehangir Art Gallery fits your 90-minute window; costs about ₹100, within your ₹1500 budget; is indoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Chor Bazaar Antique Hunt", "category": "market", "cost_inr": 0, "duration_minutes": 120, "indoor": false, "tags": ["shopping", "heritage", "hidden"]}, "constraints": {"budget_inr": 1000, "interests": ["adventure", "nightlife"], "preferences": ["hidden", "quick"]}, "context": {"weather": "hot"}}
+### Output
+Chor Bazaar Antique Hunt is free; matches your hidden preference; is outdoor — better early or after sunset to dodge the heat.
+
+### Input
+{"experience": {"name": "Britannia & Co", "category": "restaurant", "cost_inr": 700, "duration_minutes": 75, "indoor": true, "tags": ["heritage", "food", "iranian"]}, "constraints": {"time_minutes": 300, "budget_inr": 2000, "interests": ["wellness", "heritage"], "preferences": ["morning", "local"]}, "context": {"weather": "cloudy"}}
+### Output
+Britannia & Co fits your 300-minute window; costs about ₹700, within your ₹2000 budget; is indoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Dadar Flower Market", "category": "market", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["local life", "morning", "budget"]}, "constraints": {"time_minutes": 60, "budget_inr": 500, "interests": ["heritage"], "preferences": ["local", "accessible"]}, "context": {"weather": "storm"}}
+### Output
+Dadar Flower Market fits your 60-minute window; is free; is outdoor — risky during a storm.
+
+### Input
+{"experience": {"name": "Oshiwara Night Market", "category": "market", "cost_inr": 250, "duration_minutes": 90, "indoor": false, "tags": ["food", "nightlife", "late-night"]}, "constraints": {"time_minutes": 180, "budget_inr": 1500, "interests": ["shopping", "heritage"], "preferences": ["quick"]}, "context": {"weather": "cloudy"}}
+### Output
+Oshiwara Night Market fits your 180-minute window; costs about ₹250, within your ₹1500 budget; is outdoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Sanjay Gandhi National Park", "category": "nature", "cost_inr": 85, "duration_minutes": 240, "indoor": false, "tags": ["nature", "adventure", "outdoor"]}, "constraints": {"time_minutes": 150, "budget_inr": 2000, "interests": ["adventure", "history"], "preferences": ["local", "indoor"]}, "context": {"weather": "clear"}}
+### Output
+Sanjay Gandhi National Park runs 240 minutes, a little over your 150-minute window; costs about ₹85, within your ₹2000 budget; is outdoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Jehangir Art Gallery", "category": "gallery", "cost_inr": 100, "duration_minutes": 75, "indoor": true, "tags": ["art", "culture", "indoor"]}, "constraints": {"time_minutes": 120, "budget_inr": 300, "interests": ["culture", "food"], "preferences": ["indoor", "sunset"]}, "context": {"weather": "rain"}}
+### Output
+Jehangir Art Gallery fits your 120-minute window; costs about ₹100, within your ₹300 budget; matches your indoor preference.
+
+### Input
+{"experience": {"name": "Chor Bazaar Antique Hunt", "category": "market", "cost_inr": 0, "duration_minutes": 120, "indoor": false, "tags": ["shopping", "heritage", "hidden"]}, "constraints": {"time_minutes": 120, "budget_inr": 0, "interests": ["shopping"], "preferences": ["family-friendly", "local"]}, "context": {"weather": "hot"}}
+### Output
+Chor Bazaar Antique Hunt fits your 120-minute window; is free; is outdoor — better early or after sunset to dodge the heat.
+
+### Input
+{"experience": {"name": "Jehangir Art Gallery", "category": "gallery", "cost_inr": 100, "duration_minutes": 75, "indoor": true, "tags": ["art", "culture", "indoor"]}, "constraints": {"time_minutes": 240, "budget_inr": 1500, "interests": ["culture"], "preferences": ["morning", "waterfront"]}, "context": {"weather": "storm"}}
+### Output
+Jehangir Art Gallery fits your 240-minute window; costs about ₹100, within your ₹1500 budget; is indoor — a sensible pick for the storm.
+
+### Input
+{"experience": {"name": "Versova Fishing Village", "category": "walk", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["local life", "morning", "hidden"]}, "constraints": {"time_minutes": 150, "interests": ["wellness"], "preferences": ["waterfront"]}, "context": {"weather": "cloudy"}}
+### Output
+Versova Fishing Village fits your 150-minute window; is outdoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Prithvi Theatre", "category": "theatre", "cost_inr": 400, "duration_minutes": 120, "indoor": true, "tags": ["culture", "art", "evening"]}, "constraints": {"time_minutes": 300, "budget_inr": 5000, "interests": ["local life"], "preferences": ["quiet"]}, "context": {"weather": "hot"}}
+### Output
+Prithvi Theatre fits your 300-minute window; costs about ₹400, within your ₹5000 budget; is indoor — shaded from the midday heat.
+
+### Input
+{"experience": {"name": "Bandra Chapel Road Street Art", "category": "walk", "cost_inr": 0, "duration_minutes": 45, "indoor": false, "tags": ["art", "local", "hidden"]}, "constraints": {"time_minutes": 45, "budget_inr": 800, "interests": ["local life"], "preferences": ["sunset", "rooftop"]}, "context": {"weather": "cloudy"}}
+### Output
+Bandra Chapel Road Street Art fits your 45-minute window; is free; is outdoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Marine Drive Promenade", "category": "walk", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["waterfront", "sunset", "free"]}, "constraints": {"time_minutes": 240, "budget_inr": 1000, "interests": ["wellness", "history"], "preferences": ["popular", "indoor"]}, "context": {"weather": "cloudy"}}
+### Output
+Marine Drive Promenade fits your 240-minute window; is free; is outdoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Haji Ali Dargah", "category": "heritage", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["heritage", "culture", "free"]}, "constraints": {"time_minutes": 60, "budget_inr": 1000, "interests": ["shopping"], "preferences": ["quiet", "waterfront"]}, "context": {"weather": "rain"}}
+### Output
+Haji Ali Dargah fits your 60-minute window; is free; is outdoor — a likely washout in this rain.
+
+### Input
+{"experience": {"name": "Haji Ali Dargah", "category": "heritage", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["heritage", "culture", "free"]}, "constraints": {"time_minutes": 45, "budget_inr": 500, "interests": ["history", "heritage"], "preferences": ["sunset"]}, "context": {"weather": "cloudy"}}
+### Output
+Haji Ali Dargah runs 60 minutes, a little over your 45-minute window; is free; is outdoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Global Vipassana Pagoda", "category": "meditation", "cost_inr": 0, "duration_minutes": 120, "indoor": true, "tags": ["wellness", "quiet", "free"]}, "constraints": {"time_minutes": 45, "budget_inr": 300, "interests": ["culture", "wellness"], "preferences": ["hidden", "indoor"]}, "context": {"weather": "cloudy"}}
+### Output
+Global Vipassana Pagoda runs 120 minutes, a little over your 45-minute window; is free; matches your indoor preference.
+
+### Input
+{"experience": {"name": "Haji Ali Dargah", "category": "heritage", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["heritage", "culture", "free"]}, "constraints": {"time_minutes": 120, "budget_inr": 800, "interests": ["history", "art"], "preferences": ["family-friendly", "rooftop"]}, "context": {"weather": "hot"}}
+### Output
+Haji Ali Dargah fits your 120-minute window; is free; is outdoor — better early or after sunset to dodge the heat.
+
+### Input
+{"experience": {"name": "Oshiwara Night Market", "category": "market", "cost_inr": 250, "duration_minutes": 90, "indoor": false, "tags": ["food", "nightlife", "late-night"]}, "constraints": {"budget_inr": 300, "interests": ["culture", "local life"], "preferences": ["waterfront"]}, "context": {"weather": "rain"}}
+### Output
+Oshiwara Night Market costs about ₹250, within your ₹300 budget; is outdoor — a likely washout in this rain.
+
+### Input
+{"experience": {"name": "Kala Ghoda Cafe", "category": "cafe", "cost_inr": 500, "duration_minutes": 60, "indoor": true, "tags": ["art", "quiet", "food"]}, "constraints": {"time_minutes": 180, "budget_inr": 5000, "interests": ["art"], "preferences": ["quiet", "morning"]}, "context": {"weather": "clear"}}
+### Output
+Kala Ghoda Cafe fits your 180-minute window; costs about ₹500, within your ₹5000 budget; matches your quiet preference.
+
+### Input
+{"experience": {"name": "Carter Road Sunset Promenade", "category": "walk", "cost_inr": 0, "duration_minutes": 45, "indoor": false, "tags": ["waterfront", "sunset", "free"]}, "constraints": {"budget_inr": 0, "interests": ["local life", "culture"], "preferences": ["late-night"]}, "context": {"weather": "rain"}}
+### Output
+Carter Road Sunset Promenade is free; is outdoor — a likely washout in this rain.
+
+### Input
+{"experience": {"name": "Haji Ali Dargah", "category": "heritage", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["heritage", "culture", "free"]}, "constraints": {"time_minutes": 360, "budget_inr": 5000, "interests": ["history"], "preferences": ["family-friendly", "vegetarian"]}, "context": {"weather": "clear"}}
+### Output
+Haji Ali Dargah fits your 360-minute window; is free; is outdoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Cafe Zoe", "category": "cafe", "cost_inr": 350, "duration_minutes": 90, "indoor": true, "tags": ["local", "quiet", "food"]}, "constraints": {"time_minutes": 120, "budget_inr": 1000, "interests": ["culture"], "preferences": ["sunset"]}, "context": {"weather": "storm"}}
+### Output
+Cafe Zoe fits your 120-minute window; costs about ₹350, within your ₹1000 budget; is indoor — a sensible pick for the storm.
+
+### Input
+{"experience": {"name": "Dadar Flower Market", "category": "market", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["local life", "morning", "budget"]}, "constraints": {"time_minutes": 90, "budget_inr": 0, "interests": ["heritage"], "preferences": ["family-friendly"]}, "context": {"weather": "storm"}}
+### Output
+Dadar Flower Market fits your 90-minute window; is free; is outdoor — risky during a storm.
+
+### Input
+{"experience": {"name": "Kala Ghoda Cafe", "category": "cafe", "cost_inr": 500, "duration_minutes": 60, "indoor": true, "tags": ["art", "quiet", "food"]}, "constraints": {"time_minutes": 90, "budget_inr": 200, "interests": ["heritage"], "preferences": ["rooftop", "indoor"]}, "context": {"weather": "rain"}}
+### Output
+Kala Ghoda Cafe fits your 90-minute window; costs about ₹500, a stretch on your ₹200 budget; matches your indoor preference.
+
+### Input
+{"experience": {"name": "Chor Bazaar Antique Hunt", "category": "market", "cost_inr": 0, "duration_minutes": 120, "indoor": false, "tags": ["shopping", "heritage", "hidden"]}, "constraints": {"time_minutes": 45, "budget_inr": 200, "interests": ["adventure"], "preferences": ["budget", "accessible"]}, "context": {"weather": "storm"}}
+### Output
+Chor Bazaar Antique Hunt runs 120 minutes, a little over your 45-minute window; is free; is outdoor — risky during a storm.
+
+### Input
+{"experience": {"name": "Britannia & Co", "category": "restaurant", "cost_inr": 700, "duration_minutes": 75, "indoor": true, "tags": ["heritage", "food", "iranian"]}, "constraints": {"time_minutes": 300, "interests": ["culture"], "preferences": ["rooftop"]}, "context": {"weather": "storm"}}
+### Output
+Britannia & Co fits your 300-minute window; is indoor — a sensible pick for the storm.
+
+### Input
+{"experience": {"name": "Britannia & Co", "category": "restaurant", "cost_inr": 700, "duration_minutes": 75, "indoor": true, "tags": ["heritage", "food", "iranian"]}, "constraints": {"budget_inr": 300, "interests": ["history"], "preferences": ["accessible", "family-friendly"]}, "context": {"weather": "hot"}}
+### Output
+Britannia & Co costs about ₹700, a stretch on your ₹300 budget; is indoor — shaded from the midday heat.
+
+### Input
+{"experience": {"name": "Global Vipassana Pagoda", "category": "meditation", "cost_inr": 0, "duration_minutes": 120, "indoor": true, "tags": ["wellness", "quiet", "free"]}, "constraints": {"time_minutes": 240, "budget_inr": 1000, "interests": ["adventure"], "preferences": ["quiet", "late-night"]}, "context": {"weather": "cloudy"}}
+### Output
+Global Vipassana Pagoda fits your 240-minute window; is free; matches your quiet preference.
+
+### Input
+{"experience": {"name": "Dadar Flower Market", "category": "market", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["local life", "morning", "budget"]}, "constraints": {"time_minutes": 45, "budget_inr": 1000, "interests": ["local life"], "preferences": ["local", "popular"]}, "context": {"weather": "hot"}}
+### Output
+Dadar Flower Market runs 60 minutes, a little over your 45-minute window; is free; is outdoor — better early or after sunset to dodge the heat.
+
+### Input
+{"experience": {"name": "Jehangir Art Gallery", "category": "gallery", "cost_inr": 100, "duration_minutes": 75, "indoor": true, "tags": ["art", "culture", "indoor"]}, "constraints": {"time_minutes": 60, "budget_inr": 300, "interests": ["culture", "art"], "preferences": ["quick"]}, "context": {"weather": "hot"}}
+### Output
+Jehangir Art Gallery runs 75 minutes, a little over your 60-minute window; costs about ₹100, within your ₹300 budget; is indoor — shaded from the midday heat.
+
+### Input
+{"experience": {"name": "Bandra Chapel Road Street Art", "category": "walk", "cost_inr": 0, "duration_minutes": 45, "indoor": false, "tags": ["art", "local", "hidden"]}, "constraints": {"time_minutes": 300, "budget_inr": 200, "interests": ["art", "local life"], "preferences": ["morning", "sunset"]}, "context": {"weather": "hot"}}
+### Output
+Bandra Chapel Road Street Art fits your 300-minute window; is free; is outdoor — better early or after sunset to dodge the heat.
+
+### Input
+{"experience": {"name": "Cafe Zoe", "category": "cafe", "cost_inr": 350, "duration_minutes": 90, "indoor": true, "tags": ["local", "quiet", "food"]}, "constraints": {"time_minutes": 30, "budget_inr": 200, "interests": ["shopping"], "preferences": ["quick", "popular"]}, "context": {"weather": "storm"}}
+### Output
+Cafe Zoe runs 90 minutes, a little over your 30-minute window; costs about ₹350, a stretch on your ₹200 budget; is indoor — a sensible pick for the storm.
+
+### Input
+{"experience": {"name": "Carter Road Sunset Promenade", "category": "walk", "cost_inr": 0, "duration_minutes": 45, "indoor": false, "tags": ["waterfront", "sunset", "free"]}, "constraints": {"time_minutes": 120, "budget_inr": 2000, "interests": ["local life"], "preferences": ["vegetarian", "outdoor"]}, "context": {"weather": "cloudy"}}
+### Output
+Carter Road Sunset Promenade fits your 120-minute window; is free; matches your outdoor preference.
+
+### Input
+{"experience": {"name": "Prithvi Theatre", "category": "theatre", "cost_inr": 400, "duration_minutes": 120, "indoor": true, "tags": ["culture", "art", "evening"]}, "constraints": {"time_minutes": 45, "budget_inr": 1500, "interests": ["local life", "nightlife"], "preferences": ["budget", "sunset"]}, "context": {"weather": "clear"}}
+### Output
+Prithvi Theatre runs 120 minutes, a little over your 45-minute window; costs about ₹400, within your ₹1500 budget; is indoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Oshiwara Night Market", "category": "market", "cost_inr": 250, "duration_minutes": 90, "indoor": false, "tags": ["food", "nightlife", "late-night"]}, "constraints": {"time_minutes": 45, "budget_inr": 0, "interests": ["food", "nightlife"], "preferences": ["family-friendly", "sunset"]}, "context": {"weather": "storm"}}
+### Output
+Oshiwara Night Market runs 90 minutes, a little over your 45-minute window; costs about ₹250, a stretch on your ₹0 budget; is outdoor — risky during a storm.
+
+### Input
+{"experience": {"name": "Kala Ghoda Cafe", "category": "cafe", "cost_inr": 500, "duration_minutes": 60, "indoor": true, "tags": ["art", "quiet", "food"]}, "constraints": {"time_minutes": 180, "budget_inr": 2000, "interests": ["culture"], "preferences": ["budget"]}, "context": {"weather": "rain"}}
+### Output
+Kala Ghoda Cafe fits your 180-minute window; costs about ₹500, within your ₹2000 budget; is indoor — good for today's rain.
+
+### Input
+{"experience": {"name": "Jehangir Art Gallery", "category": "gallery", "cost_inr": 100, "duration_minutes": 75, "indoor": true, "tags": ["art", "culture", "indoor"]}, "constraints": {"time_minutes": 300, "budget_inr": 5000, "interests": ["history"], "preferences": ["vegetarian"]}, "context": {"weather": "hot"}}
+### Output
+Jehangir Art Gallery fits your 300-minute window; costs about ₹100, within your ₹5000 budget; is indoor — shaded from the midday heat.
+
+### Input
+{"experience": {"name": "Oshiwara Night Market", "category": "market", "cost_inr": 250, "duration_minutes": 90, "indoor": false, "tags": ["food", "nightlife", "late-night"]}, "constraints": {"time_minutes": 90, "budget_inr": 0, "interests": ["history", "art"], "preferences": ["waterfront"]}, "context": {"weather": "clear"}}
+### Output
+Oshiwara Night Market fits your 90-minute window; costs about ₹250, a stretch on your ₹0 budget; is outdoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Jehangir Art Gallery", "category": "gallery", "cost_inr": 100, "duration_minutes": 75, "indoor": true, "tags": ["art", "culture", "indoor"]}, "constraints": {"time_minutes": 360, "budget_inr": 1500, "interests": ["local life", "shopping"], "preferences": ["hidden"]}, "context": {"weather": "clear"}}
+### Output
+Jehangir Art Gallery fits your 360-minute window; costs about ₹100, within your ₹1500 budget; is indoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Oshiwara Night Market", "category": "market", "cost_inr": 250, "duration_minutes": 90, "indoor": false, "tags": ["food", "nightlife", "late-night"]}, "constraints": {"time_minutes": 60, "budget_inr": 3000, "interests": ["heritage", "shopping"], "preferences": ["waterfront", "accessible"]}, "context": {"weather": "storm"}}
+### Output
+Oshiwara Night Market runs 90 minutes, a little over your 60-minute window; costs about ₹250, within your ₹3000 budget; is outdoor — risky during a storm.
+
+### Input
+{"experience": {"name": "Chor Bazaar Antique Hunt", "category": "market", "cost_inr": 0, "duration_minutes": 120, "indoor": false, "tags": ["shopping", "heritage", "hidden"]}, "constraints": {"time_minutes": 30, "budget_inr": 200, "interests": ["adventure", "nightlife"], "preferences": ["indoor"]}, "context": {"weather": "cloudy"}}
+### Output
+Chor Bazaar Antique Hunt runs 120 minutes, a little over your 30-minute window; is free; is outdoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Versova Fishing Village", "category": "walk", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["local life", "morning", "hidden"]}, "constraints": {"budget_inr": 5000, "interests": ["nightlife"], "preferences": ["accessible"]}, "context": {"weather": "storm"}}
+### Output
+Versova Fishing Village is free; is outdoor — risky during a storm.
+
+### Input
+{"experience": {"name": "Oshiwara Night Market", "category": "market", "cost_inr": 250, "duration_minutes": 90, "indoor": false, "tags": ["food", "nightlife", "late-night"]}, "constraints": {"time_minutes": 300, "budget_inr": 500, "interests": ["shopping"], "preferences": ["waterfront", "popular"]}, "context": {"weather": "hot"}}
+### Output
+Oshiwara Night Market fits your 300-minute window; costs about ₹250, within your ₹500 budget; is outdoor — better early or after sunset to dodge the heat.
+
+### Input
+{"experience": {"name": "Colaba Causeway Bazaar", "category": "market", "cost_inr": 0, "duration_minutes": 90, "indoor": false, "tags": ["shopping", "budget", "popular"]}, "constraints": {"time_minutes": 120, "budget_inr": 200, "interests": ["art"], "preferences": ["waterfront", "popular"]}, "context": {"weather": "hot"}}
+### Output
+Colaba Causeway Bazaar fits your 120-minute window; is free; matches your popular preference.
+
+### Input
+{"experience": {"name": "Marine Drive Promenade", "category": "walk", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["waterfront", "sunset", "free"]}, "constraints": {"time_minutes": 180, "budget_inr": 800, "interests": ["culture"], "preferences": ["family-friendly"]}, "context": {"weather": "rain"}}
+### Output
+Marine Drive Promenade fits your 180-minute window; is free; is outdoor — a likely washout in this rain.
+
+### Input
+{"experience": {"name": "Cafe Zoe", "category": "cafe", "cost_inr": 350, "duration_minutes": 90, "indoor": true, "tags": ["local", "quiet", "food"]}, "constraints": {"time_minutes": 45, "interests": ["adventure", "nature"], "preferences": ["accessible"]}, "context": {"weather": "rain"}}
+### Output
+Cafe Zoe runs 90 minutes, a little over your 45-minute window; is indoor — good for today's rain.
+
+### Input
+{"experience": {"name": "Oshiwara Night Market", "category": "market", "cost_inr": 250, "duration_minutes": 90, "indoor": false, "tags": ["food", "nightlife", "late-night"]}, "constraints": {"time_minutes": 30, "budget_inr": 500, "interests": ["heritage"], "preferences": ["quick", "hidden"]}, "context": {"weather": "rain"}}
+### Output
+Oshiwara Night Market runs 90 minutes, a little over your 30-minute window; costs about ₹250, within your ₹500 budget; is outdoor — a likely washout in this rain.
+
+### Input
+{"experience": {"name": "Bandra Chapel Road Street Art", "category": "walk", "cost_inr": 0, "duration_minutes": 45, "indoor": false, "tags": ["art", "local", "hidden"]}, "constraints": {"time_minutes": 360, "budget_inr": 5000, "interests": ["history"], "preferences": ["indoor", "quick"]}, "context": {"weather": "hot"}}
+### Output
+Bandra Chapel Road Street Art fits your 360-minute window; is free; is outdoor — better early or after sunset to dodge the heat.
+
+### Input
+{"experience": {"name": "Jehangir Art Gallery", "category": "gallery", "cost_inr": 100, "duration_minutes": 75, "indoor": true, "tags": ["art", "culture", "indoor"]}, "constraints": {"time_minutes": 360, "budget_inr": 1500, "interests": ["food"], "preferences": ["rooftop", "popular"]}, "context": {"weather": "cloudy"}}
+### Output
+Jehangir Art Gallery fits your 360-minute window; costs about ₹100, within your ₹1500 budget; is indoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Carter Road Sunset Promenade", "category": "walk", "cost_inr": 0, "duration_minutes": 45, "indoor": false, "tags": ["waterfront", "sunset", "free"]}, "constraints": {"time_minutes": 120, "budget_inr": 2000, "interests": ["culture"], "preferences": ["vegetarian"]}, "context": {"weather": "hot"}}
+### Output
+Carter Road Sunset Promenade fits your 120-minute window; is free; is outdoor — better early or after sunset to dodge the heat.
+
+### Input
+{"experience": {"name": "Colaba Causeway Bazaar", "category": "market", "cost_inr": 0, "duration_minutes": 90, "indoor": false, "tags": ["shopping", "budget", "popular"]}, "constraints": {"time_minutes": 45, "budget_inr": 1000, "interests": ["heritage"], "preferences": ["indoor"]}, "context": {"weather": "cloudy"}}
+### Output
+Colaba Causeway Bazaar runs 90 minutes, a little over your 45-minute window; is free; is outdoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Haji Ali Dargah", "category": "heritage", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["heritage", "culture", "free"]}, "constraints": {"time_minutes": 360, "budget_inr": 1500, "interests": ["wellness", "shopping"], "preferences": ["rooftop"]}, "context": {"weather": "rain"}}
+### Output
+Haji Ali Dargah fits your 360-minute window; is free; is outdoor — a likely washout in this rain.
+
+### Input
+{"experience": {"name": "Global Vipassana Pagoda", "category": "meditation", "cost_inr": 0, "duration_minutes": 120, "indoor": true, "tags": ["wellness", "quiet", "free"]}, "constraints": {"time_minutes": 120, "budget_inr": 5000, "interests": ["adventure"], "preferences": ["waterfront", "hidden"]}, "context": {"weather": "storm"}}
+### Output
+Global Vipassana Pagoda fits your 120-minute window; is free; is indoor — a sensible pick for the storm.
+
+### Input
+{"experience": {"name": "Carter Road Sunset Promenade", "category": "walk", "cost_inr": 0, "duration_minutes": 45, "indoor": false, "tags": ["waterfront", "sunset", "free"]}, "constraints": {"budget_inr": 500, "interests": ["history"], "preferences": ["rooftop", "hidden"]}, "context": {"weather": "storm"}}
+### Output
+Carter Road Sunset Promenade is free; is outdoor — risky during a storm.
+
+### Input
+{"experience": {"name": "Colaba Causeway Bazaar", "category": "market", "cost_inr": 0, "duration_minutes": 90, "indoor": false, "tags": ["shopping", "budget", "popular"]}, "constraints": {"time_minutes": 45, "budget_inr": 1500, "interests": ["wellness", "history"], "preferences": ["late-night", "local"]}, "context": {"weather": "hot"}}
+### Output
+Colaba Causeway Bazaar runs 90 minutes, a little over your 45-minute window; is free; is outdoor — better early or after sunset to dodge the heat.
+
+### Input
+{"experience": {"name": "Cafe Zoe", "category": "cafe", "cost_inr": 350, "duration_minutes": 90, "indoor": true, "tags": ["local", "quiet", "food"]}, "constraints": {"time_minutes": 360, "budget_inr": 2000, "interests": ["culture"], "preferences": ["accessible", "indoor"]}, "context": {"weather": "rain"}}
+### Output
+Cafe Zoe fits your 360-minute window; costs about ₹350, within your ₹2000 budget; matches your indoor preference.
+
+### Input
+{"experience": {"name": "Haji Ali Dargah", "category": "heritage", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["heritage", "culture", "free"]}, "constraints": {"time_minutes": 45, "budget_inr": 300, "interests": ["culture", "history"], "preferences": ["accessible"]}, "context": {"weather": "clear"}}
+### Output
+Haji Ali Dargah runs 60 minutes, a little over your 45-minute window; is free; is outdoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Global Vipassana Pagoda", "category": "meditation", "cost_inr": 0, "duration_minutes": 120, "indoor": true, "tags": ["wellness", "quiet", "free"]}, "constraints": {"time_minutes": 300, "budget_inr": 0, "interests": ["local life", "art"], "preferences": ["popular"]}, "context": {"weather": "rain"}}
+### Output
+Global Vipassana Pagoda fits your 300-minute window; is free; is indoor — good for today's rain.
+
+### Input
+{"experience": {"name": "Versova Fishing Village", "category": "walk", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["local life", "morning", "hidden"]}, "constraints": {"time_minutes": 150, "budget_inr": 3000, "interests": ["culture", "nightlife"], "preferences": ["budget"]}, "context": {"weather": "clear"}}
+### Output
+Versova Fishing Village fits your 150-minute window; is free; is outdoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Britannia & Co", "category": "restaurant", "cost_inr": 700, "duration_minutes": 75, "indoor": true, "tags": ["heritage", "food", "iranian"]}, "constraints": {"time_minutes": 360, "budget_inr": 300, "interests": ["art", "heritage"], "preferences": ["vegetarian"]}, "context": {"weather": "cloudy"}}
+### Output
+Britannia & Co fits your 360-minute window; costs about ₹700, a stretch on your ₹300 budget; is indoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Prithvi Theatre", "category": "theatre", "cost_inr": 400, "duration_minutes": 120, "indoor": true, "tags": ["culture", "art", "evening"]}, "constraints": {"time_minutes": 240, "budget_inr": 3000, "interests": ["wellness", "nature"], "preferences": ["quick"]}, "context": {"weather": "storm"}}
+### Output
+Prithvi Theatre fits your 240-minute window; costs about ₹400, within your ₹3000 budget; is indoor — a sensible pick for the storm.
+
+### Input
+{"experience": {"name": "Dadar Flower Market", "category": "market", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["local life", "morning", "budget"]}, "constraints": {"time_minutes": 300, "interests": ["adventure", "nightlife"], "preferences": ["hidden", "morning"]}, "context": {"weather": "rain"}}
+### Output
+Dadar Flower Market fits your 300-minute window; matches your morning preference; is outdoor — a likely washout in this rain.
+
+### Input
+{"experience": {"name": "Versova Fishing Village", "category": "walk", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["local life", "morning", "hidden"]}, "constraints": {"time_minutes": 150, "budget_inr": 200, "interests": ["heritage"], "preferences": ["outdoor"]}, "context": {"weather": "rain"}}
+### Output
+Versova Fishing Village fits your 150-minute window; is free; matches your outdoor preference.
+
+### Input
+{"experience": {"name": "Kala Ghoda Cafe", "category": "cafe", "cost_inr": 500, "duration_minutes": 60, "indoor": true, "tags": ["art", "quiet", "food"]}, "constraints": {"time_minutes": 180, "budget_inr": 300, "interests": ["nightlife", "food"], "preferences": ["quick"]}, "context": {"weather": "storm"}}
+### Output
+Kala Ghoda Cafe fits your 180-minute window; costs about ₹500, a stretch on your ₹300 budget; is indoor — a sensible pick for the storm.
+
+### Input
+{"experience": {"name": "Dadar Flower Market", "category": "market", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["local life", "morning", "budget"]}, "constraints": {"time_minutes": 240, "budget_inr": 1500, "interests": ["nature"], "preferences": ["indoor", "waterfront"]}, "context": {"weather": "cloudy"}}
+### Output
+Dadar Flower Market fits your 240-minute window; is free; is outdoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Prithvi Theatre", "category": "theatre", "cost_inr": 400, "duration_minutes": 120, "indoor": true, "tags": ["culture", "art", "evening"]}, "constraints": {"time_minutes": 180, "budget_inr": 500, "interests": ["food"], "preferences": ["waterfront", "rooftop"]}, "context": {"weather": "rain"}}
+### Output
+Prithvi Theatre fits your 180-minute window; costs about ₹400, within your ₹500 budget; is indoor — good for today's rain.
+
+### Input
+{"experience": {"name": "Versova Fishing Village", "category": "walk", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["local life", "morning", "hidden"]}, "constraints": {"time_minutes": 90, "budget_inr": 2000, "interests": ["culture", "history"], "preferences": ["late-night"]}, "context": {"weather": "rain"}}
+### Output
+Versova Fishing Village fits your 90-minute window; is free; is outdoor — a likely washout in this rain.
+
+### Input
+{"experience": {"name": "Bandra Chapel Road Street Art", "category": "walk", "cost_inr": 0, "duration_minutes": 45, "indoor": false, "tags": ["art", "local", "hidden"]}, "constraints": {"budget_inr": 3000, "interests": ["culture", "heritage"], "preferences": ["outdoor", "quick"]}, "context": {"weather": "cloudy"}}
+### Output
+Bandra Chapel Road Street Art is free; matches your outdoor preference; is outdoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Jehangir Art Gallery", "category": "gallery", "cost_inr": 100, "duration_minutes": 75, "indoor": true, "tags": ["art", "culture", "indoor"]}, "constraints": {"time_minutes": 300, "budget_inr": 1000, "interests": ["nightlife"], "preferences": ["outdoor"]}, "context": {"weather": "clear"}}
+### Output
+Jehangir Art Gallery fits your 300-minute window; costs about ₹100, within your ₹1000 budget; is indoor — great in clear weather.
+
+### Input
+{"experience": {"name": "Dadar Flower Market", "category": "market", "cost_inr": 0, "duration_minutes": 60, "indoor": false, "tags": ["local life", "morning", "budget"]}, "constraints": {"time_minutes": 90, "budget_inr": 200, "interests": ["culture"], "preferences": ["quick"]}, "context": {"weather": "rain"}}
+### Output
+Dadar Flower Market fits your 90-minute window; is free; is outdoor — a likely washout in this rain.
+
+### Input
+{"experience": {"name": "Chor Bazaar Antique Hunt", "category": "market", "cost_inr": 0, "duration_minutes": 120, "indoor": false, "tags": ["shopping", "heritage", "hidden"]}, "constraints": {"time_minutes": 90, "interests": ["history", "wellness"], "preferences": ["popular", "quiet"]}, "context": {"weather": "cloudy"}}
+### Output
+Chor Bazaar Antique Hunt runs 120 minutes, a little over your 90-minute window; is outdoor — comfortable for the current cloud cover.
+
+### Input
+{"experience": {"name": "Chor Bazaar Antique Hunt", "category": "market", "cost_inr": 0, "duration_minutes": 120, "indoor": false, "tags": ["shopping", "heritage", "hidden"]}, "constraints": {"time_minutes": 120, "budget_inr": 0, "interests": ["local life", "history"], "preferences": ["morning", "quick"]}, "context": {"weather": "hot"}}
+### Output
+Chor Bazaar Antique Hunt fits your 120-minute window; is free; is outdoor — better early or after sunset to dodge the heat.

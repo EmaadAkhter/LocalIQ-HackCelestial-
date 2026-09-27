@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/providers.dart';
 import '../core/theme/app_theme.dart';
@@ -13,21 +14,53 @@ class LocalIqApp extends ConsumerStatefulWidget {
   ConsumerState<LocalIqApp> createState() => _LocalIqAppState();
 }
 
-class _LocalIqAppState extends ConsumerState<LocalIqApp> {
+class _LocalIqAppState extends ConsumerState<LocalIqApp> with WidgetsBindingObserver {
   final _router = createAppRouter();
 
   @override
   void initState() {
     super.initState();
-    // Cold start: try to restore a persisted session via /auth/refresh. A no-op
-    // for the offline service and when there is nothing to restore.
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final session = await ref.read(authServiceProvider).restore();
-      if (!mounted) return;
-      if (session != null && !session.user.onboardingCompleted) {
-        _router.go('/onboarding');
-      }
-    });
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrap());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// Called every time the app comes to the foreground — resets the 7-day
+  /// inactivity clock so only truly absent users are signed out.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ref.read(sharedPrefsTokenStoreProvider.future).then((store) {
+        store.touchActivity();
+      }).ignore();
+    }
+  }
+
+  Future<void> _bootstrap() async {
+    // Ensure SharedPreferences are loaded before anything else resolves.
+    await ref.read(sharedPrefsTokenStoreProvider.future);
+
+    // Check if the user has already completed onboarding (local flag).
+    final prefs = await SharedPreferences.getInstance();
+    final onboardingDone = prefs.getBool('localiq.onboarding.completed') ?? false;
+
+    // Try to restore a persisted session.
+    final session = await ref.read(authServiceProvider).restore();
+    if (!mounted) return;
+
+    if (session != null && !onboardingDone && !session.user.isGuest) {
+      // Registered user who hasn't finished onboarding yet.
+      _router.go('/onboarding');
+    } else if (session != null) {
+      // Already logged in — go straight home.
+      _router.go('/home');
+    }
+    // Otherwise, stay on /welcome (the initial location).
   }
 
   @override

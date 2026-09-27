@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from app.config import get_settings
 
 GroupType = Literal["solo", "couple", "family", "friends"]
-ParseSource = Literal["ollama", "heuristic", "llm", "canned"]
+ParseSource = Literal["nugen", "ollama", "heuristic", "llm", "canned"]
 
 
 class ErrorResponse(BaseModel):

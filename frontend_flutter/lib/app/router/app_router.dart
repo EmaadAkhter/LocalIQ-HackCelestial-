@@ -9,6 +9,9 @@ import '../../features/auth/presentation/screens/guide_login_screen.dart';
 import '../../features/auth/presentation/screens/guide_signup_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/signup_screen.dart';
+import '../../features/chat/domain/chat_thread.dart';
+import '../../features/chat/presentation/chat_thread_screen.dart';
+import '../../features/chat/presentation/inbox_screen.dart';
 import '../../features/director/presentation/director_screen.dart';
 import '../../features/driver/presentation/driver_trip_screen.dart';
 import '../../features/driver/presentation/driver_trips_screen.dart';
@@ -31,6 +34,7 @@ import '../../features/safety/presentation/safety_screen.dart';
 import '../../features/saved/presentation/saved_screen.dart';
 import '../../features/social/presentation/notifications_screen.dart';
 import '../../features/social/presentation/people_screen.dart';
+import '../../features/social/presentation/random_meetup_screen.dart';
 import '../../features/wallet/presentation/wallet_screen.dart';
 import '../screens/welcome_screen.dart';
 import '../shell/app_shell.dart';
@@ -262,11 +266,34 @@ GoRouter createAppRouter() {
             const MaterialPage(child: ExploreScreen()),
       ),
 
-      // People now lives under Profile, but keep the route reachable.
+      // Phase 16: Random Meetup — spontaneous, activity-driven connection.
       GoRoute(
         path: '/people',
         pageBuilder: (context, state) =>
+            const MaterialPage(child: RandomMeetupScreen()),
+      ),
+      // Matched explorers + meetup invitations live behind Random Meetup.
+      GoRoute(
+        path: '/people/matches',
+        pageBuilder: (context, state) =>
             const MaterialPage(child: PeopleScreen()),
+      ),
+
+      // Unified Chat & Messaging: Guide ↔ Explorer and Matched Explorers
+      GoRoute(
+        path: '/inbox',
+        pageBuilder: (context, state) =>
+            const MaterialPage(child: InboxScreen()),
+      ),
+      GoRoute(
+        path: '/chat/:id',
+        pageBuilder: (context, state) {
+          final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
+          final thread = state.extra as ChatThread?;
+          return MaterialPage(
+            child: ChatThreadScreen(threadId: id, initialThread: thread),
+          );
+        },
       ),
 
       // ------------------------------------------------------ redirects

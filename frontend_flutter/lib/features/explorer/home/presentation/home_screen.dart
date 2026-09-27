@@ -7,6 +7,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../models/guide.dart';
 import '../../../../models/right_now_context.dart';
 import '../../../places/domain/place.dart';
+import '../../../social/presentation/widgets/random_meetup_banner.dart';
 import '../widgets/home_header.dart';
 import '../widgets/quick_chips.dart';
 import '../widgets/right_now_banner.dart';
@@ -94,6 +95,14 @@ class _ExplorerHomeScreenState extends ConsumerState<ExplorerHomeScreen> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
               child: RightNowBanner(context: RightNowContext.sample),
+            ),
+          ),
+
+          // ── Random Meetup — the human-to-human side of LocalIQ
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(20, 0, 20, 20),
+              child: RandomMeetupBanner(),
             ),
           ),
 

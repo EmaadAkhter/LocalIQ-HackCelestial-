@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../models/guide.dart';
+import '../../chat/domain/chat_thread.dart';
 import '../data/guide_repository.dart';
 import '../data/local_guides.dart';
 
@@ -264,6 +266,27 @@ class _GuideCard extends StatelessWidget {
                   ),
                 ),
               const Spacer(),
+              OutlinedButton.icon(
+                onPressed: () {
+                  context.push(
+                    '/chat/1',
+                    extra: ChatThread(
+                      id: 1,
+                      kind: 'guide_explorer',
+                      otherUserId: int.tryParse(guide.id) ?? 101,
+                      otherName: guide.name,
+                      otherAvatarUrl: guide.photoUrl,
+                      contextLabel: 'Guided Experience Inquiry · ${guide.name}',
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.chat_bubble_outline_rounded, size: 15),
+                label: const Text('Chat'),
+                style: OutlinedButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+              const SizedBox(width: 8),
               FilledButton(
                 onPressed: () => _showBookingModal(context, guide),
                 style: FilledButton.styleFrom(
@@ -336,8 +359,25 @@ class _GuideCard extends StatelessWidget {
                   Navigator.pop(ctx);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Booking request sent to ${guide.name}! They will confirm shortly.'),
+                      content: Text('Booking request sent to ${guide.name}!'),
                       backgroundColor: AppColors.primary,
+                      action: SnackBarAction(
+                        label: 'Chat Now',
+                        textColor: Colors.white,
+                        onPressed: () {
+                          context.push(
+                            '/chat/1',
+                            extra: ChatThread(
+                              id: 1,
+                              kind: 'guide_explorer',
+                              otherUserId: int.tryParse(guide.id) ?? 101,
+                              otherName: guide.name,
+                              otherAvatarUrl: guide.photoUrl,
+                              contextLabel: 'Booking Request · ${guide.name}',
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   );
                 },

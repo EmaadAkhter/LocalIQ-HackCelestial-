@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
@@ -77,7 +78,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   Future<void> _submit({String? message, List<String> selections = const []}) async {
     final step = _step;
-    if (step?.sessionId == null || step!.done) return;
+    // Guard: must have a live session and not already in flight.
+    if (step?.sessionId == null || step!.done || _busy) return;
     final label = message ?? selections.join(', ');
     if (label.trim().isNotEmpty) {
       setState(() => _messages.add(_Message(label, fromHost: false)));
@@ -86,11 +88,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     try {
       final next = await ref.read(onboardingRepositoryProvider).answer(
             step.sessionId!,
-            message: message,
+            // Send null for blank free-text so the backend treats it as a skip.
+            message: (message?.trim().isEmpty ?? true) ? null : message,
             selections: selections,
           );
       _input.clear();
       _applyStep(next);
+
+      // Persist the completion flag so this screen is never shown again.
+      if (next.done || next.completed) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('localiq.onboarding.completed', true);
+      }
     } catch (error) {
       if (mounted) {
         showAppToast(context, '$error', icon: Icons.error_outline_rounded);
@@ -395,8 +404,11 @@ class _Composer extends StatelessWidget {
                     controller: controller,
                     textInputAction: TextInputAction.send,
                     onSubmitted: (_) => onSubmitText(),
-                    decoration: const InputDecoration(
-                      hintText: 'Type your answer...',
+                    decoration: InputDecoration(
+                      hintText: 'Type your answer…',
+                      // Subtle hint that blank is okay on pure open questions.
+                      helperText: hasOptions ? null : 'Optional — tap the arrow to skip',
+                      helperStyle: const TextStyle(fontSize: 10.5),
                     ),
                   ),
                 ),
@@ -404,9 +416,25 @@ class _Composer extends StatelessWidget {
                 IconButton.filled(
                   onPressed: onSubmitText,
                   icon: const Icon(Icons.arrow_upward_rounded),
+                  tooltip: 'Send / Skip',
                 ),
               ],
             ),
+            // When it is the last step and pure free-text, show an
+            // explicit "Done" button so the user is never stuck.
+            if (!hasOptions) ...[
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: onSubmitText,
+                  child: const Text(
+                    'Done →',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ),
+            ],
           ],
         ],
       ),
@@ -475,7 +503,12 @@ class _TasteSummary extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
-              onPressed: () => context.go('/home'),
+              onPressed: () async {
+                // Ensure flag is written even if the backend call path missed it.
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setBool('localiq.onboarding.completed', true);
+                if (context.mounted) context.go('/home');
+              },
               icon: const Icon(Icons.home_rounded, size: 18),
               label: const Text('See what I recommend'),
               style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),

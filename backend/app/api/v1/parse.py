@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from app.config import get_settings
 from app.rate_limit import LLM_LIMIT, limiter
 from app.schemas import ParsedConstraints, ParseRequest, ParseResponse
+from app.services import nugen
 from app.services.llm import get_client
 from app.services.recommender import KNOWN_AREAS
 
@@ -159,7 +160,21 @@ def heuristic_parse(text: str) -> ParsedConstraints:
 @router.post("/parse", response_model=ParseResponse, summary="Parse natural-language constraints")
 @limiter.limit(LLM_LIMIT)
 async def parse_constraints(request: Request, response: Response, payload: ParseRequest):
-    """Try Ollama strict JSON first; fall back to deterministic heuristic."""
+    """Try the Nugen aligned model, then Ollama, then the deterministic heuristic."""
+    # 0) Nugen domain-aligned model (only when explicitly enabled).
+    if nugen.configured():
+        try:
+            data = await nugen.extract_constraints(payload.text)
+            if data:
+                constraints = ParsedConstraints.model_validate(
+                    nugen.to_parsed_constraints(data)
+                )
+                return ParseResponse(constraints=constraints, source="nugen")
+        except ValidationError as exc:
+            logger.warning("Nugen parse failed validation: %s", exc)
+        except Exception as exc:  # noqa: BLE001 - defensive
+            logger.warning("Nugen parse raised: %s", exc)
+
     # 1) Ollama attempt.
     try:
         client = get_client()

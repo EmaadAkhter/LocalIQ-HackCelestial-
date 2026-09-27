@@ -1,0 +1,25 @@
+{
+  "note": "Curated demo feed for the Weather Digital Twin. Production replaces this with live social APIs (X/Reddit/Instagram). Each post is a location-tagged field report that nudges the twin's area risk and indoor demand.",
+  "posts": [
+    {"area": "marine drive", "signal": "flood", "severity": 0.9, "minutes_ago": 12, "text": "Marine Drive is waterlogged again, waves crashing over the promenade - avoid walking here."},
+    {"area": "marine drive", "signal": "closed", "severity": 0.7, "minutes_ago": 25, "text": "Police turning people back from Marine Drive, high tide plus rain."},
+    {"area": "churchgate", "signal": "flood", "severity": 0.8, "minutes_ago": 18, "text": "Churchgate station underpass flooded, knee-deep water near the subway."},
+    {"area": "colaba", "signal": "flood", "severity": 0.75, "minutes_ago": 30, "text": "Colaba Causeway flooded near the market, traffic crawling."},
+    {"area": "fort", "signal": "flood", "severity": 0.7, "minutes_ago": 40, "text": "Water pooling on Fort side streets, cars stuck near Horniman Circle."},
+    {"area": "csmt", "signal": "flood", "severity": 0.85, "minutes_ago": 15, "text": "CSMT forecourt waterlogged, locals delayed."},
+    {"area": "kala ghoda", "signal": "indoor_boost", "severity": 0.8, "minutes_ago": 20, "text": "Every cafe in Kala Ghoda is packed, everyone ducking in from the rain - great cosy vibe."},
+    {"area": "kala ghoda", "signal": "crowded", "severity": 0.7, "minutes_ago": 35, "text": "Jehangir Gallery full of people escaping the downpour, lovely and dry inside."},
+    {"area": "femina", "signal": "indoor_boost", "severity": 0.6, "minutes_ago": 50, "text": "Museum crowd is up today thanks to the weather, queue is long but dry."},
+    {"area": "dadar", "signal": "flood", "severity": 0.65, "minutes_ago": 28, "text": "Dadar TT circle flooded, flower market stalls underwater."},
+    {"area": "mahim", "signal": "flood", "severity": 0.6, "minutes_ago": 45, "text": "Mahim causeway slow, water on the road."},
+    {"area": "bandra", "signal": "flood", "severity": 0.55, "minutes_ago": 22, "text": "Bandra linking road has waterlogging near the signal, traffic backed up."},
+    {"area": "bandra", "signal": "indoor_boost", "severity": 0.65, "minutes_ago": 33, "text": "Cafes on Chapel Road are full, everyone hiding from the rain."},
+    {"area": "juhu", "signal": "closed", "severity": 0.5, "minutes_ago": 60, "text": "Juhu beach cleaned out, lifeguards warning people away."},
+    {"area": "versova", "signal": "closed", "severity": 0.4, "minutes_ago": 70, "text": "Versova jetty walk not advisable right now, too wet and windy."},
+    {"area": "worli", "signal": "flood", "severity": 0.6, "minutes_ago": 38, "text": "Worli sea face water on the road, be careful on two-wheelers."},
+    {"area": "lower parel", "signal": "indoor_boost", "severity": 0.55, "minutes_ago": 42, "text": "Phoenix Mills is buzzing, good indoor plan for this weather."},
+    {"area": "powai", "signal": "clear", "severity": 0.3, "minutes_ago": 55, "text": "Powai lake side is fine, light drizzle only, still pleasant."},
+    {"area": "andheri", "signal": "clear", "severity": 0.3, "minutes_ago": 48, "text": "Andheri west is mostly dry, just cloudy."},
+    {"area": "colaba", "signal": "indoor_boost", "severity": 0.7, "minutes_ago": 26, "text": "Irani cafes in Colaba packed, chai and bun maska weather."}
+  ]
+}

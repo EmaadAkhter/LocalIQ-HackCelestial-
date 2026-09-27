@@ -29,7 +29,7 @@ class NotificationController extends Notifier<NotificationState> {
           body: 'Elena Rostova wants to explore the Irani Café Trail with you.',
           receivedAt: DateTime.now().subtract(const Duration(minutes: 15)),
           isRead: false,
-          actionRoute: '/people',
+          actionRoute: '/people/matches',
         ),
         AppNotification(
           id: 'notif-2',

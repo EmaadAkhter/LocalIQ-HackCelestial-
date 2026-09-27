@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/error/app_exception.dart';
@@ -90,13 +91,32 @@ class _CompanionScreenState extends ConsumerState<CompanionScreen> {
       });
     } on AppException catch (e) {
       if (!mounted) return;
+      final isNetwork = e.message.toLowerCase().contains('connection') ||
+          e.message.toLowerCase().contains('socket') ||
+          e.message.toLowerCase().contains('timeout') ||
+          e.message.toLowerCase().contains('network');
       setState(() {
-        _messages.add(_Bubble(e.message, isError: true));
+        _messages.add(_Bubble(
+          isNetwork
+              ? '🔌 Travel Buddy couldn\'t reach LocalIQ right now — check your connection or try again in a moment.'
+              : e.message,
+          isError: true,
+        ));
       });
     } catch (e) {
       if (!mounted) return;
+      final msg = '$e';
+      final isNetwork = msg.toLowerCase().contains('connection') ||
+          msg.toLowerCase().contains('socket') ||
+          msg.toLowerCase().contains('failed host') ||
+          msg.toLowerCase().contains('errno');
       setState(() {
-        _messages.add(_Bubble('$e', isError: true));
+        _messages.add(_Bubble(
+          isNetwork
+              ? '🔌 Travel Buddy couldn\'t reach LocalIQ right now — check your connection or try again in a moment.'
+              : 'Something went wrong. Please try again.',
+          isError: true,
+        ));
       });
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -210,14 +230,43 @@ class _CompanionScreenState extends ConsumerState<CompanionScreen> {
                       border: isUser ? null : Border.all(color: AppColors.border),
                       boxShadow: AppShadows.card,
                     ),
-                    child: Text(
-                      m.text,
-                      style: TextStyle(
-                        color: isUser ? Colors.white : AppColors.text,
-                        fontSize: 13.5,
-                        height: 1.4,
-                      ),
-                    ),
+                    child: isUser
+                        ? Text(
+                            m.text,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 13.5,
+                              height: 1.4,
+                            ),
+                          )
+                        : MarkdownBody(
+                            data: m.text,
+                            styleSheet: MarkdownStyleSheet(
+                              p: TextStyle(
+                                color: m.isError ? AppColors.danger : AppColors.text,
+                                fontSize: 13.5,
+                                height: 1.4,
+                              ),
+                              strong: TextStyle(
+                                color: m.isError ? AppColors.danger : AppColors.text,
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w800,
+                              ),
+                              listBullet: TextStyle(
+                                color: m.isError ? AppColors.danger : AppColors.text,
+                                fontSize: 13.5,
+                              ),
+                              h3: TextStyle(
+                                color: m.isError ? AppColors.danger : AppColors.text,
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w800,
+                              ),
+                              code: const TextStyle(
+                                fontSize: 12,
+                                backgroundColor: Color(0x1A000000),
+                              ),
+                            ),
+                          ),
                   ),
                 );
               },
