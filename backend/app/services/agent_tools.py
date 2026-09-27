@@ -80,6 +80,11 @@ def list_meetups(session: Session, *, area: str = "", limit: int = 5) -> list[di
 
 
 # Registry exposed to the agent. The schema is a subset of OpenAI's tool format.
+#: Tools that spend money or change state. Everything else is read-only and
+#: runs without asking. Keep this list short and explicit.
+MUTATING_TOOLS: frozenset[str] = frozenset()
+
+
 REGISTRY: dict[str, dict[str, Any]] = {
     "search_places": {
         "function": search_places,

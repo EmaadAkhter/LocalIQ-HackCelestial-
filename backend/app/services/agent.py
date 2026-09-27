@@ -33,25 +33,13 @@ _SYSTEM_PROMPT = (
 def _build_messages(
     conversation: Conversation,
     user_message: Message,
-    tool_results: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     """Rebuild the message list for the LLM from the conversation."""
     msgs: list[dict[str, Any]] = [{"role": "system", "content": _SYSTEM_PROMPT}]
     for m in conversation.messages:
-        item: dict[str, Any] = {"role": m.role, "content": m.content}
-        if m.tool_json and m.role == "assistant":
-            item["tool_calls"] = m.tool_json.get("tool_calls", [])
-        if m.role == "tool":
-            item["tool_call_id"] = m.tool_json.get("tool_call_id", "")
-        msgs.append(item)
-    # The user's new message is already persisted, but tool results are not.
-    if tool_results:
-        for tr in tool_results:
-            msgs.append({
-                "role": "tool",
-                "tool_call_id": tr["tool_call_id"],
-                "content": json.dumps(tr["result"], default=str),
-            })
+        # Only the spoken content matters for continuity; tool-call plumbing
+        # stays inside the turn it belongs to.
+        msgs.append({"role": m.role, "content": m.content})
     return msgs
 
 
@@ -84,6 +72,23 @@ def _fallback_reply(session: Session, message: str) -> str:
         + "\n".join(lines)
         + "\nAsk me to turn any of these into a plan."
     )
+
+
+def _execute_calls(
+    session: Session, tool_calls: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    """Run each tool call, turning failures into data the model can explain."""
+    results: list[dict[str, Any]] = []
+    for call in tool_calls:
+        try:
+            result = agent_tools.execute(
+                call["name"], session, call.get("arguments", {})
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Tool %s failed: %s", call["name"], exc)
+            result = {"error": str(exc)}
+        results.append({"tool_call_id": call.get("id", ""), "result": result})
+    return results
 
 
 def _create_run(
@@ -122,56 +127,97 @@ async def run_turn(
       - assistant_message (the persisted Message)
       - pending_tool_calls (if waiting for confirmation)
     """
-    tool_results: list[dict[str, Any]] | None = None
+    messages = _build_messages(conversation, user_message)
 
+    # A confirmed pending run already has its tool calls decided; execute them
+    # and feed the results back so the model can write the final answer.
     if pending_run and confirm:
-        # Execute the pending tool calls and ask the LLM for a final answer.
-        tool_results = []
-        for call in pending_run.tool_calls_json:
-            try:
-                result = agent_tools.execute(
-                    call["name"], session, call.get("arguments", {})
-                )
-            except Exception as exc:  # noqa: BLE001
-                logger.warning("Tool %s failed: %s", call["name"], exc)
-                result = {"error": str(exc)}
-            tool_results.append({
-                "tool_call_id": call.get("id", ""),
-                "result": result,
+        calls = pending_run.tool_calls_json
+        results = _execute_calls(session, calls)
+        messages.append({
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+                {
+                    "id": c["id"],
+                    "type": "function",
+                    "function": {"name": c["name"], "arguments": json.dumps(c["arguments"])},
+                }
+                for c in calls
+            ],
+        })
+        for r in results:
+            messages.append({
+                "role": "tool",
+                "tool_call_id": r["tool_call_id"],
+                "content": json.dumps(r["result"], default=str),
             })
         pending_run.status = "completed"
         session.add(pending_run)
 
-    messages = _build_messages(conversation, user_message, tool_results)
     tools = agent_tools.schemas()
+    all_tool_calls: list[dict[str, Any]] = []
+    content = ""
+    status = "completed"
+    run: AgentRun | None = None
 
-    try:
-        response = await llm.chat_completion(messages, tools=tools)
-        msg = llm.extract_message(response)
-        content = msg.get("content") or ""
-        tool_calls = llm.extract_tool_calls(msg)
-    except Exception as exc:  # noqa: BLE001
-        # The agent must never 500 the app. Degrade to a deterministic,
-        # data-grounded reply so the user still gets something useful.
-        logger.warning("Agent LLM unavailable, using fallback: %s", exc)
-        content = _fallback_reply(session, user_message.content)
-        tool_calls = []
+    # Read-only tools run inline; only mutating tools pause for confirmation.
+    for _ in range(4):
+        try:
+            response = await llm.chat_completion(messages, tools=tools)
+            msg = llm.extract_message(response)
+            content = msg.get("content") or ""
+            tool_calls = llm.extract_tool_calls(msg)
+        except Exception as exc:  # noqa: BLE001
+            # The agent must never 500 the app. Degrade to a deterministic,
+            # data-grounded reply so the user still gets something useful.
+            logger.warning("Agent LLM unavailable, using fallback: %s", exc)
+            content = _fallback_reply(session, user_message.content)
+            tool_calls = []
+
+        if not tool_calls:
+            break
+
+        all_tool_calls.extend(tool_calls)
+        needs_confirmation = any(
+            c["name"] in agent_tools.MUTATING_TOOLS for c in tool_calls
+        )
+        if needs_confirmation and not confirm:
+            run = _create_run(session, user, conversation, "pending", tool_calls)
+            status = "pending_confirmation"
+            content = content or "Shall I go ahead?"
+            break
+
+        results = _execute_calls(session, tool_calls)
+        messages.append({
+            "role": "assistant",
+            "content": content,
+            "tool_calls": [
+                {
+                    "id": c["id"],
+                    "type": "function",
+                    "function": {"name": c["name"], "arguments": json.dumps(c["arguments"])},
+                }
+                for c in tool_calls
+            ],
+        })
+        for r in results:
+            messages.append({
+                "role": "tool",
+                "tool_call_id": r["tool_call_id"],
+                "content": json.dumps(r["result"], default=str),
+            })
 
     assistant_message = Message(
         conversation_id=conversation.id,
         role=MessageRole.ASSISTANT.value,
         content=content,
-        tool_json={"tool_calls": tool_calls} if tool_calls else {},
+        tool_json={"tool_calls": all_tool_calls} if all_tool_calls else {},
     )
     session.add(assistant_message)
 
-    if tool_calls and not confirm:
-        # First time seeing tool calls: ask for confirmation before spending.
-        run = _create_run(session, user, conversation, "pending", tool_calls)
-        status = "pending_confirmation"
-    else:
-        run = _create_run(session, user, conversation, "completed", tool_calls, content)
-        status = "completed"
+    if run is None:
+        run = _create_run(session, user, conversation, "completed", all_tool_calls, content)
 
     conversation.updated_at = __import__("app.timeutil", fromlist=["utcnow"]).utcnow()
     session.add(conversation)

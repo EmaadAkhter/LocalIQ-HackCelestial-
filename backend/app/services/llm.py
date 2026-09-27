@@ -93,9 +93,16 @@ async def close_http_client() -> None:
 
 
 def _auth_headers() -> dict[str, str]:
-    """Send the shared-LLM API key when one is configured (Kong key-auth)."""
+    """Attach the LLM key when one is configured.
+
+    Local deployments sit behind Kong key-auth and read ``apikey``; Ollama
+    Cloud reads a standard ``Authorization: Bearer`` header. Sending both keeps
+    one code path working for either endpoint.
+    """
     key = get_settings().ollama_api_key
-    return {"apikey": key} if key else {}
+    if not key:
+        return {}
+    return {"apikey": key, "Authorization": f"Bearer {key}"}
 
 
 # ---------------------------------------------------------------------------
@@ -532,13 +539,46 @@ async def _groq_chat_completion(
     return response.json()
 
 
+def _ollama_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Convert OpenAI-style tool messages to Ollama's native shape.
+
+    Ollama takes ``tool_calls: [{function: {name, arguments}}]`` with arguments
+    as an object, and tool results as ``{role: "tool", content}`` — no ``id``,
+    ``type`` or ``tool_call_id``.
+    """
+    out: list[dict[str, Any]] = []
+    for m in messages:
+        role = m.get("role")
+        if role is None:
+            continue
+        item: dict[str, Any] = {"role": role}
+        if m.get("content"):
+            item["content"] = m["content"]
+        if role == "assistant" and m.get("tool_calls"):
+            calls = []
+            for c in m["tool_calls"]:
+                fn = c.get("function", {})
+                args = fn.get("arguments", {})
+                if isinstance(args, str):
+                    try:
+                        args = json.loads(args)
+                    except json.JSONDecodeError:
+                        args = {}
+                calls.append({"function": {"name": fn.get("name", ""), "arguments": args}})
+            item["tool_calls"] = calls
+        if role == "tool":
+            item.pop("tool_call_id", None)
+        out.append(item)
+    return out
+
+
 async def _ollama_chat_completion(
     messages: list[dict[str, Any]], tools: list[dict[str, Any]] | None
 ) -> dict[str, Any]:
     settings = get_settings()
     payload: dict[str, Any] = {
         "model": settings.ollama_model,
-        "messages": _normalize_messages(messages),
+        "messages": _ollama_messages(messages),
         "stream": False,
         "options": {"temperature": 0.4, "num_predict": 800},
     }

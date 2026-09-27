@@ -67,6 +67,8 @@ services:
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:7b}
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-nomic-embed-text}
       OLLAMA_API_KEY: ${OLLAMA_API_KEY:-}
+      # Hosted models can be slower than a local one; give the agent room.
+      LLM_CHAT_TIMEOUT_SECONDS: ${LLM_CHAT_TIMEOUT_SECONDS:-60}
       SEARXNG_URL: ${SEARXNG_URL:-http://searxng:8080}
       SEARXNG_ENABLED: ${SEARXNG_ENABLED:-true}
       GOOGLE_MAPS_API_KEY_WEB: ${GOOGLE_MAPS_API_KEY_WEB:-}
