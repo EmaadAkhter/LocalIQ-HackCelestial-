@@ -222,10 +222,15 @@ def list_candidates(
             .where(MeetupRequest.user_id == candidate.id)
             .order_by(MeetupRequest.id.desc())
         ).all()
-        interests = list(their_requests[0].interests or []) if their_requests else []
-        budget = their_requests[0].budget_inr if their_requests else request.budget_inr
-        duration = their_requests[0].duration_min if their_requests else request.duration_min
-        start = their_requests[0].start_time if their_requests else request.start_time
+        # Only travellers who have opted in by posting a (live) request can be
+        # matched. Without this, every registered account — including guides and
+        # strangers who never asked for a meetup — appeared as a candidate.
+        if not any(not _expired(r) for r in their_requests):
+            continue
+        interests = list(their_requests[0].interests or [])
+        budget = their_requests[0].budget_inr
+        duration = their_requests[0].duration_min
+        start = their_requests[0].start_time
         tier = (
             "standard"
             if session.exec(

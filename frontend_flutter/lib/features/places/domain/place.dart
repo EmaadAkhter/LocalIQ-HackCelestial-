@@ -30,6 +30,10 @@ class Place {
     this.phone,
     this.website,
     this.summary,
+    this.external = false,
+    this.rightNowLabel,
+    this.rightNowScore,
+    this.rightNowContext = const [],
   });
 
   final String id;
@@ -56,6 +60,23 @@ class Place {
   final String? phone;
   final String? website;
   final String? summary;
+
+  /// True when the row came from `/places/search` (Google Places) rather than
+  /// the curated LocalIQ catalogue. Such places have no experiences yet.
+  final bool external;
+
+  /// Live "Right Now" verdict for this place, computed per request by the
+  /// backend (`/places/right-now`). Null outside that feed, so the UI must not
+  /// invent a badge when it is absent.
+  final String? rightNowLabel;
+
+  /// 0–100 moment score behind [rightNowLabel].
+  final double? rightNowScore;
+
+  /// Human-readable reasons ("Weekend — busier than usual", …).
+  final List<String> rightNowContext;
+
+  bool get hasRightNow => rightNowLabel != null;
 
   String get priceLabel => typicalSpend == 0 ? 'Free' : '₹$typicalSpend';
 
@@ -85,7 +106,70 @@ class Place {
       phone: json.stringOrNull('phone'),
       website: json.stringOrNull('website'),
       summary: json.stringOrNull('summary'),
+      rightNowLabel: json.stringOrNull('rightNowLabel'),
+      rightNowScore: json.doubleOrNull('rightNowScore'),
+      rightNowContext: json.stringList('rightNowContext'),
     );
+  }
+
+  /// Maps one item from `GET /places/search` (Google Places, normalized by the
+  /// backend) onto the app's [Place] shape.
+  ///
+  /// Google rows carry fewer fields than a curated place, so the gaps get
+  /// sensible defaults rather than blocking the row from rendering.
+  factory Place.fromSearchResult(Map<String, dynamic> json) {
+    final lat = json.doubleValue('lat', fallback: 0);
+    final lng = json.doubleValue('lng', fallback: 0);
+    final image = json.stringOrNull('image_url') ?? '';
+    final open = json.stringOrNull('open_time');
+    final close = json.stringOrNull('close_time');
+    final address = json.string('address') ?? '';
+    return Place(
+      id: json.string('id') ?? '',
+      name: json.string('name') ?? 'Unnamed place',
+      category: ExperienceCategory.parse(json.string('category')),
+      address: address,
+      // Google gives one address string; the last comma-separated chunk reads
+      // as the locality in almost every Mumbai result.
+      area: _areaFromAddress(address),
+      centre: GeoPoint(latitude: lat, longitude: lng),
+      heroImageUrl: image,
+      imageUrls: image.isEmpty ? const [] : [image],
+      openingHours: open != null && close != null
+          ? OpeningHours.fromJson({
+              'weekly': {
+                for (var day = 1; day <= 7; day++) '$day': '$open-$close',
+              },
+            })
+          : OpeningHours.fromJson(const {}),
+      accessibility: AccessibilityProfile.standard,
+      rating: json.doubleValue('rating', fallback: 0),
+      reviewCount: json.intValue('review_count'),
+      priceLevel: 1,
+      typicalSpend: json.intValue('avg_cost'),
+      crowdLevel: CrowdLevel.moderate,
+      indoor: false,
+      localFavourite: false,
+      bookingRequired: false,
+      summary: json.stringOrNull('description'),
+      external: true,
+    );
+  }
+
+  static String _areaFromAddress(String address) {
+    final parts = address
+        .split(',')
+        .map((p) => p.trim())
+        .where((p) => p.isNotEmpty)
+        .toList();
+    if (parts.length < 2) return '';
+    // Skip the trailing "Maharashtra"/PIN chunks when present.
+    for (final part in parts.reversed) {
+      if (RegExp(r'^\d{6}$').hasMatch(part)) continue;
+      if (part.toLowerCase() == 'maharashtra') continue;
+      return part;
+    }
+    return '';
   }
 
   Map<String, dynamic> toJson() => {
@@ -110,6 +194,9 @@ class Place {
         'phone': phone,
         'website': website,
         'summary': summary,
+        'rightNowLabel': rightNowLabel,
+        'rightNowScore': rightNowScore,
+        'rightNowContext': rightNowContext,
       };
 }
 

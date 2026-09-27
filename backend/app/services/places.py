@@ -35,6 +35,16 @@ logger = logging.getLogger(__name__)
 #: How close (km) an experience must be to a named area to be "in" it.
 AREA_RADIUS_KM = 4.0
 
+#: Local-gem score at or above which a venue counts as a genuine hidden gem.
+#: The dataset is re-calibrated (``scripts/recalibrate_dataset.py``) so only ~11
+#: of 48 places clear this bar; before, 47/48 did and the label meant nothing.
+GEM_THRESHOLD = 0.85
+
+#: Floor for the "Hidden gems" rail. Slightly below [GEM_THRESHOLD] so the
+#: semi-local tier (0.80-0.85) can still fill a nearby-only feed, while genuine
+#: mainstream venues (Palladium, Gateway of India, ...) never leak in.
+GEM_RAIL_MIN_SCORE = 0.80
+
 _CATEGORY_MAP: dict[str, str] = {
     "food": "food",
     "culture": "culture",
@@ -158,11 +168,21 @@ def _tagline(exp: Experience) -> str:
     return (text[:90] + "…") if len(text) > 90 else (text or "A local favourite.")
 
 
-def place_from_experience(exp: Experience, *, base: str | None = None) -> dict[str, Any]:
-    """Project a venue row onto the app's ``Place`` shape."""
+def place_from_experience(
+    exp: Experience,
+    *,
+    base: str | None = None,
+    right_now: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Project a venue row onto the app's ``Place`` shape.
+
+    ``right_now`` is the optional output of :func:`right_now.score_for`, so a
+    feed can ship the live label/context with each card instead of a hardcoded
+    "Great right now" badge.
+    """
     area = nearest_area(exp.lat, exp.lng) or "Mumbai"
     image = _image(exp, base)
-    return {
+    payload: dict[str, Any] = {
         "id": str(exp.id),
         "name": exp.name,
         "category": app_category(exp.category),
@@ -179,12 +199,19 @@ def place_from_experience(exp: Experience, *, base: str | None = None) -> dict[s
         "typicalSpend": exp.avg_cost,
         "crowdLevel": crowd_level(exp),
         "indoor": (exp.indoor_outdoor or "").lower() == "indoor",
-        "localFavourite": (exp.local_gem_score or 0.0) >= 0.7,
+        "localFavourite": (exp.local_gem_score or 0.0) >= GEM_THRESHOLD,
         "bookingRequired": False,
         "phone": None,
         "website": None,
         "summary": (exp.description or "")[:280] or None,
+        "localGemScore": round(exp.local_gem_score or 0.0, 3),
+        "tags": list(exp.tags or []),
     }
+    if right_now:
+        payload["rightNowLabel"] = right_now.get("label")
+        payload["rightNowScore"] = right_now.get("score")
+        payload["rightNowContext"] = [str(c) for c in (right_now.get("context") or [])]
+    return payload
 
 
 def experience_from_experience(
@@ -237,13 +264,11 @@ def search(
     """Filter + rank experiences for the ``/places`` list endpoint."""
     stmt = select(Experience)
     if text and text.strip():
-        like = f"%{text.strip().lower()}%"
-        stmt = stmt.where(
-            or_(
-                func.lower(Experience.name).like(like),
-                func.lower(Experience.description).like(like),
-            )
-        )
+        terms = [t for t in text.strip().lower().split() if len(t) > 2]
+        if terms:
+            name_conds = [func.lower(Experience.name).like(f"%{t}%") for t in terms]
+            desc_conds = [func.lower(Experience.description).like(f"%{t}%") for t in terms]
+            stmt = stmt.where(or_(*name_conds, *desc_conds))
     if categories:
         mapped = db_categories(categories)
         if mapped:
@@ -285,10 +310,59 @@ def popular(
 
 
 def gems(
-    session: Session, *, lat: float, lng: float, radius_km: float = 8.0, limit: int = 12
+    session: Session,
+    *,
+    lat: float | None = None,
+    lng: float | None = None,
+    radius_km: float = 8.0,
+    limit: int = 12,
+    min_score: float = GEM_RAIL_MIN_SCORE,
 ) -> list[Experience]:
-    """Local-favourite venues near a point, ranked by local-gem score."""
-    rows = search(
-        session, lat=lat, lng=lng, radius_km=radius_km, limit=limit * 3, order="gems"
+    """Local-favourite venues near a point, ranked by local-gem score.
+
+    Applies a floor so the rail cannot be padded with mainstream places when
+    only a couple of real gems are nearby; it is better to show two gems than
+    six venues of which four are ordinary.
+    """
+    rows = list(session.exec(select(Experience)).all())
+    if lat is not None and lng is not None:
+        rows = [e for e in rows if haversine_km(lat, lng, e.lat, e.lng) <= radius_km]
+    rows = [e for e in rows if (e.local_gem_score or 0.0) >= min_score]
+    rows.sort(key=lambda e: -(e.local_gem_score or 0.0))
+    return rows[: max(1, limit)]
+
+
+def right_now_ranked(
+    session: Session,
+    *,
+    weather: dict[str, Any] | None = None,
+    sun: dict[str, Any] | None = None,
+    lat: float | None = None,
+    lng: float | None = None,
+    radius_km: float | None = None,
+    limit: int = 12,
+    pool_limit: int = 120,
+) -> list[tuple[dict[str, Any], Experience]]:
+    """Venues ordered purely by the live Right Now score.
+
+    Deliberately *not* the taste reranker: "Perfect right now" is about this
+    moment (weather, time-of-day, crowd, golden hour), so it must not return the
+    same order as the taste-ranked "Recommended for you" rail. Returns
+    ``(score_result, experience)`` pairs.
+    """
+    from app.services import right_now as right_now_service
+
+    rows = list(session.exec(select(Experience)).all())
+    if lat is not None and lng is not None and radius_km:
+        rows = [e for e in rows if haversine_km(lat, lng, e.lat, e.lng) <= radius_km]
+
+    scored = [
+        (right_now_service.score_for(exp, weather=weather or {}, sun=sun or {}), exp)
+        for exp in rows
+    ]
+    # Tie-break on gem score so equal moments still surface the local finds.
+    scored.sort(
+        key=lambda pair: (pair[0]["score"], pair[1].local_gem_score or 0.0),
+        reverse=True,
     )
-    return rows[:limit]
+    return scored[: max(1, min(limit, pool_limit))]

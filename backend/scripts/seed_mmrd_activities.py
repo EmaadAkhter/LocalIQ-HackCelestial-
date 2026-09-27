@@ -301,7 +301,10 @@ async def _run(args: argparse.Namespace) -> int:
                         description=description,
                         tags=tags,
                         indoor_outdoor=_infer_indoor_outdoor(tags),
-                        local_gem_score=max(0.5, float(cand.get("llm_confidence") or 0.5)),
+                        # Extraction confidence is not a local-gem signal: a
+                        # confident parse of a mall is still a mall. Neutral 0.5
+                        # keeps scraped rows out of the "Hidden gems" rail.
+                        local_gem_score=0.5,
                         embedding=embedding,
                     )
                     session.add(exp)

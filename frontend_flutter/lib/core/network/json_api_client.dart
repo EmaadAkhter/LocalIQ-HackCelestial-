@@ -68,17 +68,20 @@ class JsonApiClient {
     });
   }
 
+  /// POST JSON. [timeout] overrides the client default for slow endpoints
+  /// (the LLM-backed agent can legitimately take a minute).
   Future<dynamic> post(
     String path, {
     Map<String, dynamic>? body,
     Map<String, dynamic>? query,
+    Duration? timeout,
   }) {
     return _send(() async {
       final request = await _client.postUrl(_uri(path, query));
       _applyHeaders(request);
       request.add(utf8.encode(jsonEncode(body ?? const <String, dynamic>{})));
       return request.close();
-    });
+    }, timeout);
   }
 
   Future<dynamic> patch(String path, {Map<String, dynamic>? body}) {
@@ -149,9 +152,12 @@ class JsonApiClient {
     });
   }
 
-  Future<dynamic> _send(Future<HttpClientResponse> Function() run) async {
+  Future<dynamic> _send(
+    Future<HttpClientResponse> Function() run, [
+    Duration? override,
+  ]) async {
     try {
-      final response = await run().timeout(timeout);
+      final response = await run().timeout(override ?? timeout);
       final body = await utf8.decoder.bind(response).join();
       final decoded = body.isEmpty ? null : jsonDecode(body);
 
@@ -160,21 +166,21 @@ class JsonApiClient {
           return decoded;
         case 401 || 403:
           throw UnauthorizedException(
-            _serverMessage(decoded, 'You are not authorised for this action.'),
+            serverMessage(decoded, 'You are not authorised for this action.'),
           );
         case 404:
           throw NotFoundException(
-            _serverMessage(decoded, 'The requested resource was not found.'),
+            serverMessage(decoded, 'The requested resource was not found.'),
           );
         case 422:
           throw ServerException(
-            _serverMessage(decoded, 'The request was rejected. Check your input.'),
+            serverMessage(decoded, 'The request was rejected. Check your input.'),
             code: '422',
             cause: decoded,
           );
         default:
           throw ServerException(
-            _serverMessage(decoded, 'Request failed (${response.statusCode}).'),
+            serverMessage(decoded, 'Request failed (${response.statusCode}).'),
             code: '$response.statusCode',
             cause: decoded,
           );
@@ -196,8 +202,8 @@ class JsonApiClient {
   ///
   /// Field-level validation messages win, then the top-level message/detail, so
   /// a 422 reads "password: String should have at least 8 characters" instead of
-  /// a bare status code.
-  static String _serverMessage(dynamic decoded, String fallback) {
+  /// a bare status code. Pure function, exposed for tests.
+  static String serverMessage(dynamic decoded, String fallback) {
     if (decoded is! Map) return fallback;
     final details = decoded['details'];
     if (details is List && details.isNotEmpty && details.first is Map) {

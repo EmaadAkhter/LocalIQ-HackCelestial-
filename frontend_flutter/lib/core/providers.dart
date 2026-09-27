@@ -84,6 +84,25 @@ final allExperiencesProvider = FutureProvider<List<Experience>>((ref) async {
   return all;
 }, name: 'localiq.allExperiences');
 
+/// Home rail: "Recommended for you", taste-ranked by the backend.
+final forYouPlacesProvider = FutureProvider<List<Place>>((ref) async {
+  final repo = ref.watch(placeRepositoryProvider);
+  return repo.forYou(limit: 12);
+}, name: 'localiq.forYouPlaces');
+
+/// Home rail: "Perfect right now", ranked by the live moment (weather, time,
+/// crowd). Each place carries a `rightNowLabel` the card renders as a badge.
+final rightNowPlacesProvider = FutureProvider<List<Place>>((ref) async {
+  final repo = ref.watch(placeRepositoryProvider);
+  return repo.rightNow(limit: 12);
+}, name: 'localiq.rightNowPlaces');
+
+/// Home rail: "Hidden gems", only genuine local finds (backend applies a floor).
+final gemPlacesProvider = FutureProvider<List<Place>>((ref) async {
+  final repo = ref.watch(placeRepositoryProvider);
+  return repo.localGems(limit: 12);
+}, name: 'localiq.gemPlaces');
+
 final placeByIdProvider = Provider.family<Place?, String>((ref, id) {
   final places = ref.watch(allPlacesProvider).value ?? const <Place>[];
   for (final place in places) {
@@ -98,6 +117,18 @@ final placeDetailProvider = FutureProvider.family<Place?, String>((ref, id) asyn
   final repo = ref.watch(placeRepositoryProvider);
   return repo.placeById(id);
 }, name: 'localiq.placeDetail');
+
+/// Free-text place lookup backed by Google Places (`/places/search`).
+///
+/// Keyed by the query string; callers should debounce before flipping the key
+/// so every keystroke does not become a Google round-trip.
+final placeSearchProvider =
+    FutureProvider.family<List<Place>, String>((ref, query) async {
+  final trimmed = query.trim();
+  if (trimmed.isEmpty) return const <Place>[];
+  final repo = ref.watch(placeRepositoryProvider);
+  return repo.searchRemote(trimmed);
+}, name: 'localiq.placeSearch');
 
 final experienceByIdProvider =
     Provider.family<Experience?, String>((ref, id) {

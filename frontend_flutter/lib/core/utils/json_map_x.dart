@@ -72,6 +72,18 @@ extension JsonMapX on Map<String, dynamic> {
     return const [];
   }
 
+  /// A JSON array of objects, or an empty list when absent/mistyped.
+  List<Map<String, dynamic>> mapOrEmptyList(String key) {
+    final value = pick(key);
+    if (value is List) {
+      return value
+          .whereType<Map>()
+          .map((e) => e.cast<String, dynamic>())
+          .toList();
+    }
+    return const [];
+  }
+
   Map<String, dynamic> mapOrEmpty(String key) {
     final value = pick(key);
     if (value is Map<String, dynamic>) return value;

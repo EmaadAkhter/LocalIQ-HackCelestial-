@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/providers.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../models/guide.dart';
 import '../../../../models/right_now_context.dart';
 import '../../../places/domain/place.dart';
 import '../widgets/home_header.dart';
@@ -14,7 +15,6 @@ import '../widgets/experience_card.dart';
 import '../widgets/guide_card.dart';
 import '../../../../models/quest.dart';
 import '../../../guides/data/guide_repository.dart';
-import '../../../guides/data/local_guides.dart';
 import '../../../quests/data/quest_repository.dart';
 import '../../../quests/data/local_quests.dart';
 
@@ -42,7 +42,6 @@ class _ExplorerHomeScreenState extends ConsumerState<ExplorerHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final placesAsync = ref.watch(allPlacesProvider);
     final user = ref.watch(currentUserProvider);
 
     return Scaffold(
@@ -99,13 +98,7 @@ class _ExplorerHomeScreenState extends ConsumerState<ExplorerHomeScreen> {
           ),
 
           // ── Feed sections
-          placesAsync.when(
-            data: (places) => _HomeFeed(places: places),
-            loading: () => const SliverToBoxAdapter(child: _HomeLoading()),
-            error: (e, _) => SliverToBoxAdapter(
-              child: _HomeError(onRetry: () => ref.invalidate(allPlacesProvider)),
-            ),
-          ),
+          const _HomeFeed(),
 
           const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
         ],
@@ -174,136 +167,112 @@ class _SearchField extends StatelessWidget {
 }
 
 class _HomeFeed extends ConsumerWidget {
-  const _HomeFeed({required this.places});
-
-  final List<Place> places;
+  const _HomeFeed();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (places.isEmpty) {
-      return const SliverToBoxAdapter(
-        child: Center(
-          child: Padding(
-            padding: EdgeInsets.all(40),
-            child: Text(
-              'No experiences found nearby.',
-              style: TextStyle(color: AppColors.textMuted),
-            ),
-          ),
+    final forYou = ref.watch(forYouPlacesProvider);
+    final rightNow = ref.watch(rightNowPlacesProvider);
+    final gems = ref.watch(gemPlacesProvider);
+
+    final anyLoaded = forYou.hasValue || rightNow.hasValue || gems.hasValue;
+    final anyLoading = forYou.isLoading || rightNow.isLoading || gems.isLoading;
+    if (!anyLoaded && anyLoading) {
+      return const SliverToBoxAdapter(child: _HomeLoading());
+    }
+
+    // A place belongs to exactly one rail: the first one to claim it. This is
+    // what stops "Recommended" and "Perfect right now" repeating the same two
+    // cards, which is what happened when every rail was cut from one list.
+    final seen = <String>{};
+    List<Place> claim(Iterable<Place> source, {required int take}) {
+      final out = <Place>[];
+      for (final place in source) {
+        if (out.length >= take) break;
+        if (place.id.isEmpty || seen.add(place.id)) out.add(place);
+      }
+      return out;
+    }
+
+    final recommended = claim(forYou.value ?? const [], take: 8);
+    final timely = claim(rightNow.value ?? const [], take: 6);
+    final hiddenGems = claim(gems.value ?? const [], take: 6);
+    final guides = ref.watch(allGuidesProvider).value ?? const <Guide>[];
+
+    if (recommended.isEmpty && timely.isEmpty && hiddenGems.isEmpty) {
+      return SliverToBoxAdapter(
+        child: _HomeError(
+          onRetry: () {
+            ref.invalidate(forYouPlacesProvider);
+            ref.invalidate(rightNowPlacesProvider);
+            ref.invalidate(gemPlacesProvider);
+          },
         ),
       );
     }
 
-    final sorted = [...places]..sort((a, b) => b.rating.compareTo(a.rating));
-    final recommended = sorted.take(8).toList();
-    final gems = places.where((p) => p.localFavourite).take(6).toList();
-    final nearbyGuides = ref.watch(allGuidesProvider).value ?? kLocalGuides;
+    // The banner phrase comes from the live engine, not a hardcoded string.
+    final timelyReason = timely.isNotEmpty && timely.first.rightNowContext.isNotEmpty
+        ? timely.first.rightNowContext.first
+        : 'Ranked for this moment';
 
     return SliverList(
       delegate: SliverChildListDelegate([
-        // 1. Recommended for you
-        HomeSection(
+        _PlaceRail(
           title: 'Recommended for you',
-          subtitle: 'Based on your location and preferences',
+          subtitle: 'Matched to your taste',
           icon: Icons.auto_awesome_rounded,
           iconColor: AppColors.violet,
+          places: recommended,
           onSeeAll: () => context.push('/explore'),
-          child: SizedBox(
-            height: 240,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              itemCount: recommended.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 12),
-              itemBuilder: (context, i) => ExperienceCard(
-                place: recommended[i],
-                onTap: () => context.push(
-                  '/place/${recommended[i].id}',
-                  extra: recommended[i],
-                ),
-              ),
-            ),
-          ),
         ),
-
         const SizedBox(height: 8),
-
-        // 2. Perfect right now
-        HomeSection(
+        _PlaceRail(
           title: 'Perfect right now',
-          subtitle: 'Clear skies · Low crowd · 29°C',
+          subtitle: timelyReason,
           icon: Icons.bolt_rounded,
           iconColor: const Color(0xFF0E7C5A),
+          places: timely,
+          showRightNow: true,
           onSeeAll: () => context.push('/explore?filter=right_now'),
-          child: SizedBox(
-            height: 240,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              itemCount: sorted.take(6).length,
-              separatorBuilder: (_, _) => const SizedBox(width: 12),
-              itemBuilder: (context, i) {
-                final list = sorted.take(6).toList();
-                return ExperienceCard(
-                  place: list[i],
-                  rightNowLabel: 'Great right now',
-                  onTap: () => context.push('/place/${list[i].id}?place=${list[i].id}'),
-                );
-              },
-            ),
-          ),
         ),
-
         const SizedBox(height: 8),
-
-        // 3. Hidden gems near you
-        HomeSection(
+        _PlaceRail(
           title: 'Hidden gems near you',
           subtitle: 'Locals rate highly, visitors rarely find',
           icon: Icons.diamond_outlined,
           iconColor: AppColors.violet,
+          places: hiddenGems,
+          showGem: true,
           onSeeAll: () => context.push('/explore?filter=gems'),
-          child: SizedBox(
-            height: 240,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              itemCount: gems.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 12),
-              itemBuilder: (context, i) => ExperienceCard(
-                place: gems[i],
-                isLocalGem: true,
-                onTap: () => context.push('/place/${gems[i].id}?place=${gems[i].id}'),
+        ),
+        const SizedBox(height: 8),
+
+        // Only rendered when the backend actually returns guides; the bundled
+        // sample list used to stand in here and read as static data.
+        if (guides.isNotEmpty) ...[
+          HomeSection(
+            title: 'Local guides near you',
+            subtitle: 'Curated local experts you can book',
+            icon: Icons.person_search_outlined,
+            iconColor: AppColors.blue,
+            onSeeAll: () => context.push('/guides'),
+            child: SizedBox(
+              height: 170,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                itemCount: guides.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 12),
+                itemBuilder: (context, i) => GuideCard(
+                  guide: guides[i],
+                  onTap: () => context.push('/guides'),
+                ),
               ),
             ),
           ),
-        ),
-
-        const SizedBox(height: 8),
-
-        // 4. Local guides near you
-        HomeSection(
-          title: 'Local guides near you',
-          subtitle: 'Verified guides available today',
-          icon: Icons.person_search_outlined,
-          iconColor: AppColors.blue,
-          onSeeAll: () => context.push('/guides'),
-          child: SizedBox(
-            height: 170,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              itemCount: nearbyGuides.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 12),
-              itemBuilder: (context, i) => GuideCard(
-                guide: nearbyGuides[i],
-                onTap: () => context.push('/guides'),
-              ),
-            ),
-          ),
-        ),
-
-        const SizedBox(height: 8),
+          const SizedBox(height: 8),
+        ],
 
         // 5. Active Plan teaser
         const _ActivePlanTeaser(),
@@ -315,6 +284,62 @@ class _HomeFeed extends ConsumerWidget {
 
         const SizedBox(height: 24),
       ]),
+    );
+  }
+}
+
+/// One horizontal place rail. Renders nothing when it has no places, so a
+/// single failing endpoint cannot leave an empty titled section on Home.
+class _PlaceRail extends StatelessWidget {
+  const _PlaceRail({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.iconColor,
+    required this.places,
+    required this.onSeeAll,
+    this.showRightNow = false,
+    this.showGem = false,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color iconColor;
+  final List<Place> places;
+  final VoidCallback onSeeAll;
+  final bool showRightNow;
+  final bool showGem;
+
+  @override
+  Widget build(BuildContext context) {
+    if (places.isEmpty) return const SizedBox.shrink();
+    return HomeSection(
+      title: title,
+      subtitle: subtitle,
+      icon: icon,
+      iconColor: iconColor,
+      onSeeAll: onSeeAll,
+      child: SizedBox(
+        height: 240,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          itemCount: places.length,
+          separatorBuilder: (_, _) => const SizedBox(width: 12),
+          itemBuilder: (context, i) {
+            final place = places[i];
+            return ExperienceCard(
+              place: place,
+              // The badge reflects what the engine actually computed.
+              rightNowLabel: showRightNow ? place.rightNowLabel : null,
+              isLocalGem: showGem || place.localFavourite,
+              onTap: () =>
+                  context.push('/place/${place.id}?place=${place.id}'),
+            );
+          },
+        ),
+      ),
     );
   }
 }

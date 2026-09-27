@@ -168,6 +168,8 @@ def seed_database() -> dict[str, int]:
                 accessibility_flags=list(item.get("accessibility_flags", []) or []),
                 indoor_outdoor=str(item.get("indoor_outdoor", "indoor")).lower(),
                 local_gem_score=float(item.get("local_gem_score", 0.5)),
+                crowd_density_level=str(item.get("crowd_density_level", "MEDIUM")).upper(),
+                best_visit_time=item.get("best_visit_time") or None,
             )
             session.add(exp)
             exp_count += 1

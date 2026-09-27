@@ -28,9 +28,12 @@ from sqlmodel import Session
 
 from app.config import get_settings
 from app.database import get_session
-from app.models import Experience
+from app.models import Experience, User
 from app.rate_limit import PUBLIC_LIMIT, limiter
+from app.services import graphs
 from app.services import places as places_service
+from app.services.auth import get_current_user_optional
+from app.services.weather import fetch_sun_times, fetch_weather, neutral_weather
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -101,17 +104,101 @@ def popular_places(
 def gem_places(
     request: Request,
     response: Response,
-    lat: float = Query(..., ge=-90, le=90),
-    lng: float = Query(..., ge=-180, le=180),
+    lat: float | None = Query(default=None, ge=-90, le=90),
+    lng: float | None = Query(default=None, ge=-180, le=180),
     radius_km: float = Query(default=8.0, gt=0, le=50),
     limit: int = Query(default=12, ge=1, le=50),
     session: Session = Depends(get_session),
 ):
+    """Genuine hidden gems, ranked by local-gem score.
+
+    Omit ``lat``/``lng`` for a city-wide list; pass them to restrict to nearby
+    finds. Only venues above the gem floor are returned.
+    """
     base = _base_url(request)
     rows = places_service.gems(
         session, lat=lat, lng=lng, radius_km=radius_km, limit=limit
     )
     return [places_service.place_from_experience(e, base=base) for e in rows]
+
+
+async def _conditions(lat: float | None, lng: float | None) -> tuple[dict, dict]:
+    """Weather + sun times, never failing the request."""
+    try:
+        if lat is not None and lng is not None:
+            weather = await fetch_weather(lat, lng)
+            sun = await fetch_sun_times(lat, lng)
+        else:
+            weather = await fetch_weather()
+            sun = await fetch_sun_times()
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning("Place feed conditions lookup failed: %s", exc)
+        weather = neutral_weather(reason="exception")
+        sun = {"available": False}
+    return weather, sun
+
+
+@router.get("/places/for-you", summary="Personalized places (taste-ranked)")
+@limiter.limit(PUBLIC_LIMIT)
+async def for_you_places(
+    request: Request,
+    response: Response,
+    lat: float | None = Query(default=None, ge=-90, le=90),
+    lng: float | None = Query(default=None, ge=-180, le=180),
+    limit: int = Query(default=12, ge=1, le=30),
+    session: Session = Depends(get_session),
+    current_user: User | None = Depends(get_current_user_optional),
+):
+    """Recommendations ranked by the signed-in user's learned taste vector.
+
+    Anonymous callers (no token) get the deterministic feasibility ranking, so
+    the rail is never empty and never blocked on auth.
+    """
+    base = _base_url(request)
+    weather, _sun = await _conditions(lat, lng)
+    ranked = graphs.taste_aware_recommend(
+        session,
+        current_user,
+        lat=lat,
+        lng=lng,
+        weather=weather,
+        limit=limit,
+    )
+    return [places_service.place_from_experience(r.experience, base=base) for r in ranked]
+
+
+@router.get("/places/right-now", summary="Live 'Right Now' places (weather + crowd + time)")
+@limiter.limit(PUBLIC_LIMIT)
+async def right_now_places(
+    request: Request,
+    response: Response,
+    lat: float | None = Query(default=None, ge=-90, le=90),
+    lng: float | None = Query(default=None, ge=-180, le=180),
+    limit: int = Query(default=12, ge=1, le=30),
+    session: Session = Depends(get_session),
+    current_user: User | None = Depends(get_current_user_optional),
+):
+    """The moment's best places, ranked by weather, time-of-day and crowd.
+
+    Each card carries ``rightNowLabel`` / ``rightNowContext`` computed for this
+    request, so the UI shows the real reason instead of a fixed badge. Ranked
+    independently of the taste reranker so it never mirrors "Recommended".
+    """
+    base = _base_url(request)
+    weather, sun = await _conditions(lat, lng)
+    scored = places_service.right_now_ranked(
+        session,
+        weather=weather,
+        sun=sun,
+        lat=lat,
+        lng=lng,
+        radius_km=12.0 if (lat is not None and lng is not None) else None,
+        limit=limit,
+    )
+    return [
+        places_service.place_from_experience(exp, base=base, right_now=result)
+        for result, exp in scored
+    ]
 
 
 @router.get("/places/discover", summary="Natural-language place discovery")

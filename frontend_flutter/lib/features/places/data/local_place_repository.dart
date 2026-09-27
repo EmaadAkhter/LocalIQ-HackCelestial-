@@ -96,17 +96,13 @@ class LocalPlaceRepository implements PlaceRepository {
   }
 
   @override
-  Future<List<Place>> localGems({
-    required GeoPoint near,
-    double radiusKm = 8,
-    int limit = 12,
-  }) async {
+  Future<List<Place>> localGems({GeoPoint? near, int limit = 12}) async {
     await _latencyDelay();
     final candidates = <({Place place, double score})>[];
     for (final place in _places) {
       if (!place.localFavourite) continue;
-      final distance = _distance(near, place.centre);
-      if (distance > radiusKm) continue;
+      final distance = near == null ? 0.0 : _distance(near, place.centre);
+      if (near != null && distance > 8) continue;
       final best = _experiences
           .where((e) => e.placeId == place.id)
           .fold<double>(0, (max, e) => math.max(max, e.localScore));
@@ -115,6 +111,45 @@ class LocalPlaceRepository implements PlaceRepository {
     candidates.sort((a, b) => b.score.compareTo(a.score));
     return candidates.take(limit).map((c) => c.place).toList();
   }
+
+  @override
+  Future<List<Place>> forYou({GeoPoint? near, int limit = 12}) async {
+    await _latencyDelay();
+    // Offline stand-in for the taste reranker: quality first, then proximity.
+    final ranked = [..._places];
+    ranked.sort((a, b) {
+      final aScore = _offlineQuality(a) -
+          (near == null ? 0 : _distance(near, a.centre) * 0.35);
+      final bScore = _offlineQuality(b) -
+          (near == null ? 0 : _distance(near, b.centre) * 0.35);
+      return bScore.compareTo(aScore);
+    });
+    return ranked.take(limit).toList();
+  }
+
+  @override
+  Future<List<Place>> rightNow({GeoPoint? near, int limit = 12}) async {
+    await _latencyDelay();
+    // Offline stand-in: quiet, highly-rated places are the safest bet at any
+    // hour without live weather or sun data.
+    final ranked = [..._places];
+    ranked.sort((a, b) {
+      final aScore = _offlineQuality(a) + _quietBonus(a);
+      final bScore = _offlineQuality(b) + _quietBonus(b);
+      return bScore.compareTo(aScore);
+    });
+    return ranked.take(limit).toList();
+  }
+
+  static double _offlineQuality(Place place) =>
+      place.rating * 0.6 + (place.localFavourite ? 1.6 : 0.0);
+
+  static double _quietBonus(Place place) => switch (place.crowdLevel) {
+        CrowdLevel.quiet => 1.2,
+        CrowdLevel.moderate => 0.6,
+        CrowdLevel.busy => 0.0,
+        CrowdLevel.veryBusy => -0.4,
+      };
 
   @override
   Future<PlaceQueryResult> discover(PlaceQuery query) async {
@@ -131,6 +166,26 @@ class LocalPlaceRepository implements PlaceRepository {
       experiences: experiences,
       interpretedQuery: query.text,
     );
+  }
+
+  @override
+  Future<List<Place>> searchRemote(
+    String query, {
+    GeoPoint? near,
+    int limit = 10,
+  }) async {
+    await _latencyDelay();
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) return const [];
+    // Offline mode: best effort over the bundled catalogue.
+    return _places
+        .where((p) =>
+            p.name.toLowerCase().contains(q) ||
+            p.area.toLowerCase().contains(q) ||
+            p.address.toLowerCase().contains(q) ||
+            p.category.label.toLowerCase().contains(q))
+        .take(limit)
+        .toList();
   }
 
   /// Normalised popularity, saturating so mega-attraction review counts do

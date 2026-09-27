@@ -1394,6 +1394,8 @@ class AgentChatRequest(BaseModel):
         default=False,
         description="Set to true to approve a pending tool-calling turn.",
     )
+    lat: float | None = Field(default=None, ge=-90, le=90)
+    lng: float | None = Field(default=None, ge=-180, le=180)
 
 
 class ToolCall(BaseModel):

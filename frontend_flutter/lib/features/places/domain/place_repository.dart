@@ -29,6 +29,9 @@ class PlaceQuery {
   final GeoPoint? near;
   final Set<ExperienceCategory> categories;
   final double radiusKm;
+
+  /// Maximum results to return. `0` (or negative) means "no limit" — used for
+  /// catalogue loads that want everything, not a proximity search.
   final int limit;
   final DateTime? openAt;
   final int? maxTypicalSpend;
@@ -75,15 +78,34 @@ abstract interface class PlaceRepository {
     int limit = 12,
   });
 
+  /// "Recommended for you": taste-ranked places for the signed-in user.
+  ///
+  /// Anonymous callers get the deterministic quality/distance ranking, so the
+  /// rail is never empty. [near] is optional — without it the backend ranks the
+  /// whole catalogue.
+  Future<List<Place>> forYou({GeoPoint? near, int limit = 12});
+
+  /// "Perfect right now": places ranked by the live moment (weather, time of
+  /// day, crowd). Deliberately distinct from [forYou].
+  Future<List<Place>> rightNow({GeoPoint? near, int limit = 12});
+
   /// Places locals rate highly but that sit below the tourist threshold.
-  Future<List<Place>> localGems({
-    required GeoPoint near,
-    double radiusKm = 8,
-    int limit = 12,
-  });
+  ///
+  /// Only genuine gems are returned (the backend applies a floor); [near] is
+  /// optional for a city-wide list.
+  Future<List<Place>> localGems({GeoPoint? near, int limit = 12});
 
   /// Full-text + faceted search backing natural-language queries.
   Future<PlaceQueryResult> discover(PlaceQuery query);
+
+  /// Real place lookup for free-text queries, backed by Google Places via
+  /// `GET /places/search`. Returns an empty list when the remote lookup is
+  /// unavailable so callers can fall back to the local catalogue.
+  Future<List<Place>> searchRemote(
+    String query, {
+    GeoPoint? near,
+    int limit = 10,
+  });
 }
 
 class PlaceQueryResult {

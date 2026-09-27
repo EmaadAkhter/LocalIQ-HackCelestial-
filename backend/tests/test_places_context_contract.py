@@ -262,7 +262,7 @@ def test_scraped_rows_with_null_json_columns_do_not_500():
     """
     with Session(engine) as session:
         exp = Experience(
-            name="TS Null JSON Venue",
+            name="TS-Null JSON Venue",
             category="food",
             lat=19.05,
             lng=72.83,
@@ -285,4 +285,4 @@ def test_scraped_rows_with_null_json_columns_do_not_500():
 
     listing = client.get("/api/v1/places", params={"text": "Null JSON", "limit": 5})
     assert listing.status_code == 200, listing.text
-    assert any(p["name"] == "TS Null JSON Venue" for p in listing.json())
+    assert any(p["name"] == "TS-Null JSON Venue" for p in listing.json())

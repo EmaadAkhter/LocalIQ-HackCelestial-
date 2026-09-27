@@ -25,6 +25,7 @@ from sqlmodel import Session, select
 
 from app.models import Experience, User
 from app.services import graphs, reranker, taste
+from app.services.context import IST
 from app.services.recommender import parse_hhmm
 from app.services.weather import MUMBAI_LAT, MUMBAI_LON
 
@@ -53,9 +54,25 @@ FEED_RIGHT_NOW_WEIGHT = 0.45
 
 
 def now_minutes(now: datetime | None = None) -> int:
-    """Minutes since local midnight (IST) for the given/current moment."""
+    """Minutes since local midnight (IST) for the given/current moment.
+
+    The clocks here are Mumbai clocks: a UTC ``datetime`` is converted to IST
+    rather than read as if it were already local, which used to shift the whole
+    time-of-day and safety model by 5h30m.
+    """
     moment = now or datetime.now(timezone.utc)
-    return (moment.hour * 60 + moment.minute) % (24 * 60)
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=timezone.utc)
+    local = moment.astimezone(IST)
+    return local.hour * 60 + local.minute
+
+
+def is_weekend(now: datetime | None = None) -> bool:
+    """True when it is Saturday/Sunday in Mumbai (not in UTC)."""
+    moment = now or datetime.now(timezone.utc)
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=timezone.utc)
+    return moment.astimezone(IST).weekday() >= 5
 
 
 def _fmt(minutes: int) -> str:
@@ -81,7 +98,14 @@ def _crowd_score(exp: Experience, now_min: int, *, weekend: bool) -> tuple[float
     if weekend:
         score -= 0.05
         note = note or "Weekend — busier than usual"
-    return max(0.0, min(1.0, score)), note
+    score = max(0.0, min(1.0, score))
+    # Let a genuinely quiet venue say so, so the panel is not one repeated line.
+    if note is None:
+        if level in ("LOW", "QUIET"):
+            note = "Quiet right now — a good window"
+        elif level in ("HIGH", "BUSY", "VERY_HIGH", "VERY_BUSY"):
+            note = "A popular spot — expect a crowd"
+    return score, note
 
 
 def _safety_score(exp: Experience, now_min: int) -> tuple[float, str | None]:
@@ -133,7 +157,7 @@ def score_for(
 ) -> dict[str, Any]:
     """Compute the Right Now score, components and context lines."""
     now_min = now_min if now_min is not None else now_minutes()
-    weekend = weekend if weekend is not None else datetime.now(timezone.utc).weekday() >= 5
+    weekend = weekend if weekend is not None else is_weekend()
     weather = weather or {}
     sun = sun or {}
 
@@ -250,7 +274,7 @@ def right_now_feed(
         weather=weather or {},
         limit=max(limit * 4, 40),
     )
-    weekend = datetime.now(timezone.utc).weekday() >= 5
+    weekend = is_weekend()
     items: list[dict[str, Any]] = []
     for ranked in pool:
         result = score_for(

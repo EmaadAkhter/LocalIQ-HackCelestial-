@@ -209,9 +209,13 @@ class _GuideLoginScreenState extends ConsumerState<GuideLoginScreen> {
           label: 'Continue Guide with Google',
           onPressed: _busy
               ? () {}
-              : () => _run(
-                    () => ref.read(authServiceProvider).signInWithGoogle(),
-                  ),
+              : () => _run(() async {
+                    final idToken =
+                        await ref.read(googleSignInServiceProvider).idToken();
+                    return ref
+                        .read(authServiceProvider)
+                        .signInWithGoogle(idToken: idToken);
+                  }),
         ),
         const SizedBox(height: 18),
         Row(

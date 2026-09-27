@@ -177,6 +177,8 @@ async def travel_buddy_chat(
         user_msg,
         confirm=payload.confirm,
         pending_run=pending_run,
+        lat=payload.lat,
+        lng=payload.lng,
     )
 
     assistant = _message_response(result["assistant_message"])

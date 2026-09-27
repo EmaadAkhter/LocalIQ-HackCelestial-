@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -25,6 +27,11 @@ class DiscoverScreen extends ConsumerStatefulWidget {
 class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   late final TextEditingController _searchCtrl;
   String _query = '';
+
+  /// Debounced copy of [_query] used to key the remote (Google Places) lookup,
+  /// so typing does not fire a request per keystroke.
+  String _remoteQuery = '';
+  Timer? _debounce;
   _DiscoverSort _sort = _DiscoverSort.relevance;
   _DiscoverView _view = _DiscoverView.list;
 
@@ -33,12 +40,25 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     super.initState();
     _searchCtrl = TextEditingController(text: widget.initialQuery ?? '');
     _query = _searchCtrl.text;
+    _remoteQuery = _query.trim();
   }
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  void _onQueryChanged(String value) {
+    setState(() => _query = value);
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 400), () {
+      if (!mounted) return;
+      final next = value.trim();
+      if (next == _remoteQuery) return;
+      setState(() => _remoteQuery = next);
+    });
   }
 
   List<Place> _filter(List<Place> all) {
@@ -64,7 +84,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             // ── Search header
             _DiscoverSearchBar(
               controller: _searchCtrl,
-              onChanged: (v) => setState(() => _query = v),
+              onChanged: _onQueryChanged,
               onFilter: () => _showFilterSheet(context),
             ),
 
@@ -80,8 +100,18 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             Expanded(
               child: allAsync.when(
                 data: (places) {
-                  final results = _filter(places);
+                  final local = _filter(places);
+                  // Curated hits show instantly; Google fills in the rest.
+                  final remoteAsync = _remoteQuery.isEmpty
+                      ? const AsyncValue<List<Place>>.data(<Place>[])
+                      : ref.watch(placeSearchProvider(_remoteQuery));
+                  final results = _merge(local, remoteAsync.value ?? const []);
                   if (results.isEmpty) {
+                    if (remoteAsync.isLoading) {
+                      return const Center(
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      );
+                    }
                     return _EmptyState(query: _query);
                   }
                   if (_view == _DiscoverView.map) {
@@ -108,6 +138,18 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         ),
       ),
     );
+  }
+
+  /// Curated places first (they carry experiences and images), then Google
+  /// results that are not already in the catalogue. A curated place and its
+  /// Google twin are different ids, so both can legitimately appear.
+  List<Place> _merge(List<Place> local, List<Place> remote) {
+    if (remote.isEmpty) return local;
+    final seen = local.map((p) => p.name.toLowerCase()).toSet();
+    return [
+      ...local,
+      ...remote.where((p) => !seen.contains(p.name.toLowerCase())),
+    ];
   }
 
   void _showFilterSheet(BuildContext context) {

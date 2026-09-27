@@ -43,6 +43,7 @@ class Environment {
     required this.apiKeyOverride,
     required this.googleMapsApiKey,
     required this.googlePlacesApiKey,
+    required this.googleServerClientId,
     required this.useOfflineData,
     required this.requestTimeout,
     required this.aiAssistantEnabled,
@@ -60,6 +61,14 @@ class Environment {
   final String? googleMapsApiKey;
   final String? googlePlacesApiKey;
 
+  /// The **web** OAuth client id used for Google Sign-In.
+  ///
+  /// Android must pass this as `serverClientId`; Google then mints an idToken
+  /// whose audience is the web client, which is exactly what the backend
+  /// validates against `GOOGLE_OAUTH_CLIENT_ID`. Using the Android client id
+  /// here would produce a token the backend rejects.
+  final String? googleServerClientId;
+
   /// When true the app never touches the network.
   final bool useOfflineData;
   final Duration requestTimeout;
@@ -71,6 +80,10 @@ class Environment {
   bool get hasGoogleMaps => (googleMapsApiKey ?? '').isNotEmpty;
 
   bool get hasGooglePlaces => (googlePlacesApiKey ?? '').isNotEmpty;
+
+  /// True when a web OAuth client id was supplied at build time.
+  bool get hasGoogleSignIn =>
+      (googleServerClientId ?? '').trim().isNotEmpty;
 
   String get apiBaseUrl =>
       apiBaseUrlOverride?.trim().isNotEmpty == true
@@ -109,6 +122,9 @@ class Environment {
     googleMapsApiKey: const String.fromEnvironment('LOCALIQ_GOOGLE_MAPS_API_KEY'),
     googlePlacesApiKey:
         const String.fromEnvironment('LOCALIQ_GOOGLE_PLACES_API_KEY'),
+    googleServerClientId: const String.fromEnvironment(
+      'LOCALIQ_GOOGLE_SERVER_CLIENT_ID',
+    ),
     useOfflineData: const bool.fromEnvironment(
       'LOCALIQ_OFFLINE',
       defaultValue: false,

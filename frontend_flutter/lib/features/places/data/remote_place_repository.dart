@@ -1,5 +1,6 @@
 import '../../../core/error/app_exception.dart';
 import '../../../core/network/json_api_client.dart';
+import '../../../core/utils/json_map_x.dart';
 import '../../context/domain/context_models.dart';
 import '../../context/domain/discovery_context.dart';
 import '../domain/place_repository.dart';
@@ -12,27 +13,30 @@ import '../domain/place.dart';
 ///   GET /places/{id}
 ///   GET /places/{id}/experiences
 ///   GET /places/popular?lat=&lng=&radius_km=&limit=
-///   GET /places/gems?lat=&lng=&radius_km=&limit=
+///   GET /places/for-you?lat=&lng=&limit=
+///   GET /places/right-now?lat=&lng=&limit=
+///   GET /places/gems?lat=&lng=&limit=
 ///   GET /places/discover?text=...
 class RemotePlaceRepository implements PlaceRepository {
   RemotePlaceRepository(this._client);
 
   final JsonApiClient _client;
 
-  /// Server-side caps (app/api/v1/place_discovery.py). Requests above these are
-  /// rejected with a 422, so callers may ask for more and we clamp + page.
-  static const double _maxRadiusKm = 50;
+  /// Server-side page cap (app/api/v1/place_discovery.py): `limit` above this
+  /// is rejected with a 422, so requests are paged rather than enlarged.
   static const int _maxPageSize = 100;
 
   @override
   Future<List<Place>> search(PlaceQuery query) async {
-    // The catalogue can exceed one page, so walk offset pages until the
-    // caller's limit is met or the server runs out of rows.
-    final target = query.limit < 1 ? _maxPageSize : query.limit;
+    // `limit <= 0` means "the whole catalogue": keep walking offset pages until
+    // the server stops returning rows. Otherwise stop at the caller's limit.
+    final unbounded = query.limit < 1;
     final places = <Place>[];
     var offset = 0;
-    while (places.length < target) {
-      final pageSize = (target - places.length).clamp(1, _maxPageSize);
+    while (unbounded || places.length < query.limit) {
+      final pageSize = unbounded
+          ? _maxPageSize
+          : (query.limit - places.length).clamp(1, _maxPageSize);
       final data = await _client.get(
         '/places',
         query: {..._toQuery(query), 'limit': pageSize, 'offset': offset},
@@ -105,17 +109,38 @@ class RemotePlaceRepository implements PlaceRepository {
   }
 
   @override
-  Future<List<Place>> localGems({
-    required GeoPoint near,
-    double radiusKm = 8,
-    int limit = 12,
-  }) async {
+  Future<List<Place>> forYou({GeoPoint? near, int limit = 12}) async {
+    final data = await _client.get(
+      '/places/for-you',
+      query: {
+        if (near != null) 'lat': near.latitude,
+        if (near != null) 'lng': near.longitude,
+        'limit': limit,
+      },
+    );
+    return _decodeList(data);
+  }
+
+  @override
+  Future<List<Place>> rightNow({GeoPoint? near, int limit = 12}) async {
+    final data = await _client.get(
+      '/places/right-now',
+      query: {
+        if (near != null) 'lat': near.latitude,
+        if (near != null) 'lng': near.longitude,
+        'limit': limit,
+      },
+    );
+    return _decodeList(data);
+  }
+
+  @override
+  Future<List<Place>> localGems({GeoPoint? near, int limit = 12}) async {
     final data = await _client.get(
       '/places/gems',
       query: {
-        'lat': near.latitude,
-        'lng': near.longitude,
-        'radius_km': radiusKm,
+        if (near != null) 'lat': near.latitude,
+        if (near != null) 'lng': near.longitude,
         'limit': limit,
       },
     );
@@ -143,12 +168,41 @@ class RemotePlaceRepository implements PlaceRepository {
     );
   }
 
+  @override
+  Future<List<Place>> searchRemote(
+    String query, {
+    GeoPoint? near,
+    int limit = 10,
+  }) async {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return const [];
+    try {
+      final data = await _client.get(
+        '/places/search',
+        query: {
+          'q': trimmed,
+          if (near != null) 'lat': near.latitude,
+          if (near != null) 'lng': near.longitude,
+          'limit': limit,
+        },
+      );
+      if (data is! Map) return const [];
+      return (data['items'] as List? ?? const [])
+          .whereType<Map>()
+          .map((e) => Place.fromSearchResult(e.cast<String, dynamic>()))
+          .toList();
+    } on AppException {
+      // Search is best-effort: a Google outage must not blank the screen.
+      return const [];
+    }
+  }
+
   Map<String, dynamic> _toQuery(PlaceQuery query) => {
         if (query.text != null && query.text!.trim().isNotEmpty)
           'text': query.text,
         if (query.near != null) 'lat': query.near!.latitude,
         if (query.near != null) 'lng': query.near!.longitude,
-        'radius_km': query.radiusKm.clamp(0.1, _maxRadiusKm),
+        'radius_km': query.radiusKm,
         'limit': query.limit.clamp(1, _maxPageSize),
         if (query.categories.isNotEmpty)
           'categories': query.categories.map((c) => c.name).toList(),
@@ -164,19 +218,6 @@ class RemotePlaceRepository implements PlaceRepository {
         .whereType<Map>()
         .map((e) => Place.fromJson(e.cast<String, dynamic>()))
         .toList();
-  }
-}
-
-extension on Map<String, dynamic> {
-  List<Map<String, dynamic>> mapOrEmptyList(String key) {
-    final value = this[key];
-    if (value is List) {
-      return value
-          .whereType<Map>()
-          .map((e) => e.cast<String, dynamic>())
-          .toList();
-    }
-    return const [];
   }
 }
 

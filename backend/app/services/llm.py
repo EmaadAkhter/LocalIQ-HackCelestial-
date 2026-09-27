@@ -625,7 +625,7 @@ def extract_message(response: dict[str, Any]) -> dict[str, Any]:
 def extract_tool_calls(message: dict[str, Any]) -> list[dict[str, Any]]:
     calls = message.get("tool_calls") or []
     out: list[dict[str, Any]] = []
-    for c in calls:
+    for index, c in enumerate(calls):
         fn = c.get("function", {})
         args = fn.get("arguments", "{}")
         if isinstance(args, str):
@@ -634,7 +634,9 @@ def extract_tool_calls(message: dict[str, Any]) -> list[dict[str, Any]]:
             except json.JSONDecodeError:
                 args = {}
         out.append({
-            "id": c.get("id", ""),
+            # Ollama's native tool calls carry no id; synthesise a stable one so
+            # the tool results can be paired back to their call.
+            "id": c.get("id") or f"call_{index}",
             "name": fn.get("name", ""),
             "arguments": args,
         })

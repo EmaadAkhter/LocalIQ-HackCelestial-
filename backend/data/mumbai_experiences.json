@@ -14,7 +14,7 @@
       "indoor_outdoor": "indoor",
       "lat": 19.0505,
       "lng": 72.8297,
-      "local_gem_score": 0.85,
+      "local_gem_score": 0.84,
       "name": "Elco Pani Puri & Chaat, Bandra",
       "open_time": "11:00",
       "rating": 4.5,
@@ -23,7 +23,8 @@
         "chaat",
         "vegetarian",
         "family_friendly"
-      ]
+      ],
+      "crowd_density_level": "MEDIUM"
     },
     {
       "accessibility_flags": [
@@ -38,7 +39,7 @@
       "indoor_outdoor": "indoor",
       "lat": 18.9172,
       "lng": 72.8273,
-      "local_gem_score": 0.9,
+      "local_gem_score": 0.82,
       "name": "Bademiya Late-Night Kebabs, Colaba",
       "open_time": "12:00",
       "rating": 4.4,
@@ -47,7 +48,8 @@
         "late_night",
         "non_veg",
         "street_food"
-      ]
+      ],
+      "crowd_density_level": "MEDIUM"
     },
     {
       "accessibility_flags": [
@@ -62,7 +64,7 @@
       "indoor_outdoor": "indoor",
       "lat": 18.9278,
       "lng": 72.8413,
-      "local_gem_score": 0.92,
+      "local_gem_score": 0.82,
       "name": "Britannia & Co, Ballard Estate",
       "open_time": "11:30",
       "rating": 4.6,
@@ -71,7 +73,8 @@
         "heritage",
         "lunch",
         "historic"
-      ]
+      ],
+      "crowd_density_level": "MEDIUM"
     },
     {
       "accessibility_flags": [
@@ -86,7 +89,7 @@
       "indoor_outdoor": "indoor",
       "lat": 18.9062,
       "lng": 72.8143,
-      "local_gem_score": 0.8,
+      "local_gem_score": 0.66,
       "name": "Leopold Cafe, Colaba",
       "open_time": "07:30",
       "rating": 4.2,
@@ -95,7 +98,8 @@
         "heritage",
         "continental",
         "beer"
-      ]
+      ],
+      "crowd_density_level": "MEDIUM"
     },
     {
       "accessibility_flags": [
@@ -110,7 +114,7 @@
       "indoor_outdoor": "mixed",
       "lat": 19.0187,
       "lng": 72.8431,
-      "local_gem_score": 0.88,
+      "local_gem_score": 0.9,
       "name": "Dadar Maharashtrian Food Trail",
       "open_time": "09:00",
       "rating": 4.5,
@@ -119,7 +123,8 @@
         "street_food",
         "vegetarian",
         "walking"
-      ]
+      ],
+      "crowd_density_level": "MEDIUM"
     },
     {
       "accessibility_flags": [],
@@ -132,7 +137,7 @@
       "indoor_outdoor": "mixed",
       "lat": 18.9567,
       "lng": 72.834,
-      "local_gem_score": 0.9,
+      "local_gem_score": 0.92,
       "name": "Mohammed Ali Road Food Walk",
       "open_time": "18:00",
       "rating": 4.6,
@@ -141,7 +146,9 @@
         "street_food",
         "non_veg",
         "walking"
-      ]
+      ],
+      "crowd_density_level": "HIGH",
+      "best_visit_time": "After 20:00; spectacular during Ramadan"
     },
     {
       "accessibility_flags": [
@@ -156,7 +163,7 @@
       "indoor_outdoor": "outdoor",
       "lat": 19.0907,
       "lng": 72.9072,
-      "local_gem_score": 0.82,
+      "local_gem_score": 0.9,
       "name": "Ghatkopar Khau Galli",
       "open_time": "11:00",
       "rating": 4.3,
@@ -165,7 +172,8 @@
         "budget",
         "vegetarian",
         "snacks"
-      ]
+      ],
+      "crowd_density_level": "MEDIUM"
     },
     {
       "accessibility_flags": [],
@@ -178,7 +186,7 @@
       "indoor_outdoor": "outdoor",
       "lat": 19.1075,
       "lng": 72.8263,
-      "local_gem_score": 0.78,
+      "local_gem_score": 0.6,
       "name": "Juhu Beach Pav Bhaji Sunset",
       "open_time": "10:00",
       "rating": 4.2,
@@ -187,7 +195,9 @@
         "sunset",
         "street_food",
         "budget"
-      ]
+      ],
+      "crowd_density_level": "HIGH",
+      "best_visit_time": "An hour before sunset"
     },
     {
       "accessibility_flags": [
@@ -203,7 +213,7 @@
       "indoor_outdoor": "outdoor",
       "lat": 18.922,
       "lng": 72.8347,
-      "local_gem_score": 0.7,
+      "local_gem_score": 0.4,
       "name": "Gateway of India Sunrise",
       "open_time": "00:00",
       "rating": 4.5,
@@ -212,7 +222,9 @@
         "harbour",
         "photography",
         "free"
-      ]
+      ],
+      "crowd_density_level": "HIGH",
+      "best_visit_time": "Early morning before the crowds"
     },
     {
       "accessibility_flags": [],
@@ -225,7 +237,7 @@
       "indoor_outdoor": "mixed",
       "lat": 18.9633,
       "lng": 72.9315,
-      "local_gem_score": 0.88,
+      "local_gem_score": 0.5,
       "name": "Elephanta Caves Ferry Day",
       "open_time": "09:00",
       "rating": 4.4,
@@ -234,7 +246,8 @@
         "caves",
         "ferry",
         "history"
-      ]
+      ],
+      "crowd_density_level": "HIGH"
     },
     {
       "accessibility_flags": [
@@ -249,7 +262,7 @@
       "indoor_outdoor": "outdoor",
       "lat": 18.9398,
       "lng": 72.8355,
-      "local_gem_score": 0.85,
+      "local_gem_score": 0.56,
       "name": "CSMT Heritage Walk",
       "open_time": "08:00",
       "rating": 4.6,
@@ -258,7 +271,8 @@
         "unesco",
         "walking",
         "architecture"
-      ]
+      ],
+      "crowd_density_level": "HIGH"
     },
     {
       "accessibility_flags": [
@@ -273,7 +287,7 @@
       "indoor_outdoor": "indoor",
       "lat": 19.0169,
       "lng": 72.8302,
-      "local_gem_score": 0.8,
+      "local_gem_score": 0.56,
       "name": "Siddhivinayak Morning Darshan",
       "open_time": "05:30",
       "rating": 4.7,
@@ -281,7 +295,9 @@
         "temple",
         "spiritual",
         "morning"
-      ]
+      ],
+      "crowd_density_level": "HIGH",
+      "best_visit_time": "Tuesdays are busiest — go before 07:00"
     },
     {
       "accessibility_flags": [],
@@ -294,7 +310,7 @@
       "indoor_outdoor": "outdoor",
       "lat": 18.9827,
       "lng": 72.8257,
-      "local_gem_score": 0.84,
+      "local_gem_score": 0.58,
       "name": "Haji Ali Dargah + Dhobi Ghat",
       "open_time": "06:00",
       "rating": 4.5,
@@ -303,7 +319,8 @@
         "sea",
         "photography",
         "heritage"
-      ]
+      ],
+      "crowd_density_level": "HIGH"
     },
     {
       "accessibility_flags": [],
@@ -316,7 +333,7 @@
       "indoor_outdoor": "outdoor",
       "lat": 19.2081,
       "lng": 72.9062,
-      "local_gem_score": 0.9,
+      "local_gem_score": 0.6,
       "name": "Kanheri Caves Half-Day",
       "open_time": "07:30",
       "rating": 4.5,
@@ -325,7 +342,9 @@
         "caves",
         "hiking",
         "nature"
-      ]
+      ],
+      "crowd_density_level": "LOW",
+      "best_visit_time": "Start by 08:00 to beat the heat"
     },
     {
       "accessibility_flags": [
@@ -349,7 +368,9 @@
         "temple",
         "walking",
         "hidden_gem"
-      ]
+      ],
+      "crowd_density_level": "LOW",
+      "best_visit_time": "Late afternoon, around 16:30"
     },
     {
       "accessibility_flags": [
@@ -364,7 +385,7 @@
       "indoor_outdoor": "mixed",
       "lat": 19.2344,
       "lng": 72.8078,
-      "local_gem_score": 0.87,
+      "local_gem_score": 0.64,
       "name": "Global Vipassana Pagoda Trip",
       "open_time": "09:00",
       "rating": 4.6,
@@ -373,7 +394,8 @@
         "day_trip",
         "peaceful",
         "architecture"
-      ]
+      ],
+      "crowd_density_level": "LOW"
     },
     {
       "accessibility_flags": [
@@ -388,7 +410,7 @@
       "indoor_outdoor": "outdoor",
       "lat": 18.9067,
       "lng": 72.8147,
-      "local_gem_score": 0.75,
+      "local_gem_score": 0.5,
       "name": "Colaba Causeway Bargain Hunt",
       "open_time": "10:00",
       "rating": 4.1,
@@ -396,7 +418,8 @@
         "bargain",
         "souvenirs",
         "street_market"
-      ]
+      ],
+      "crowd_density_level": "HIGH"
     },
     {
       "accessibility_flags": [
@@ -411,7 +434,7 @@
       "indoor_outdoor": "outdoor",
       "lat": 19.059,
       "lng": 72.8298,
-      "local_gem_score": 0.78,
+      "local_gem_score": 0.52,
       "name": "Linking Road Fashion Crawl",
       "open_time": "10:30",
       "rating": 4.2,
@@ -419,7 +442,8 @@
         "fashion",
         "street_market",
         "boutiques"
-      ]
+      ],
+      "crowd_density_level": "HIGH"
     },
     {
       "accessibility_flags": [
@@ -434,7 +458,7 @@
       "indoor_outdoor": "indoor",
       "lat": 18.947,
       "lng": 72.8343,
-      "local_gem_score": 0.83,
+      "local_gem_score": 0.8,
       "name": "Crawford Market Spice Run",
       "open_time": "09:00",
       "rating": 4.3,
@@ -443,7 +467,9 @@
         "spices",
         "heritage",
         "food"
-      ]
+      ],
+      "crowd_density_level": "HIGH",
+      "best_visit_time": "Mornings on weekdays"
     },
     {
       "accessibility_flags": [],
@@ -456,7 +482,7 @@
       "indoor_outdoor": "mixed",
       "lat": 18.9687,
       "lng": 72.828,
-      "local_gem_score": 0.9,
+      "local_gem_score": 0.93,
       "name": "Chor Bazaar Antique Hunt",
       "open_time": "10:00",
       "rating": 4.2,
@@ -465,7 +491,9 @@
         "vintage",
         "bargain",
         "photography"
-      ]
+      ],
+      "crowd_density_level": "LOW",
+      "best_visit_time": "Friday mornings for the flea market"
     },
     {
       "accessibility_flags": [
@@ -480,7 +508,7 @@
       "indoor_outdoor": "mixed",
       "lat": 18.9515,
       "lng": 72.834,
-      "local_gem_score": 0.8,
+      "local_gem_score": 0.78,
       "name": "Zaveri Bazaar & Kalbadevi Lanes",
       "open_time": "10:00",
       "rating": 4.1,
@@ -489,7 +517,8 @@
         "wholesale",
         "heritage",
         "market"
-      ]
+      ],
+      "crowd_density_level": "HIGH"
     },
     {
       "accessibility_flags": [
@@ -505,7 +534,7 @@
       "indoor_outdoor": "indoor",
       "lat": 19.0065,
       "lng": 72.83,
-      "local_gem_score": 0.6,
+      "local_gem_score": 0.28,
       "name": "Phoenix Palladium Mall Crawl",
       "open_time": "10:00",
       "rating": 4.3,
@@ -514,7 +543,9 @@
         "brands",
         "rainy_day",
         "food_court"
-      ]
+      ],
+      "crowd_density_level": "HIGH",
+      "best_visit_time": "Weekday afternoons"
     },
     {
       "accessibility_flags": [
@@ -529,7 +560,7 @@
       "indoor_outdoor": "mixed",
       "lat": 19.0187,
       "lng": 72.8425,
-      "local_gem_score": 0.88,
+      "local_gem_score": 0.89,
       "name": "Dadar Flower & Plaza Market",
       "open_time": "05:30",
       "rating": 4.4,
@@ -538,7 +569,9 @@
         "morning",
         "local",
         "budget"
-      ]
+      ],
+      "crowd_density_level": "HIGH",
+      "best_visit_time": "Before 07:00 when the market is loudest"
     },
     {
       "accessibility_flags": [
@@ -553,7 +586,7 @@
       "indoor_outdoor": "outdoor",
       "lat": 19.06,
       "lng": 72.828,
-      "local_gem_score": 0.76,
+      "local_gem_score": 0.58,
       "name": "Hill Road Budget Fashion",
       "open_time": "10:00",
       "rating": 4.0,
@@ -561,7 +594,8 @@
         "fashion",
         "budget",
         "street_market"
-      ]
+      ],
+      "crowd_density_level": "MEDIUM"
     },
     {
       "accessibility_flags": [
@@ -577,7 +611,7 @@
       "indoor_outdoor": "indoor",
       "lat": 18.9275,
       "lng": 72.8305,
-      "local_gem_score": 0.89,
+      "local_gem_score": 0.78,
       "name": "Jehangir Art Gallery + Kala Ghoda",
       "open_time": "11:00",
       "rating": 4.6,
@@ -586,7 +620,9 @@
         "painting",
         "heritage",
         "walking"
-      ]
+      ],
+      "crowd_density_level": "LOW",
+      "best_visit_time": "Weekday afternoons; closed Mondays"
     },
     {
       "accessibility_flags": [
@@ -601,7 +637,7 @@
       "indoor_outdoor": "indoor",
       "lat": 18.9267,
       "lng": 72.8324,
-      "local_gem_score": 0.85,
+      "local_gem_score": 0.54,
       "name": "CSMVS Museum Mile",
       "open_time": "10:15",
       "rating": 4.7,
@@ -610,7 +646,9 @@
         "history",
         "rainy_day",
         "family"
-      ]
+      ],
+      "crowd_density_level": "LOW",
+      "best_visit_time": "Weekday mornings; closed Mondays"
     },
     {
       "accessibility_flags": [
@@ -625,7 +663,7 @@
       "indoor_outdoor": "indoor",
       "lat": 18.9269,
       "lng": 72.8313,
-      "local_gem_score": 0.82,
+      "local_gem_score": 0.58,
       "name": "NGMA Mumbai Hour",
       "open_time": "11:00",
       "rating": 4.4,
@@ -633,7 +671,8 @@
         "modern_art",
         "gallery",
         "rainy_day"
-      ]
+      ],
+      "crowd_density_level": "LOW"
     },
     {
       "accessibility_flags": [],
@@ -646,7 +685,7 @@
       "indoor_outdoor": "outdoor",
       "lat": 19.0596,
       "lng": 72.8295,
-      "local_gem_score": 0.93,
+      "local_gem_score": 0.88,
       "name": "Bandra Chapel Road Street Art",
       "open_time": "08:00",
       "rating": 4.6,
@@ -655,7 +694,9 @@
         "murals",
         "walking",
         "photography"
-      ]
+      ],
+      "crowd_density_level": "MEDIUM",
+      "best_visit_time": "Golden hour for the murals"
     },
     {
       "accessibility_flags": [
@@ -670,7 +711,7 @@
       "indoor_outdoor": "indoor",
       "lat": 19.1068,
       "lng": 72.826,
-      "local_gem_score": 0.91,
+      "local_gem_score": 0.64,
       "name": "Prithvi Theatre Evening, Juhu",
       "open_time": "10:00",
       "rating": 4.7,
@@ -678,7 +719,9 @@
         "theatre",
         "performance",
         "cafe"
-      ]
+      ],
+      "crowd_density_level": "LOW",
+      "best_visit_time": "Book the 18:00 or 21:00 show"
     },
     {
       "accessibility_flags": [
@@ -693,7 +736,7 @@
       "indoor_outdoor": "indoor",
       "lat": 18.9297,
       "lng": 72.8239,
-      "local_gem_score": 0.8,
+      "local_gem_score": 0.46,
       "name": "NCPA Performance Night",
       "open_time": "10:00",
       "rating": 4.6,
@@ -701,7 +744,8 @@
         "music",
         "dance",
         "performance"
-      ]
+      ],
+      "crowd_density_level": "LOW"
     },
     {
       "accessibility_flags": [
@@ -716,7 +760,7 @@
       "indoor_outdoor": "indoor",
       "lat": 18.9535,
       "lng": 72.8217,
-      "local_gem_score": 0.87,
+      "local_gem_score": 0.76,
       "name": "Royal Opera House Show",
       "open_time": "10:00",
       "rating": 4.5,
@@ -724,7 +768,8 @@
         "opera",
         "heritage",
         "performance"
-      ]
+      ],
+      "crowd_density_level": "LOW"
     },
     {
       "accessibility_flags": [],
@@ -746,7 +791,8 @@
         "cafe",
         "walking",
         "festival"
-      ]
+      ],
+      "crowd_density_level": "MEDIUM"
     },
     {
       "accessibility_flags": [],
@@ -759,7 +805,7 @@
       "indoor_outdoor": "mixed",
       "lat": 19.0596,
       "lng": 72.8285,
-      "local_gem_score": 0.85,
+      "local_gem_score": 0.74,
       "name": "Bandra Nightlife Crawl",
       "open_time": "18:00",
       "rating": 4.3,
@@ -768,7 +814,8 @@
         "live_music",
         "friends",
         "late_night"
-      ]
+      ],
+      "crowd_density_level": "MEDIUM"
     },
     {
       "accessibility_flags": [
@@ -783,7 +830,7 @@
       "indoor_outdoor": "indoor",
       "lat": 18.994,
       "lng": 72.8285,
-      "local_gem_score": 0.78,
+      "local_gem_score": 0.42,
       "name": "Lower Parel Brewery Hop",
       "open_time": "17:00",
       "rating": 4.2,
@@ -792,7 +839,8 @@
         "bars",
         "music",
         "friends"
-      ]
+      ],
+      "crowd_density_level": "MEDIUM"
     },
     {
       "accessibility_flags": [
@@ -807,7 +855,7 @@
       "indoor_outdoor": "indoor",
       "lat": 19.1319,
       "lng": 72.8266,
-      "local_gem_score": 0.8,
+      "local_gem_score": 0.44,
       "name": "Andheri West Rooftop Circuit",
       "open_time": "18:00",
       "rating": 4.2,
@@ -815,7 +863,8 @@
         "rooftop",
         "cocktails",
         "friends"
-      ]
+      ],
+      "crowd_density_level": "MEDIUM"
     },
     {
       "accessibility_flags": [
@@ -830,7 +879,7 @@
       "indoor_outdoor": "indoor",
       "lat": 18.9315,
       "lng": 72.838,
-      "local_gem_score": 0.86,
+      "local_gem_score": 0.76,
       "name": "Fort Jazz & Heritage Bar Night",
       "open_time": "18:00",
       "rating": 4.4,
@@ -838,7 +887,8 @@
         "jazz",
         "cocktails",
         "heritage"
-      ]
+      ],
+      "crowd_density_level": "MEDIUM"
     },
     {
       "accessibility_flags": [],
@@ -851,7 +901,7 @@
       "indoor_outdoor": "outdoor",
       "lat": 19.062,
       "lng": 72.826,
-      "local_gem_score": 0.84,
+      "local_gem_score": 0.86,
       "name": "Carter Road Live Gig Evening",
       "open_time": "17:00",
       "rating": 4.3,
@@ -860,7 +910,8 @@
         "sea_face",
         "budget",
         "friends"
-      ]
+      ],
+      "crowd_density_level": "MEDIUM"
     },
     {
       "accessibility_flags": [
@@ -875,7 +926,7 @@
       "indoor_outdoor": "mixed",
       "lat": 19.0644,
       "lng": 72.8299,
-      "local_gem_score": 0.82,
+      "local_gem_score": 0.86,
       "name": "Waterfield Road Karaoke Lane",
       "open_time": "18:00",
       "rating": 4.1,
@@ -884,7 +935,8 @@
         "dive_bars",
         "budget",
         "friends"
-      ]
+      ],
+      "crowd_density_level": "MEDIUM"
     },
     {
       "accessibility_flags": [],
@@ -897,7 +949,7 @@
       "indoor_outdoor": "indoor",
       "lat": 18.943,
       "lng": 72.8238,
-      "local_gem_score": 0.75,
+      "local_gem_score": 0.48,
       "name": "Marine Drive Midnight Lounge",
       "open_time": "19:00",
       "rating": 4.3,
@@ -905,7 +957,8 @@
         "lounge",
         "sea_view",
         "date_night"
-      ]
+      ],
+      "crowd_density_level": "MEDIUM"
     },
     {
       "accessibility_flags": [
@@ -920,7 +973,7 @@
       "indoor_outdoor": "outdoor",
       "lat": 19.1315,
       "lng": 72.8138,
-      "local_gem_score": 0.83,
+      "local_gem_score": 0.62,
       "name": "Versova Beach Shack Night",
       "open_time": "17:00",
       "rating": 4.2,
@@ -928,7 +981,8 @@
         "beach",
         "seafood",
         "live_music"
-      ]
+      ],
+      "crowd_density_level": "MEDIUM"
     },
     {
       "accessibility_flags": [],
@@ -941,7 +995,7 @@
       "indoor_outdoor": "outdoor",
       "lat": 18.943,
       "lng": 72.8225,
-      "local_gem_score": 0.9,
+      "local_gem_score": 0.48,
       "name": "Marine Drive Sunrise Walk",
       "open_time": "00:00",
       "rating": 4.7,
@@ -950,7 +1004,9 @@
         "sunrise",
         "free",
         "sea_face"
-      ]
+      ],
+      "crowd_density_level": "HIGH",
+      "best_visit_time": "Just before sunrise, around 06:00"
     },
     {
       "accessibility_flags": [],
@@ -963,7 +1019,7 @@
       "indoor_outdoor": "outdoor",
       "lat": 19.2288,
       "lng": 72.917,
-      "local_gem_score": 0.88,
+      "local_gem_score": 0.7,
       "name": "Sanjay Gandhi NP Trail",
       "open_time": "07:30",
       "rating": 4.4,
@@ -972,7 +1028,8 @@
         "forest",
         "wildlife",
         "morning"
-      ]
+      ],
+      "crowd_density_level": "LOW"
     },
     {
       "accessibility_flags": [],
@@ -985,7 +1042,7 @@
       "indoor_outdoor": "outdoor",
       "lat": 19.121,
       "lng": 72.9055,
-      "local_gem_score": 0.82,
+      "local_gem_score": 0.58,
       "name": "Powai Lake Cycling Loop",
       "open_time": "06:00",
       "rating": 4.3,
@@ -994,7 +1051,8 @@
         "lake",
         "morning",
         "nature"
-      ]
+      ],
+      "crowd_density_level": "MEDIUM"
     },
     {
       "accessibility_flags": [
@@ -1009,7 +1067,7 @@
       "indoor_outdoor": "outdoor",
       "lat": 19.062,
       "lng": 72.8265,
-      "local_gem_score": 0.87,
+      "local_gem_score": 0.66,
       "name": "Carter Road Sunset Promenade",
       "open_time": "06:00",
       "rating": 4.5,
@@ -1018,7 +1076,9 @@
         "sea_face",
         "walking",
         "free"
-      ]
+      ],
+      "crowd_density_level": "MEDIUM",
+      "best_visit_time": "Sunset, obviously"
     },
     {
       "accessibility_flags": [],
@@ -1031,7 +1091,7 @@
       "indoor_outdoor": "outdoor",
       "lat": 19.1315,
       "lng": 72.813,
-      "local_gem_score": 0.9,
+      "local_gem_score": 0.91,
       "name": "Versova Fishing Village Morning",
       "open_time": "05:30",
       "rating": 4.5,
@@ -1040,7 +1100,8 @@
         "morning",
         "photography",
         "local"
-      ]
+      ],
+      "crowd_density_level": "MEDIUM"
     },
     {
       "accessibility_flags": [
@@ -1055,7 +1116,7 @@
       "indoor_outdoor": "outdoor",
       "lat": 18.9562,
       "lng": 72.8046,
-      "local_gem_score": 0.84,
+      "local_gem_score": 0.72,
       "name": "Hanging Gardens + Sunset Point",
       "open_time": "06:00",
       "rating": 4.3,
@@ -1064,7 +1125,8 @@
         "sunset",
         "family",
         "views"
-      ]
+      ],
+      "crowd_density_level": "MEDIUM"
     },
     {
       "accessibility_flags": [],
@@ -1077,7 +1139,7 @@
       "indoor_outdoor": "outdoor",
       "lat": 19.0419,
       "lng": 72.8194,
-      "local_gem_score": 0.91,
+      "local_gem_score": 0.54,
       "name": "Bandra Fort & Sea-Link View",
       "open_time": "06:00",
       "rating": 4.6,
@@ -1086,7 +1148,8 @@
         "sunset",
         "photography",
         "sea_link"
-      ]
+      ],
+      "crowd_density_level": "HIGH"
     },
     {
       "accessibility_flags": [
@@ -1101,7 +1164,7 @@
       "indoor_outdoor": "outdoor",
       "lat": 19.05,
       "lng": 72.82,
-      "local_gem_score": 0.86,
+      "local_gem_score": 0.64,
       "name": "Bandstand Promenade Evening",
       "open_time": "00:00",
       "rating": 4.4,
@@ -1110,7 +1173,8 @@
         "walking",
         "free",
         "evening"
-      ]
+      ],
+      "crowd_density_level": "HIGH"
     }
   ],
   "guides": [

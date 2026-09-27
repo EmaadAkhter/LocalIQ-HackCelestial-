@@ -46,10 +46,20 @@ def _guide_to_dict(g: Guide) -> dict[str, Any]:
     }
 
 
-def search_places(session: Session, *, query: str = "", category: str = "", limit: int = 5) -> list[dict[str, Any]]:
-    """Search places/experiences by text and optional category."""
+def search_places(
+    session: Session,
+    *,
+    query: str = "",
+    category: str = "",
+    lat: float | None = None,
+    lng: float | None = None,
+    limit: int = 5,
+) -> list[dict[str, Any]]:
+    """Search places/experiences by text, optional category and user location."""
     categories = [category] if category else None
-    rows = places.search(session, text=query, categories=categories, limit=limit)
+    rows = places.search(
+        session, text=query, categories=categories, lat=lat, lng=lng, limit=limit
+    )
     return [_experience_to_dict(e) for e in rows]
 
 
@@ -101,6 +111,8 @@ REGISTRY: dict[str, dict[str, Any]] = {
                             "type": "string",
                             "description": "Optional category such as food, culture, nature, nightlife.",
                         },
+                        "lat": {"type": "number", "description": "User's latitude for distance ranking."},
+                        "lng": {"type": "number", "description": "User's longitude for distance ranking."},
                         "limit": {"type": "integer", "default": 5, "description": "Max results."},
                     },
                 },
