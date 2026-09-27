@@ -58,9 +58,9 @@ class LocalIqUser {
       homeCity: json.string('homeCity') ?? 'Mumbai',
       createdAt:
           DateTime.tryParse(json.stringOrNull('createdAt') ?? '') ?? DateTime.now(),
-      isAnonymous: json.boolValue('isAnonymous'),
-      emailVerified: json.boolValue('emailVerified'),
-      onboardingCompleted: json.boolValue('onboardingCompleted'),
+      isAnonymous: json.boolValue('isAnonymous') || json.boolValue('is_anonymous'),
+      emailVerified: json.boolValue('emailVerified') || json.boolValue('email_verified'),
+      onboardingCompleted: json.boolValue('onboardingCompleted') || json.boolValue('onboarding_completed'),
     );
   }
 

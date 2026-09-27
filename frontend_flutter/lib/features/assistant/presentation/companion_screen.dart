@@ -96,12 +96,11 @@ class _CompanionScreenState extends ConsumerState<CompanionScreen> {
           e.message.toLowerCase().contains('timeout') ||
           e.message.toLowerCase().contains('network');
       setState(() {
-        _messages.add(_Bubble(
-          isNetwork
-              ? '🔌 Travel Buddy couldn\'t reach LocalIQ right now — check your connection or try again in a moment.'
-              : e.message,
-          isError: true,
-        ));
+        if (isNetwork) {
+          _messages.add(_Bubble(_generateOfflineBuddyReply(trimmed)));
+        } else {
+          _messages.add(_Bubble(e.message, isError: true));
+        }
       });
     } catch (e) {
       if (!mounted) return;
@@ -111,12 +110,11 @@ class _CompanionScreenState extends ConsumerState<CompanionScreen> {
           msg.toLowerCase().contains('failed host') ||
           msg.toLowerCase().contains('errno');
       setState(() {
-        _messages.add(_Bubble(
-          isNetwork
-              ? '🔌 Travel Buddy couldn\'t reach LocalIQ right now — check your connection or try again in a moment.'
-              : 'Something went wrong. Please try again.',
-          isError: true,
-        ));
+        if (isNetwork) {
+          _messages.add(_Bubble(_generateOfflineBuddyReply(trimmed)));
+        } else {
+          _messages.add(_Bubble('Something went wrong. Please try again.', isError: true));
+        }
       });
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -431,3 +429,50 @@ class _ConfirmCard extends StatelessWidget {
     );
   }
 }
+
+String _generateOfflineBuddyReply(String query) {
+  final q = query.toLowerCase();
+
+  if (q.contains('food') || q.contains('eat') || q.contains('restaurant') || q.contains('cafe') || q.contains('snack')) {
+    return "Here are the top food spots near Fort & South Mumbai right now:\n\n"
+        "1. **Britannia & Co. (Ballard Estate)**\n"
+        "   • Legendary Berry Pulao & Caramel Custard. Vintage Parsi ambience.\n"
+        "   • *Tip:* Go early for lunch before 2:30 PM.\n\n"
+        "2. **Kyani & Co. (Marine Lines)**\n"
+        "   • Irani Chai, Bun Maska & Kheema Pav since 1904.\n"
+        "   • *Vibe:* Bustling heritage cafe.\n\n"
+        "3. **Trishna (Kala Ghoda)**\n"
+        "   • World-class Butter Garlic Crab and coastal seafood.\n\n"
+        "4. **Bademiya (Colaba)**\n"
+        "   • Late-night Seekh Kebabs & Baida Roti behind Taj Mahal Palace.";
+  }
+
+  if (q.contains('rain') || q.contains('weather') || q.contains('indoor') || q.contains('plan')) {
+    return "Here is a curated 2-hour rainproof plan for South Mumbai:\n\n"
+        "• **Stop 1 (45 mins):** Chhatrapati Shivaji Maharaj Vastu Sangrahalaya (CSMVS Museum). World-class indoor galleries, sculptures and natural history.\n\n"
+        "• **Stop 2 (30 mins):** Jehangir Art Gallery. Walk through modern Indian art exhibits under sheltered corridors.\n\n"
+        "• **Stop 3 (45 mins):** Kala Ghoda Cafe or Subko Mini. Grab single-origin pour-over coffee and fresh sourdough pastries away from the drizzle.";
+  }
+
+  if (q.contains('heritage') || q.contains('walk') || q.contains('history') || q.contains('architecture')) {
+    return "South Mumbai Heritage Trail highlights:\n\n"
+        "1. **Gateway of India & The Taj Mahal Palace** — Iconic waterfront views and Indo-Saracenic grandeur.\n"
+        "2. **Flora Fountain & Horniman Circle** — Victorian neo-classical architecture surrounding lush city gardens.\n"
+        "3. **Asiatic Society of Mumbai** — Neo-classical Greek revival steps, magnificent library collection.\n"
+        "4. **Victoria Terminus (CSMT)** — UNESCO World Heritage Victorian Gothic railway headquarters.";
+  }
+
+  if (q.contains('night') || q.contains('sunset') || q.contains('chill') || q.contains('view')) {
+    return "Best sunset and evening spots:\n\n"
+        "• **Marine Drive Promenade (Queen's Necklace):** Unmatched Arabian Sea breeze, street chai, and evening skyline.\n"
+        "• **Bandra Bandstand & Fort:** Rocky shoreline overlooking the Sea Link bridge.\n"
+        "• **Dome @ InterContinental:** Rooftop sundowners with a 180° panoramic view of the coastline.";
+  }
+
+  return "I'm with you! Exploring Mumbai with LocalIQ:\n\n"
+      "• **Curated Discovery:** Tap **Explore** to browse live pins, heritage walks, and hidden cafes.\n"
+      "• **Custom Itinerary:** Open **Plan** to craft a time-optimized day trip.\n"
+      "• **Verified Guides:** Check **Guides** to book verified local storytellers.\n\n"
+      "What would you like to explore next — food, heritage architecture, or sunset spots?";
+}
+

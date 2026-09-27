@@ -27,7 +27,7 @@ extension LocalIqEnvironmentX on LocalIqEnvironment {
         // On Android EMULATOR, 10.0.2.2 maps to the host machine.
         // On a PHYSICAL device, set --dart-define=LOCALIQ_API_BASE_URL=http://<your-machine-ip>:8000/api/v1
         LocalIqEnvironment.dev =>
-          kIsWeb ? 'http://localhost:8000/api/v1' : 'http://10.0.2.2:8000/api/v1',
+          kIsWeb ? 'http://localhost:8000/api/v1' : 'http://192.168.0.101:8000/api/v1',
         LocalIqEnvironment.staging => 'https://staging-api.localiq.app/api/v1',
         LocalIqEnvironment.prod => 'https://api.localiq.app/api/v1',
       };

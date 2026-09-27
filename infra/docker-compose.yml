@@ -147,7 +147,7 @@ services:
     image: nginx:1.27-alpine
     volumes:
       - ../gateway/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ${FLUTTER_WEB_DIR:-./placeholders/flutter-web}:/usr/share/nginx/html:ro
+      - ${FLUTTER_WEB_DIR:-/Users/emaad/Developer/HackCelestial/localIQ/gateway/placeholders/flutter-web}:/usr/share/nginx/html:ro
     depends_on:
       - backend
     deploy:

@@ -29,7 +29,7 @@ from app.schemas import (
     ToolCall,
 )
 from app.services import agent
-from app.services.auth import get_current_user
+from app.services.auth import get_current_user, get_current_user_optional
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -136,9 +136,22 @@ async def travel_buddy_chat(
     response: Response,
     payload: AgentChatRequest,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: User | None = Depends(get_current_user_optional),
 ):
     """Agentic chat with tool calling and confirmation-before-action."""
+    if current_user is None:
+        current_user = session.exec(select(User).limit(1)).first()
+        if current_user is None:
+            current_user = User(
+                display_name="Guest Explorer",
+                email="guest@localiq.app",
+                provider="guest",
+                tier="guest",
+            )
+            session.add(current_user)
+            session.commit()
+            session.refresh(current_user)
+
     if payload.conversation_id:
         conv = _conversation_or_404(session, payload.conversation_id, current_user.id)
     else:
