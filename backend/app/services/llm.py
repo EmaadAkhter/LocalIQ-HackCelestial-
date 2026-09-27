@@ -471,3 +471,131 @@ async def generate_json(prompt: str, *, timeout: float | None = None, **kwargs) 
     if not isinstance(parsed, dict):
         raise LLMError(f"Expected a JSON object, got {type(parsed).__name__}")
     return parsed
+
+
+# ---------------------------------------------------------------------------
+# Multi-provider chat completion with tool support
+# ---------------------------------------------------------------------------
+
+
+def _provider() -> str:
+    return get_settings().llm_provider.lower()
+
+
+def _groq_headers() -> dict[str, str]:
+    return {
+        "Authorization": f"Bearer {get_settings().groq_api_key}",
+        "Content-Type": "application/json",
+    }
+
+
+def _normalize_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for m in messages:
+        role = m.get("role")
+        if role is None:
+            continue
+        item: dict[str, Any] = {"role": role}
+        if m.get("content"):
+            item["content"] = m["content"]
+        if "tool_calls" in m:
+            item["tool_calls"] = m["tool_calls"]
+        if "tool_call_id" in m:
+            item["tool_call_id"] = m["tool_call_id"]
+        out.append(item)
+    return out
+
+
+async def _groq_chat_completion(
+    messages: list[dict[str, Any]], tools: list[dict[str, Any]] | None
+) -> dict[str, Any]:
+    settings = get_settings()
+    if not settings.groq_api_key:
+        raise LLMError("LLM_PROVIDER=groq but GROQ_API_KEY is empty")
+
+    payload: dict[str, Any] = {
+        "model": settings.groq_model,
+        "messages": _normalize_messages(messages),
+        "temperature": 0.4,
+    }
+    if tools:
+        payload["tools"] = tools
+        payload["tool_choice"] = "auto"
+
+    response = await get_http_client().post(
+        "https://api.groq.com/openai/v1/chat/completions",
+        headers=_groq_headers(),
+        json=payload,
+        timeout=settings.llm_chat_timeout_seconds,
+    )
+    response.raise_for_status()
+    return response.json()
+
+
+async def _ollama_chat_completion(
+    messages: list[dict[str, Any]], tools: list[dict[str, Any]] | None
+) -> dict[str, Any]:
+    settings = get_settings()
+    payload: dict[str, Any] = {
+        "model": settings.ollama_model,
+        "messages": _normalize_messages(messages),
+        "stream": False,
+        "options": {"temperature": 0.4, "num_predict": 800},
+    }
+    if tools:
+        payload["tools"] = tools
+
+    response = await _post_json(
+        f"{settings.ollama_url.rstrip('/')}/api/chat",
+        payload,
+        timeout=settings.llm_chat_timeout_seconds,
+    )
+    data = response.json()
+    msg = data.get("message", {})
+    return {
+        "choices": [{"message": msg}],
+        "model": settings.ollama_model,
+    }
+
+
+async def chat_completion(
+    messages: list[dict[str, Any]],
+    tools: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Call the configured LLM and return a raw completion-shaped response.
+
+    The response mirrors OpenAI's chat completion so callers can read
+    ``choices[0].message`` uniformly.
+    """
+    provider = _provider()
+    if provider == "groq":
+        return await _groq_chat_completion(messages, tools)
+    if provider == "ollama":
+        return await _ollama_chat_completion(messages, tools)
+    raise LLMError(f"Unknown LLM provider: {provider}")
+
+
+def extract_message(response: dict[str, Any]) -> dict[str, Any]:
+    choices = response.get("choices", [])
+    if not choices:
+        return {"role": "assistant", "content": ""}
+    return choices[0].get("message", {"role": "assistant", "content": ""})
+
+
+def extract_tool_calls(message: dict[str, Any]) -> list[dict[str, Any]]:
+    calls = message.get("tool_calls") or []
+    out: list[dict[str, Any]] = []
+    for c in calls:
+        fn = c.get("function", {})
+        args = fn.get("arguments", "{}")
+        if isinstance(args, str):
+            try:
+                args = json.loads(args)
+            except json.JSONDecodeError:
+                args = {}
+        out.append({
+            "id": c.get("id", ""),
+            "name": fn.get("name", ""),
+            "arguments": args,
+        })
+    return out

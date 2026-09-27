@@ -809,3 +809,86 @@ class OnboardingSession(TimestampMixin, table=True):
     extracted_json: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
     completed_at: Optional[datetime] = Field(default=None)
 
+
+# -----------------------------------------------------------------------------
+# Conversations, chat messages and agent runs
+# -----------------------------------------------------------------------------
+
+
+class ConversationKind(str, enum.Enum):
+    """What a conversation thread is for."""
+
+    GENERAL = "general"
+    TRAVEL_BUDDY = "travel_buddy"
+    GUIDE = "guide"
+    MEETUP = "meetup"
+
+
+class Conversation(TimestampMixin, table=True):
+    """A chat thread between a user and another party (agent, guide, meetup)."""
+
+    __tablename__ = "conversations"
+    __table_args__ = (
+        Index("ix_conversations_user_kind", "user_id", "kind", "created_at"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="users.id", index=True)
+    #: general | travel_buddy | guide | meetup
+    kind: str = Field(default=ConversationKind.GENERAL.value, max_length=20, index=True)
+    #: For guide/meetup chats: the foreign entity id lives in data_json.
+    data_json: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+    title: Optional[str] = Field(default=None, max_length=160)
+
+    messages: list["Message"] = Relationship(
+        back_populates="conversation",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan", "order_by": "Message.created_at"},
+    )
+
+
+class MessageRole(str, enum.Enum):
+    """Speaker in a conversation."""
+
+    USER = "user"
+    ASSISTANT = "assistant"
+    TOOL = "tool"
+
+
+class Message(TimestampMixin, table=True):
+    """A single chat message."""
+
+    __tablename__ = "messages"
+    __table_args__ = (
+        Index("ix_messages_conversation_created", "conversation_id", "created_at"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    conversation_id: int = Field(foreign_key="conversations.id", index=True)
+    role: str = Field(default=MessageRole.USER.value, max_length=20, index=True)
+    content: str = Field(default="", max_length=4000)
+    #: Optional tool call/request metadata for agent messages.
+    tool_json: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+
+    conversation: Optional["Conversation"] = Relationship(back_populates="messages")
+
+
+class AgentRun(TimestampMixin, table=True):
+    """One agentic turn: the LLM call, any tool calls it made, and the final
+    response. Linked to a conversation so the user can review what happened."""
+
+    __tablename__ = "agent_runs"
+    __table_args__ = (
+        Index("ix_agent_runs_user_created", "user_id", "created_at"),
+        Index("ix_agent_runs_conversation", "conversation_id", "created_at"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="users.id", index=True)
+    conversation_id: Optional[int] = Field(default=None, foreign_key="conversations.id", index=True)
+    #: pending | running | completed | failed
+    status: str = Field(default="pending", max_length=20, index=True)
+    #: The raw tool calls the LLM emitted.
+    tool_calls_json: list[dict[str, Any]] = Field(default_factory=list, sa_column=Column(JSON))
+    #: The final assistant message (or error string on failure).
+    result: Optional[str] = Field(default=None, max_length=4000)
+

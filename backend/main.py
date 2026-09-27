@@ -21,6 +21,7 @@ from app.api.v1 import (  # noqa: E402
     auth,
     chat,
     config,
+    conversations,
     director,
     discovery,
     driver,
@@ -196,6 +197,7 @@ app.include_router(guides.router, prefix="/api/v1", tags=["guides"])
 app.include_router(guide_packages.router, prefix="/api/v1", tags=["guide-packages"])
 app.include_router(parse.router, prefix="/api/v1", tags=["parse"])
 app.include_router(chat.router, prefix="/api/v1", tags=["chat"])
+app.include_router(conversations.router, prefix="/api/v1", tags=["conversations"])
 app.include_router(weather.router, prefix="/api/v1", tags=["weather"])
 app.include_router(itineraries.router, prefix="/api/v1", tags=["itineraries"])
 app.include_router(favorites.router, prefix="/api/v1", tags=["favorites"])

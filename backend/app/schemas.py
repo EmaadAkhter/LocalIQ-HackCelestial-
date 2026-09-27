@@ -1351,3 +1351,84 @@ class PlaceSearchResponse(BaseModel):
     )
 
 
+# --------------------------------------------------------------------------
+# Chat, agent and planner
+# --------------------------------------------------------------------------
+
+
+class MessageResponse(BaseModel):
+    id: int
+    role: str
+    content: str
+    created_at: datetime
+    tool_json: dict[str, Any] = Field(default_factory=dict)
+
+
+class ConversationResponse(BaseModel):
+    id: int
+    kind: str
+    title: str | None = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class ConversationCreateRequest(BaseModel):
+    kind: str = Field(default="general", max_length=20)
+    title: str | None = Field(default=None, max_length=160)
+    data_json: dict[str, Any] = Field(default_factory=dict)
+
+
+class ChatMessageRequest(BaseModel):
+    content: str = Field(..., min_length=1, max_length=2000)
+
+
+class ChatMessageResponse(BaseModel):
+    message: MessageResponse
+    assistant: MessageResponse | None = None
+
+
+class AgentChatRequest(BaseModel):
+    conversation_id: int | None = None
+    message: str = Field(..., min_length=1, max_length=2000)
+    confirm: bool = Field(
+        default=False,
+        description="Set to true to approve a pending tool-calling turn.",
+    )
+
+
+class ToolCall(BaseModel):
+    id: str
+    name: str
+    arguments: dict[str, Any] = Field(default_factory=dict)
+
+
+class AgentPendingAction(BaseModel):
+    run_id: int
+    conversation_id: int
+    message: str
+    tool_calls: list[ToolCall] = Field(default_factory=list)
+
+
+class AgentChatResponse(BaseModel):
+    conversation_id: int
+    run_id: int
+    status: str
+    message: MessageResponse
+    pending_actions: list[ToolCall] = Field(default_factory=list)
+
+
+class PlannerCreateRequest(BaseModel):
+    """High-level trip request the agent/form can send to the planner."""
+
+    name: str = Field(default="My Mumbai Trip", max_length=120)
+    start_location: str | None = Field(default=None, max_length=100)
+    start_time: str = Field(default="10:00", max_length=20)
+    duration_hours: float = Field(default=8.0, ge=1.0, le=16.0)
+    budget_inr: int | None = Field(default=None, ge=0)
+    travel_mode: str = Field(default="WALK", max_length=20)
+    interests: list[str] = Field(default_factory=list, max_length=20)
+    include_food: bool = True
+    max_stops: int = Field(default=5, ge=1, le=10)
+    semantic_query: str | None = Field(default=None, max_length=300)
+
+
