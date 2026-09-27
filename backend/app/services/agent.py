@@ -55,6 +55,37 @@ def _build_messages(
     return msgs
 
 
+def _fallback_reply(session: Session, message: str) -> str:
+    """A deterministic reply that still searches real data.
+
+    ponytail: keyword matching, not intent classification. The LLM path is the
+    real agent; this exists so a bad key or a stopped Ollama never breaks chat.
+    """
+    words = [w.strip(".,!?").lower() for w in message.split() if len(w) > 3]
+    stop = {"what", "where", "there", "about", "mumbai", "should", "could", "would", "have", "want", "good", "best"}
+    keywords = [w for w in words if w not in stop]
+    rows: list[dict] = []
+    try:
+        for word in keywords:
+            rows = agent_tools.search_places(session, query=word, limit=3)
+            if rows:
+                break
+    except Exception:  # noqa: BLE001
+        rows = []
+    if not rows:
+        return (
+            "I'm having trouble reaching my planning brain right now. "
+            "Try naming a Mumbai area and an interest — for example "
+            "'Bandra, food' or 'Colaba, history' — and I'll pull options."
+        )
+    lines = [f"- {r['name']} ({r['category']}, rated {r['rating']}/5, ~₹{r['avg_cost']})" for r in rows]
+    return (
+        "My live model is offline, but here are real LocalIQ picks I found for you:\n"
+        + "\n".join(lines)
+        + "\nAsk me to turn any of these into a plan."
+    )
+
+
 def _create_run(
     session: Session,
     user: User,
@@ -114,10 +145,17 @@ async def run_turn(
     messages = _build_messages(conversation, user_message, tool_results)
     tools = agent_tools.schemas()
 
-    response = await llm.chat_completion(messages, tools=tools)
-    msg = llm.extract_message(response)
-    content = msg.get("content") or ""
-    tool_calls = llm.extract_tool_calls(msg)
+    try:
+        response = await llm.chat_completion(messages, tools=tools)
+        msg = llm.extract_message(response)
+        content = msg.get("content") or ""
+        tool_calls = llm.extract_tool_calls(msg)
+    except Exception as exc:  # noqa: BLE001
+        # The agent must never 500 the app. Degrade to a deterministic,
+        # data-grounded reply so the user still gets something useful.
+        logger.warning("Agent LLM unavailable, using fallback: %s", exc)
+        content = _fallback_reply(session, user_message.content)
+        tool_calls = []
 
     assistant_message = Message(
         conversation_id=conversation.id,
