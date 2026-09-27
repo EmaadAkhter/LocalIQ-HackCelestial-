@@ -7,7 +7,7 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:582115132932:android:localiq_nexora",
+        "mobilesdk_app_id": "1:582115132932:android:e5f96d322dc220ac",
         "android_client_info": {
           "package_name": "com.nexify.localiq.localiq"
         }
@@ -18,7 +18,7 @@
           "client_type": 1,
           "android_info": {
             "package_name": "com.nexify.localiq.localiq",
-            "certificate_hash": "e5f96d322dc220ac37676_placeholder"
+            "certificate_hash": "e5f96d322dc220ac3767652a47c7a7ed15382685"
           }
         },
         {
