@@ -1,5 +1,5 @@
-.PHONY: help install install-backend install-frontend dev backend frontend-legacy \
-	tunnel tunnel-setup lint lint-backend lint-frontend typecheck typecheck-backend typecheck-frontend \
+.PHONY: help install install-backend install-frontend install-frontend-web dev backend frontend-legacy frontend-web \
+	tunnel tunnel-setup lint lint-backend lint-frontend lint-frontend-web typecheck typecheck-backend typecheck-frontend \
 	test test-cov test-backend test-live loadtest infra-up infra-down infra-tunnel infra-logs \
 	db-migrate db-revision db-downgrade db-backup db-restore \
 	jenkins-up jenkins-down jenkins-logs k8s-apply k8s-delete
@@ -17,6 +17,9 @@ install-backend: ## Install backend Python deps
 install-frontend: ## Install legacy frontend deps
 	cd frontend_legacy && npm install
 
+install-frontend-web: ## Install React/Vite web prototype deps
+	cd frontend_web && npm install
+
 # ---- Native development ----
 
 dev: ## Run backend + legacy frontend together
@@ -28,15 +31,21 @@ backend: ## Run the API (uvicorn on :8000)
 frontend-legacy: ## Run the legacy Next.js app
 	cd frontend_legacy && npm run dev
 
+frontend-web: ## Run the React/Vite web prototype
+	cd frontend_web && npm run dev
+
 # ---- Quality ----
 
-lint: lint-backend lint-frontend ## Lint backend + frontend
+lint: lint-backend lint-frontend lint-frontend-web ## Lint backend + frontend clients
 
 lint-backend: ## Lint the Python backend
 	cd backend && ruff check . || true
 
 lint-frontend: ## Lint the legacy frontend
 	cd frontend_legacy && npm run lint
+
+lint-frontend-web: ## Lint the React/Vite web prototype
+	cd frontend_web && npm run lint
 
 typecheck: typecheck-backend typecheck-frontend ## Typecheck backend + frontend
 

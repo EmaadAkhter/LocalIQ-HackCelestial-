@@ -124,6 +124,7 @@ Details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 localIQ/
 ├── backend/                 # FastAPI app (Dockerfile included)
 ├── frontend_flutter/        # Flutter client (web + iOS + Android)
+├── frontend_web/            # React/Vite web prototype (mock data)
 ├── frontend_legacy/         # previous Next.js web app (reference)
 ├── gateway/                 # Caddy (edge), Kong (API), nginx (static web)
 ├── infra/
@@ -151,6 +152,14 @@ Native development:
 ```bash
 make install
 make dev            # backend :8000 + legacy frontend :3000
+```
+
+The repository also includes a React/Vite web prototype that uses local mock
+data and is not part of the current Flutter deployment:
+
+```bash
+make install-frontend-web
+make frontend-web   # Vite development server on :5173
 ```
 
 Docker (full stack + local model):

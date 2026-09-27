@@ -11,6 +11,7 @@ to run entirely on one machine and be exposed through a single Cloudflare Tunnel
 | Component | Technology | Role |
 |---|---|---|
 | Web + mobile client | Flutter (web, iOS, Android) | Constraint form, results, map, guide chat |
+| Web prototype | React + Vite (`frontend_web/`) | Mock-data exploration UI; not deployed by the current infrastructure |
 | Legacy web client | Next.js (`frontend_legacy/`) | Previous web app, kept for reference |
 | API | FastAPI + SQLModel | Parsing, recommendations, chat, weather |
 | Database | PostgreSQL (SQLite for native dev) | Experiences, guides, itineraries |

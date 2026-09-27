@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Python 3.11+
-- Node.js 20+ (legacy web client only)
+- Node.js 20+ (web clients)
 - Flutter SDK (client)
 - Docker + Docker Compose
 - Ollama
@@ -56,6 +56,17 @@ The legacy Next.js client is in `frontend_legacy/`:
 cd frontend_legacy
 npm install
 npm run dev
+```
+
+The React/Vite web prototype is in `frontend_web/` and currently uses local
+mock data rather than the FastAPI API:
+
+```bash
+cd frontend_web
+npm install
+npm run dev
+npm run lint
+npm run build
 ```
 
 ## Gateway
